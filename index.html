@@ -9,7 +9,7 @@
 html,body{
     margin:0;
     height:100%;
-    background:#020611;
+    background:#01040a;
     font-family:Segoe UI, Arial;
     color:#9fdfff;
     overflow:hidden;
@@ -20,60 +20,7 @@ html,body{
     position:absolute;
     inset:0;
     background:url("imagem_cnt.png") center/cover no-repeat;
-    filter:brightness(.9) contrast(1.1) saturate(1.1);
-}
-
-/* VIDRO */
-.glass{
-    background:rgba(10,40,70,.25);
-    backdrop-filter: blur(8px);
-    border:1px solid rgba(120,220,255,.25);
-    box-shadow:0 0 25px rgba(0,200,255,.15);
-    border-radius:10px;
-}
-
-/* HEADER ESQ */
-#status{
-    position:absolute;
-    top:20px;
-    left:20px;
-    width:280px;
-    padding:18px;
-}
-#cnt{
-    font-size:52px;
-    letter-spacing:2px;
-    margin-top:10px;
-}
-
-/* GRAFICO */
-#telemetry{
-    position:absolute;
-    top:20px;
-    left:340px;
-    right:260px;
-    height:140px;
-}
-
-/* INDICES DIREITA */
-#indices{
-    position:absolute;
-    top:20px;
-    right:20px;
-    width:200px;
-    padding:15px;
-    line-height:28px;
-}
-
-/* PSA INFERIOR */
-#psa{
-    position:absolute;
-    bottom:20px;
-    left:50%;
-    transform:translateX(-50%);
-    width:700px;
-    padding:18px;
-    text-align:center;
+    filter:brightness(.85) contrast(1.15) saturate(1.15);
 }
 
 /* LINHAS HUD */
@@ -85,26 +32,61 @@ html,body{
 .hud:before{
     content:"";
     position:absolute;
-    inset:15px;
-    border:1px solid rgba(120,220,255,.15);
+    inset:12px;
+    border:1px solid rgba(120,220,255,.08);
 }
 
-/* PULSO */
-@keyframes pulse{
-    0%{opacity:.85}
-    50%{opacity:1}
-    100%{opacity:.85}
+/* PAINEIS PROJETADOS */
+.glass{
+    background:linear-gradient(to bottom,
+        rgba(20,120,180,.10),
+        rgba(0,20,40,.05)
+    );
+    backdrop-filter: blur(3px);
+    border:none;
+    box-shadow:
+        0 0 60px rgba(0,200,255,.12),
+        inset 0 0 25px rgba(0,200,255,.08);
+    border-radius:6px;
+    padding:18px;
 }
+
+/* POSIÇÕES */
+#status{ position:absolute; top:20px; left:20px; width:280px; }
+#telemetry{ position:absolute; top:20px; left:340px; right:260px; height:140px; }
+#indices{ position:absolute; top:20px; right:20px; width:200px; line-height:28px; }
+#psa{ position:absolute; bottom:20px; left:50%; transform:translateX(-50%); width:700px; text-align:center; }
+
+/* CNT LEITURA */
 #cnt{
-    animation:pulse 12s infinite;
+    font-size:58px;
+    letter-spacing:4px;
+    font-weight:300;
+    text-shadow:
+        0 0 8px rgba(120,220,255,.6),
+        0 0 20px rgba(0,200,255,.35);
 }
+
+/* texto */
+#status, #indices, #psa{
+    text-shadow:0 0 6px rgba(120,220,255,.35);
+}
+
+/* pulso do sistema */
+@keyframes pulse{
+    0%{opacity:.9; filter:brightness(1)}
+    50%{opacity:1; filter:brightness(1.15)}
+    100%{opacity:.9; filter:brightness(1)}
+}
+#cnt{ animation:pulse 14s ease-in-out infinite; }
+
+canvas{ filter:drop-shadow(0 0 6px rgba(120,220,255,.6)); }
 </style>
 </head>
 
 <body>
 
 <div id="map"></div>
-
 <div class="hud"></div>
 
 <div id="status" class="glass">
@@ -136,7 +118,7 @@ Compra/Pagamento por Conservação (PSA) — simulador
 </div>
 
 <script>
-/* gráfico fake fisiológico */
+/* gráfico fisiológico */
 const t = document.getElementById("telemetry");
 const c = document.createElement("canvas");
 t.appendChild(c);
@@ -150,12 +132,14 @@ function draw(){
     ctx.fillRect(0,0,c.width,c.height);
 
     ctx.strokeStyle="#6df";
+    ctx.lineWidth=2;
     ctx.beginPath();
     for(let i=0;i<c.width;i++){
         let y = 70 + Math.sin((i+x)/40)*20 + Math.sin((i+x)/13)*8;
         ctx.lineTo(i,y);
     }
     ctx.stroke();
+
     x+=2;
     requestAnimationFrame(draw);
 }
