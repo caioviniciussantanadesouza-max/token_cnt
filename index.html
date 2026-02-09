@@ -1,148 +1,166 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>CNT – Mapa Real</title>
-
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<meta charset="UTF-8">
+<title>OS.CNT</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
-  body{margin:0;background:#020617;overflow:hidden;font-family:Arial;color:#dff}
-  #map{position:absolute;inset:0;z-index:1}
+html,body{
+    margin:0;
+    height:100%;
+    background:#020611;
+    font-family:Segoe UI, Arial;
+    color:#9fdfff;
+    overflow:hidden;
+}
 
-  /* overlay holográfico com sua imagem */
-  #holo{
-    position:absolute; inset:0;
-    display:flex; align-items:center; justify-content:center;
-    pointer-events:none; z-index:3;
-    mix-blend-mode: screen; opacity:.55;
-  }
-  #holo img{
-    width:120%; max-width:none;
-    filter:drop-shadow(0 0 60px rgba(0,255,200,.35));
-  }
+/* MAPA BASE */
+#map{
+    position:absolute;
+    inset:0;
+    background:url("imagem_cnt.png") center/cover no-repeat;
+    filter:brightness(.9) contrast(1.1) saturate(1.1);
+}
 
-  canvas{position:absolute;inset:0;pointer-events:none;z-index:4}
-
-  .panel{
-    position:absolute; left:20px; top:20px; width:360px;
-    background:rgba(10,20,60,.55); backdrop-filter:blur(10px);
-    border:1px solid rgba(0,255,200,.25);
-    border-radius:16px; padding:14px; z-index:5
-  }
-  .btn{
-    width:100%; padding:10px; margin-top:10px;
-    background:rgba(0,255,180,.15);
-    border:1px solid rgba(0,255,180,.4);
-    color:#aff; border-radius:10px; cursor:pointer
-  }
-  pre{white-space:pre-wrap;word-break:break-word;margin:10px 0 0 0;font-size:12px;color:#bff}
-
-  .leaflet-control{
-    background:rgba(5,10,30,.55)!important;
-    color:#dff!important;
-    border:1px solid rgba(0,255,200,.25)!important;
+/* VIDRO */
+.glass{
+    background:rgba(10,40,70,.25);
     backdrop-filter: blur(8px);
-    border-radius:12px!important;
-  }
+    border:1px solid rgba(120,220,255,.25);
+    box-shadow:0 0 25px rgba(0,200,255,.15);
+    border-radius:10px;
+}
+
+/* HEADER ESQ */
+#status{
+    position:absolute;
+    top:20px;
+    left:20px;
+    width:280px;
+    padding:18px;
+}
+#cnt{
+    font-size:52px;
+    letter-spacing:2px;
+    margin-top:10px;
+}
+
+/* GRAFICO */
+#telemetry{
+    position:absolute;
+    top:20px;
+    left:340px;
+    right:260px;
+    height:140px;
+}
+
+/* INDICES DIREITA */
+#indices{
+    position:absolute;
+    top:20px;
+    right:20px;
+    width:200px;
+    padding:15px;
+    line-height:28px;
+}
+
+/* PSA INFERIOR */
+#psa{
+    position:absolute;
+    bottom:20px;
+    left:50%;
+    transform:translateX(-50%);
+    width:700px;
+    padding:18px;
+    text-align:center;
+}
+
+/* LINHAS HUD */
+.hud{
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+}
+.hud:before{
+    content:"";
+    position:absolute;
+    inset:15px;
+    border:1px solid rgba(120,220,255,.15);
+}
+
+/* PULSO */
+@keyframes pulse{
+    0%{opacity:.85}
+    50%{opacity:1}
+    100%{opacity:.85}
+}
+#cnt{
+    animation:pulse 12s infinite;
+}
 </style>
 </head>
+
 <body>
 
 <div id="map"></div>
 
-<div id="holo">
-  <img src="imagem_cnt.png" alt="CNT overlay"/>
+<div class="hud"></div>
+
+<div id="status" class="glass">
+<b>OS.CNT</b><br>
+Earth Environmental Monitoring Infrastructure<br><br>
+
+<div id="cnt">72.4</div>
+Confiança: Alta<br><br>
+
+Estado do sistema:<br>
+<b>Regulação estável</b><br>
+Modo operacional: Monitoramento ativo<br>
+Status: Operacional
 </div>
 
-<canvas id="fx"></canvas>
+<div id="telemetry" class="glass"></div>
 
-<div class="panel">
-  <div><b>CNT – MAPA REAL (GitHub)</b></div>
-  <div style="font-size:12px;opacity:.85;margin-top:6px">
-    Clique no mapa para analisar o ponto (demo).
-  </div>
-  <button class="btn" id="btnGPS">Ir para minha localização</button>
-  <pre id="out">Aguardando clique no mapa…</pre>
+<div id="indices" class="glass">
+IBE .......... 88<br>
+IAB .......... 88<br>
+IBI .......... 11<br>
+HID .......... 83<br>
+ENT .......... 88<br>
+PAN .......... 78
 </div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<div id="psa" class="glass">
+Compra/Pagamento por Conservação (PSA) — simulador
+</div>
+
 <script>
-  const out = document.getElementById("out");
+/* gráfico fake fisiológico */
+const t = document.getElementById("telemetry");
+const c = document.createElement("canvas");
+t.appendChild(c);
+c.width=t.clientWidth;
+c.height=t.clientHeight;
+const ctx=c.getContext("2d");
 
-  // Mapa real (OpenStreetMap)
-  const map = L.map("map").setView([-3.4653, -62.2159], 5);
+let x=0;
+function draw(){
+    ctx.fillStyle="rgba(0,20,40,.25)";
+    ctx.fillRect(0,0,c.width,c.height);
 
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 19,
-    attribution: "© OpenStreetMap"
-  }).addTo(map);
-
-  let marker = null;
-
-  function fakeScan(lat,lng){
-    // demo (depois liga APIs reais)
-    const data = {
-      lat, lng,
-      ndvi: (0.4 + Math.random()*0.4).toFixed(2),
-      umidade: (20 + Math.random()*60).toFixed(1) + "%",
-      bioe_mv: Math.round(350 + Math.random()*120) + " mV",
-      risco: ["baixo","médio","alto"][Math.floor(Math.random()*3)]
-    };
-    out.textContent = JSON.stringify(data, null, 2);
-
-    if(marker) marker.remove();
-    marker = L.marker([lat,lng]).addTo(map);
-    marker.bindPopup(
-      `<b>CNT Scan (demo)</b><br>
-       Lat: ${lat.toFixed(5)}<br>
-       Lng: ${lng.toFixed(5)}<br>
-       NDVI: ${data.ndvi}<br>
-       Umidade: ${data.umidade}<br>
-       Bioe: ${data.bioe_mv}<br>
-       Risco: ${data.risco}`
-    ).openPopup();
-  }
-
-  map.on("click", (e)=> fakeScan(e.latlng.lat, e.latlng.lng));
-
-  document.getElementById("btnGPS").onclick = () => {
-    if(!navigator.geolocation){
-      out.textContent = "GPS não suportado.";
-      return;
+    ctx.strokeStyle="#6df";
+    ctx.beginPath();
+    for(let i=0;i<c.width;i++){
+        let y = 70 + Math.sin((i+x)/40)*20 + Math.sin((i+x)/13)*8;
+        ctx.lineTo(i,y);
     }
-    out.textContent = "Pegando localização...";
-    navigator.geolocation.getCurrentPosition(
-      (pos)=>{
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-        map.setView([lat,lng], 14);
-        fakeScan(lat,lng);
-      },
-      (err)=> out.textContent = "Erro GPS: " + err.message,
-      { enableHighAccuracy:true, timeout:10000 }
-    );
-  };
-
-  // Partículas holo
-  const c = document.getElementById("fx");
-  const ctx = c.getContext("2d");
-  let w,h,p=[];
-  function resize(){
-    w=c.width=innerWidth; h=c.height=innerHeight;
-    p=[...Array(160)].map(()=>({x:Math.random()*w,y:Math.random()*h,v:0.3+Math.random()*1.2}));
-  }
-  addEventListener("resize",resize); resize();
-  (function loop(){
-    ctx.clearRect(0,0,w,h);
-    ctx.fillStyle="rgba(0,255,200,.35)";
-    for(const pt of p){
-      pt.y-=pt.v; if(pt.y<0) pt.y=h;
-      ctx.fillRect(pt.x,pt.y,2,2);
-    }
-    requestAnimationFrame(loop);
-  })();
+    ctx.stroke();
+    x+=2;
+    requestAnimationFrame(draw);
+}
+draw();
 </script>
+
 </body>
 </html>
