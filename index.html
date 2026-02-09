@@ -6,76 +6,182 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 
 <style>
-html,body{margin:0;height:100%;background:#01040a;font-family:Segoe UI, Arial;color:#9fdfff;overflow:hidden}
-#map{position:absolute;inset:0}
-#bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;animation:biome 18s ease-in-out infinite}
-@keyframes biome{0%{filter:brightness(.85) contrast(1.15) saturate(1.1)}50%{filter:brightness(.95) contrast(1.25) saturate(1.25)}100%{filter:brightness(.85) contrast(1.15) saturate(1.1)}}
+  :root{
+    --c1: rgba(120,220,255,.22);
+    --c2: rgba(120,220,255,.14);
+    --bg: rgba(0,18,36,.26);
+    --txt:#9fdfff;
+  }
+  html,body{margin:0;height:100%;background:#01040a;font-family:Segoe UI, Arial;color:var(--txt);overflow:hidden}
 
-.glass{position:absolute;padding:18px;text-shadow:0 0 6px rgba(120,220,255,.35);z-index:10}
-#status{top:20px;left:20px;width:300px}
-#telemetry{top:20px;left:340px;right:260px;height:120px}
-#indices{top:20px;right:20px;width:220px;line-height:26px}
+  /* ===== MAPA PROTAGONISTA ===== */
+  #map{position:absolute;inset:0;overflow:hidden}
+  #bg{
+    position:absolute;inset:0;width:100%;height:100%;
+    object-fit:cover;
+    animation:biome 16s ease-in-out infinite;
+    transform:translateZ(0);
+  }
+  /* respiração/pulso do bioma */
+  @keyframes biome{
+    0%   { filter:brightness(.82) contrast(1.12) saturate(1.12); transform:scale(1.00); }
+    50%  { filter:brightness(.96) contrast(1.22) saturate(1.26); transform:scale(1.015); }
+    100% { filter:brightness(.82) contrast(1.12) saturate(1.12); transform:scale(1.00); }
+  }
 
-#psa{
-  bottom:20px;left:50%;transform:translateX(-50%);
-  width:460px;text-align:center;
-}
+  /* partículas sutis */
+  #particles{
+    position:absolute;inset:-20%;
+    background:
+      radial-gradient(circle at 20% 30%, rgba(120,220,255,.10), transparent 35%),
+      radial-gradient(circle at 70% 40%, rgba(120,220,255,.08), transparent 40%),
+      radial-gradient(circle at 45% 70%, rgba(120,220,255,.06), transparent 45%);
+    mix-blend-mode:screen;
+    opacity:.55;
+    filter:blur(1px);
+    animation:drift 18s linear infinite;
+    pointer-events:none;
+  }
+  @keyframes drift{
+    0%{transform:translate3d(-1%,0,0)}
+    50%{transform:translate3d(1%,.5%,0)}
+    100%{transform:translate3d(-1%,0,0)}
+  }
 
-#cnt{
-  font-size:56px;letter-spacing:4px;font-weight:300;
-  text-shadow:0 0 10px rgba(120,220,255,.7), 0 0 24px rgba(0,200,255,.35);
-  animation:pulse 14s ease-in-out infinite;
-}
-@keyframes pulse{0%{opacity:.85}50%{opacity:1}100%{opacity:.85}}
+  /* HUD frame */
+  .hudFrame{
+    position:absolute;inset:14px;
+    border:1px solid rgba(120,220,255,.10);
+    box-shadow:0 0 22px rgba(0,200,255,.06);
+    pointer-events:none;
+  }
 
-.small{opacity:.9;font-size:12px;line-height:16px}
-.hr{height:1px;background:rgba(120,220,255,.12);margin:10px 0}
+  /* ===== PANELS (não podem esmagar o mapa) ===== */
+  .glass{
+    position:absolute;
+    background:linear-gradient(180deg, rgba(0,18,36,.22), rgba(0,18,36,.10));
+    border:1px solid rgba(120,220,255,.12);
+    border-radius:14px;
+    backdrop-filter: blur(7px);
+    -webkit-backdrop-filter: blur(7px);
+    box-shadow:0 0 28px rgba(0,200,255,.06);
+    padding:14px 16px;
+    z-index:10;
+  }
 
-button,input{
-  background:rgba(255,255,255,.05);
-  border:1px solid rgba(120,220,255,.3);
-  color:#9fdfff;padding:7px 10px;border-radius:8px;
-}
-button:hover{background:rgba(120,220,255,.15);cursor:pointer}
-input{width:160px;text-align:center}
+  .small{opacity:.92;font-size:12px;line-height:16px}
+  .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
+  .hr{height:1px;background:rgba(120,220,255,.10);margin:10px 0}
 
-#helpPanel{
-  position:absolute;left:20px;bottom:20px;
-  width:340px;max-width:calc(100vw - 40px);
-  padding:14px;border-radius:14px;
-  background:rgba(0,18,36,.35);
-  border:1px solid rgba(120,220,255,.14);
-  display:none;z-index:30;
-  backdrop-filter: blur(6px);
-}
-#helpPanel b{color:#c8f2ff}
-.tag{display:inline-block;padding:2px 8px;border:1px solid rgba(120,220,255,.18);border-radius:999px;margin:2px 4px 2px 0;font-size:12px;opacity:.95}
-.mono{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
+  /* topo esquerdo */
+  #status{top:18px;left:18px;width:300px}
+  #cnt{
+    font-size:54px;letter-spacing:3px;font-weight:300;margin:8px 0 6px;
+    text-shadow:0 0 10px rgba(120,220,255,.65), 0 0 24px rgba(0,200,255,.22);
+    animation:pulse 12s ease-in-out infinite;
+  }
+  @keyframes pulse{0%{opacity:.82}50%{opacity:1}100%{opacity:.82}}
+
+  /* topo centro (faixa baixa) */
+  #telemetry{
+    top:18px;
+    left:340px;
+    right:260px;
+    height:120px;
+    padding:10px 12px;
+  }
+  #telemetry canvas{filter:drop-shadow(0 0 6px rgba(120,220,255,.55));display:block}
+
+  /* topo direito */
+  #indices{top:18px;right:18px;width:220px;line-height:24px}
+  #indices b{color:#c8f2ff}
+
+  /* ===== COMPRA/PSA: BARRA INFERIOR (SEM ATRAPALHAR O MAPA) ===== */
+  #psaBar{
+    left:18px;right:18px;bottom:18px;
+    height:64px;
+    display:flex;align-items:center;gap:12px;
+    padding:10px 12px;
+  }
+  #psaLeft{flex:1;min-width:0}
+  #psaTitle{font-size:13px;opacity:.95;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #walletStatus{font-size:12px;opacity:.85;margin-top:4px}
+
+  #psaRight{display:flex;align-items:center;gap:10px}
+  .btn, .inp{
+    background:rgba(255,255,255,.04);
+    border:1px solid rgba(120,220,255,.22);
+    color:var(--txt);
+    padding:8px 10px;border-radius:10px;
+    outline:none;
+  }
+  .btn:hover{background:rgba(120,220,255,.12);cursor:pointer}
+  .inp{width:130px;text-align:center}
+  .btnPrimary{
+    background:rgba(120,220,255,.14);
+    border:1px solid rgba(120,220,255,.35);
+  }
+
+  /* painel extra (detalhes da cotação) aparece acima da barra */
+  #quotePanel{
+    left:18px;right:18px;bottom:92px;
+    padding:12px 14px;
+    display:none;
+  }
+
+  /* help pequeno (explicações) */
+  #helpPanel{
+    left:18px;bottom:92px;
+    width:340px;max-width:calc(100vw - 36px);
+    display:none;
+    z-index:20;
+  }
+  .tag{display:inline-block;padding:2px 8px;border:1px solid rgba(120,220,255,.16);border-radius:999px;margin:2px 4px 2px 0;font-size:12px;opacity:.95}
+
+  /* mobile: telemetria vira faixa menor e PSA vira 2 linhas */
+  @media (max-width: 980px){
+    #telemetry{left:18px;right:18px;top:210px;height:105px}
+    #indices{top:18px;right:18px;width:190px}
+    #status{width:270px}
+  }
+  @media (max-width: 620px){
+    #status{width:240px}
+    #telemetry{top:195px}
+    #psaBar{height:auto;flex-direction:column;align-items:stretch}
+    #psaRight{justify-content:space-between;flex-wrap:wrap}
+    .inp{flex:1;min-width:120px}
+  }
 </style>
 </head>
 
 <body>
 
 <div id="map">
-  <img src="imagem_cnt.png" id="bg" />
+  <img src="imagem_cnt.png" id="bg" alt="Mapa CNT" />
+  <div id="particles"></div>
+  <div class="hudFrame"></div>
 </div>
 
+<!-- STATUS -->
 <div id="status" class="glass">
   <b>OS.CNT</b><br>
-  <span class="small">Earth Environmental Monitoring Infrastructure</span><br><br>
+  <span class="small">Earth Environmental Monitoring Infrastructure</span>
 
   <div id="cnt">72.4</div>
+
   Confiança: <b id="conf">Alta</b><br><br>
 
   Estado do sistema:<br>
   <b id="state">Regulação estável</b><br>
   <span class="small">Modo operacional: Monitoramento ativo · Status: Operacional</span><br><br>
 
-  <button id="toggleHelp">O que significa?</button>
+  <button class="btn" id="toggleHelp">O que significa?</button>
 </div>
 
+<!-- TELEMETRIA -->
 <div id="telemetry" class="glass"></div>
 
+<!-- INDICES -->
 <div id="indices" class="glass">
   <div><span class="mono">IBE</span> .......... <b id="ibe">88</b></div>
   <div><span class="mono">IAB</span> .......... <b id="iab">88</b></div>
@@ -87,200 +193,206 @@ input{width:160px;text-align:center}
   <div class="small">Índices alimentam o CNT (0–100)</div>
 </div>
 
-<div id="psa" class="glass">
-  <div id="walletStatus">Carteira não conectada</div>
-  <div class="small">Swap SOL → CNT (Jupiter)</div>
-  <div class="hr"></div>
-
-  <button id="connectBtn">Conectar carteira</button>
-  <button id="refreshBtn">Atualizar cotação</button>
-  <br><br>
-
-  Valor em SOL:<br>
-  <input id="amount" type="number" value="0.10" step="0.01" min="0.01">
-  <br><br>
-
-  <div id="quoteBox" class="small">
-    Cotação: —<br>
-    Você recebe (est.): —<br>
-    Mínimo (com slippage): —<br>
-    Impacto: —
-  </div>
-
-  <div class="hr"></div>
-  <button id="buyBtn">Comprar CNT</button>
-</div>
-
-<div id="helpPanel">
+<!-- HELP -->
+<div id="helpPanel" class="glass">
   <b>Significados (leitura simples)</b>
   <div class="small" style="margin-top:6px">
-    <span class="tag">CNT</span> Coeficiente Natural Territorial (vitalidade integrada do sistema).<br>
-    <span class="tag">IBE</span> Bioelétrico (sinais/energia funcional do sistema vivo).<br>
-    <span class="tag">IAB</span> Abiótico (clima/solo/pressão física: água, temperatura, radiação).<br>
-    <span class="tag">IBI</span> Biótico (vigor ecológico: diversidade/biomassa/atividade biológica).<br>
-    <span class="tag">HID</span> Hídrico (umidade/fluxo/estabilidade hidrológica).<br>
-    <span class="tag">ENT</span> Entropia (perda de organização/instabilidade do sistema).<br>
-    <span class="tag">PAN</span> Pressão antrópica (interferência humana: degradação, risco, abertura).<br><br>
-    <span class="mono">Nota:</span> Em produção, esses índices vêm de satélite + modelos + sensores. Aqui a UI já está pronta.
+    <span class="tag">CNT</span> Vitalidade integrada do território (0–100).<br>
+    <span class="tag">IBE</span> Bioelétrico (atividade funcional do sistema vivo).<br>
+    <span class="tag">IAB</span> Abiótico (clima/solo/pressão física).<br>
+    <span class="tag">IBI</span> Biótico (vigor ecológico: vida/biomassa/diversidade).<br>
+    <span class="tag">HID</span> Hídrico (estabilidade/umidade/fluxo de água).<br>
+    <span class="tag">ENT</span> Entropia (perda de organização/instabilidade).<br>
+    <span class="tag">PAN</span> Pressão antrópica (interferência humana).<br><br>
+    <span class="mono">Obs:</span> aqui é UI; depois plugamos satélite + sensores.
+  </div>
+</div>
+
+<!-- QUOTE PANEL (detalhes) -->
+<div id="quotePanel" class="glass">
+  <div class="small" id="quoteText">Cotação: —</div>
+</div>
+
+<!-- PSA BAR -->
+<div id="psaBar" class="glass">
+  <div id="psaLeft">
+    <div id="psaTitle"><b>Compra / Pagamento por Conservação (PSA)</b> — simulador</div>
+    <div id="walletStatus">Carteira não conectada</div>
+  </div>
+
+  <div id="psaRight">
+    <button class="btn" id="connectBtn">Conectar carteira</button>
+    <button class="btn" id="quoteBtn">Ver cotação</button>
+    <input class="inp" id="amount" type="number" value="0.10" step="0.01" min="0.01" inputmode="decimal" />
+    <button class="btn btnPrimary" id="buyBtn">Comprar CNT</button>
   </div>
 </div>
 
 <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.js"></script>
 
 <script>
-/* ========= TELEMETRIA (visual fisiológico) ========= */
-const t = document.getElementById("telemetry");
-const canvas = document.createElement("canvas");
-t.appendChild(canvas);
-function resizeCanvas(){
-  canvas.width=t.clientWidth; canvas.height=t.clientHeight;
+/* ========= TELEMETRIA (fisiologia) ========= */
+const telem = document.getElementById("telemetry");
+const cv = document.createElement("canvas");
+telem.appendChild(cv);
+const ctx = cv.getContext("2d");
+
+function resize(){
+  cv.width = telem.clientWidth;
+  cv.height = telem.clientHeight;
 }
-window.addEventListener("resize", resizeCanvas);
-resizeCanvas();
+window.addEventListener("resize", resize);
+resize();
 
-const ctx=canvas.getContext("2d");
 let x=0;
-function draw(){
-  ctx.fillStyle="rgba(0,20,40,.22)";
-  ctx.fillRect(0,0,canvas.width,canvas.height);
+function loop(){
+  ctx.fillStyle="rgba(0,18,36,.18)";
+  ctx.fillRect(0,0,cv.width,cv.height);
 
-  ctx.strokeStyle="rgba(120,220,255,.85)";
+  ctx.strokeStyle="rgba(120,220,255,.92)";
   ctx.lineWidth=2;
+
   ctx.beginPath();
-  for(let i=0;i<canvas.width;i++){
-    let y = (canvas.height/2) + Math.sin((i+x)/40)*18 + Math.sin((i+x)/13)*7;
-    ctx.lineTo(i,y);
+  for(let i=0;i<cv.width;i++){
+    const y = (cv.height/2) + Math.sin((i+x)/42)*16 + Math.sin((i+x)/15)*6;
+    if(i===0) ctx.moveTo(i,y); else ctx.lineTo(i,y);
   }
   ctx.stroke();
 
-  x+=2;
-  requestAnimationFrame(draw);
+  x += 2;
+  requestAnimationFrame(loop);
 }
-draw();
+loop();
 
-/* ========= HELP PANEL ========= */
-const helpPanel=document.getElementById("helpPanel");
-document.getElementById("toggleHelp").onclick=()=>{
-  helpPanel.style.display = (helpPanel.style.display==="none" || !helpPanel.style.display) ? "block" : "none";
+/* ========= HELP TOGGLE ========= */
+const helpPanel = document.getElementById("helpPanel");
+document.getElementById("toggleHelp").onclick = ()=>{
+  helpPanel.style.display = (helpPanel.style.display === "block") ? "none" : "block";
 };
 
-/* ========= SOLANA + JUPITER QUOTE / SWAP ========= */
+/* ========= SOLANA + JUPITER ========= */
 const { Connection, PublicKey, Transaction } = solanaWeb3;
-
-// RPC mainnet
 const connection = new Connection("https://api.mainnet-beta.solana.com", "confirmed");
-
-let provider=null;
-let wallet=null;
 
 const TOKEN_MINT = "GCVyjNaCbXkwGUuktyNxSXad4ozmTp2fzQr2jieSpump";
 const SOL_MINT   = "So11111111111111111111111111111111111111112";
 
-let tokenDecimals = 6; // fallback
-async function loadTokenDecimals(){
+let provider=null;
+let wallet=null;
+let tokenDecimals = 6;
+
+async function loadDecimals(){
   try{
-    const supply = await connection.getTokenSupply(new PublicKey(TOKEN_MINT));
-    if(supply?.value?.decimals !== undefined) tokenDecimals = supply.value.decimals;
-  }catch(e){
-    // mantém fallback
-  }
+    const s = await connection.getTokenSupply(new PublicKey(TOKEN_MINT));
+    if(s?.value?.decimals !== undefined) tokenDecimals = s.value.decimals;
+  }catch(_){}
 }
 
 function fmt(n, d=6){
   if(!isFinite(n)) return "—";
-  return n.toLocaleString("pt-BR",{minimumFractionDigits:0, maximumFractionDigits:d});
+  return n.toLocaleString("pt-BR",{maximumFractionDigits:d});
 }
 
-async function updateQuote(){
-  const amountSol = parseFloat(document.getElementById("amount").value || "0");
-  if(!amountSol || amountSol<=0){
-    document.getElementById("quoteBox").innerHTML = "Cotação: —<br>Você recebe (est.): —<br>Mínimo (com slippage): —<br>Impacto: —";
-    return;
-  }
-
-  // amount em lamports
-  const inAmount = Math.floor(amountSol * 1e9);
-
-  try{
-    const url = `https://quote-api.jup.ag/v6/quote?inputMint=${SOL_MINT}&outputMint=${TOKEN_MINT}&amount=${inAmount}&slippageBps=50`;
-    const quote = await fetch(url).then(r=>r.json());
-
-    const route = quote?.data?.[0];
-    if(!route) throw new Error("Sem rota");
-
-    const outAmountRaw = Number(route.outAmount);                 // em unidades do token
-    const minOutRaw    = Number(route.otherAmountThreshold || 0); // mínimo após slippage
-    const priceImpact  = route.priceImpactPct != null ? (Number(route.priceImpactPct)*100) : null;
-
-    const out = outAmountRaw / Math.pow(10, tokenDecimals);
-    const minOut = minOutRaw / Math.pow(10, tokenDecimals);
-
-    // cotação aproximada (SOL por 1 CNT) via rota escolhida:
-    const solPerCnt = amountSol / (out || 1);
-
-    document.getElementById("quoteBox").innerHTML =
-      `Cotação (est.): <b>${fmt(solPerCnt, 10)} SOL</b> por 1 CNT<br>` +
-      `Você recebe (est.): <b>${fmt(out, 2)} CNT</b><br>` +
-      `Mínimo (slippage): <b>${fmt(minOut, 2)} CNT</b><br>` +
-      `Impacto: <b>${priceImpact==null ? "—" : fmt(priceImpact, 2)+"%"}</b>`;
-  }catch(e){
-    document.getElementById("quoteBox").innerHTML =
-      `Cotação: <b>erro</b><br><span class="small">Não consegui puxar a rota do Jupiter agora.</span>`;
-  }
+function sanitizeAmount(){
+  const el = document.getElementById("amount");
+  let v = parseFloat(el.value || "0");
+  if(!isFinite(v) || v<=0) v = 0.10;
+  // impede negativo (teu print mostrou -1,14)
+  v = Math.abs(v);
+  el.value = v.toFixed(2);
+  return v;
 }
 
-document.getElementById("refreshBtn").onclick = updateQuote;
-document.getElementById("amount").addEventListener("input", ()=>{
-  // evita spam; simples debounce
-  clearTimeout(window.__qtm);
-  window.__qtm = setTimeout(updateQuote, 350);
-});
+const quotePanel = document.getElementById("quotePanel");
+const quoteText  = document.getElementById("quoteText");
+
+async function getQuote(){
+  const sol = sanitizeAmount();
+  const inAmount = Math.floor(sol * 1e9);
+
+  const url = `https://quote-api.jup.ag/v6/quote?inputMint=${SOL_MINT}&outputMint=${TOKEN_MINT}&amount=${inAmount}&slippageBps=50`;
+  const q = await fetch(url).then(r=>r.json());
+  const route = q?.data?.[0];
+  if(!route) throw new Error("Sem rota no Jupiter.");
+
+  const outRaw = Number(route.outAmount);
+  const minRaw = Number(route.otherAmountThreshold || 0);
+  const out = outRaw / Math.pow(10, tokenDecimals);
+  const min = minRaw / Math.pow(10, tokenDecimals);
+
+  const solPerCnt = sol / (out || 1);
+  const impactPct = route.priceImpactPct != null ? (Number(route.priceImpactPct)*100) : null;
+
+  return { q, sol, out, min, solPerCnt, impactPct };
+}
 
 document.getElementById("connectBtn").onclick = async()=>{
-  if(!window.solana) return alert("Instale Phantom (ou wallet Solana compatível).");
+  if(!window.solana) return alert("Instale Phantom (ou outra wallet Solana).");
   provider = window.solana;
   await provider.connect();
   wallet = provider.publicKey.toString();
   document.getElementById("walletStatus").innerText =
     "Conectado: " + wallet.slice(0,4) + "..." + wallet.slice(-4);
-  await loadTokenDecimals();
-  await updateQuote();
+
+  await loadDecimals();
 };
+
+document.getElementById("quoteBtn").onclick = async()=>{
+  try{
+    quotePanel.style.display = "block";
+    quoteText.innerHTML = "Carregando cotação…";
+    await loadDecimals();
+    const r = await getQuote();
+
+    quoteText.innerHTML =
+      `Cotação (est.): <b>${fmt(r.solPerCnt, 10)} SOL</b> por 1 CNT<br>` +
+      `Você recebe (est.): <b>${fmt(r.out, 2)} CNT</b><br>` +
+      `Mínimo (slippage): <b>${fmt(r.min, 2)} CNT</b><br>` +
+      `Impacto: <b>${r.impactPct==null ? "—" : fmt(r.impactPct, 2)+"%"}</b><br>` +
+      `<span class="small">Fonte: Jupiter Quote</span>`;
+  }catch(e){
+    quoteText.innerHTML = "Erro ao puxar cotação. Tente de novo.";
+  }
+};
+
+// fecha o quote se clicar nele
+quotePanel.onclick = ()=> quotePanel.style.display = "none";
 
 document.getElementById("buyBtn").onclick = async()=>{
   if(!wallet) return alert("Conecte a carteira primeiro.");
-  const amountSol = parseFloat(document.getElementById("amount").value || "0");
-  if(!amountSol || amountSol<=0) return alert("Informe um valor em SOL.");
+  try{
+    await loadDecimals();
+    const r = await getQuote();
 
-  const inAmount = Math.floor(amountSol * 1e9);
+    const swap = await fetch("https://quote-api.jup.ag/v6/swap",{
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body:JSON.stringify({
+        quoteResponse: r.q,
+        userPublicKey: wallet,
+        wrapAndUnwrapSol: true
+      })
+    }).then(r=>r.json());
 
-  // 1) quote
-  const quote = await fetch(
-    `https://quote-api.jup.ag/v6/quote?inputMint=${SOL_MINT}&outputMint=${TOKEN_MINT}&amount=${inAmount}&slippageBps=50`
-  ).then(r=>r.json());
+    if(!swap?.swapTransaction) return alert("Falha ao montar transação.");
 
-  // 2) swap (transaction base64) :contentReference[oaicite:2]{index=2}
-  const swap = await fetch("https://quote-api.jup.ag/v6/swap",{
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body:JSON.stringify({
-      quoteResponse: quote,
-      userPublicKey: wallet,
-      wrapAndUnwrapSol: true
-    })
-  }).then(r=>r.json());
+    const tx = Transaction.from(Uint8Array.from(atob(swap.swapTransaction), c => c.charCodeAt(0)));
+    tx.feePayer = new PublicKey(wallet);
 
-  if(!swap?.swapTransaction) return alert("Falha ao montar transação.");
+    const signed = await provider.signTransaction(tx);
+    const sig = await connection.sendRawTransaction(signed.serialize());
 
-  // 3) assina e envia
-  const tx = Transaction.from(Uint8Array.from(atob(swap.swapTransaction), c => c.charCodeAt(0)));
-  tx.feePayer = new PublicKey(wallet);
-
-  const signed = await provider.signTransaction(tx);
-  const sig = await connection.sendRawTransaction(signed.serialize());
-
-  alert("Compra enviada ✔\nTx: " + sig);
+    alert("Compra enviada ✔\nTx: " + sig);
+  }catch(e){
+    alert("Erro na compra: " + (e?.message || "desconhecido"));
+  }
 };
+
+// sempre corrige valor
+document.getElementById("amount").addEventListener("input", ()=>{
+  // não deixa negativo nem vazio
+  sanitizeAmount();
+});
 </script>
 
 </body>
