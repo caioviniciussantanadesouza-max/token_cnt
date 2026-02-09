@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>OS.CNT</title>
+<title>OS.CNT — Observatório Ambiental</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
@@ -15,7 +15,7 @@ html,body{
     overflow:hidden;
 }
 
-/* MAPA */
+/* ===== MAPA (PROTAGONISTA) ===== */
 #map{
     position:absolute;
     inset:0;
@@ -27,10 +27,17 @@ html,body{
     width:100%;
     height:100%;
     object-fit:cover;
-    filter:brightness(.85) contrast(1.15) saturate(1.15);
+    animation:biome 18s ease-in-out infinite;
 }
 
-/* HUD linhas */
+/* respiração ecológica */
+@keyframes biome{
+    0%   { filter:brightness(.85) contrast(1.15) saturate(1.1); }
+    50%  { filter:brightness(.95) contrast(1.25) saturate(1.25); }
+    100% { filter:brightness(.85) contrast(1.15) saturate(1.1); }
+}
+
+/* ===== HUD ===== */
 .hud{
     position:absolute;
     inset:0;
@@ -40,68 +47,75 @@ html,body{
 .hud:before{
     content:"";
     position:absolute;
-    inset:12px;
-    border:1px solid rgba(120,220,255,.08);
+    inset:14px;
+    border:1px solid rgba(120,220,255,.06);
 }
 
-/* PAINEIS */
+/* ===== PAINÉIS (LEITURA, NÃO BLOCO) ===== */
 .glass{
     position:absolute;
-    background:linear-gradient(to bottom,
-        rgba(20,120,180,.10),
-        rgba(0,20,40,.05)
-    );
-    backdrop-filter: blur(3px);
-    box-shadow:
-        0 0 60px rgba(0,200,255,.12),
-        inset 0 0 25px rgba(0,200,255,.08);
-    border-radius:6px;
+    background:transparent;
+    border:none;
+    box-shadow:none;
     padding:18px;
     z-index:10;
-}
-
-/* POSIÇÕES */
-#status{ top:20px; left:20px; width:280px; }
-#telemetry{ top:20px; left:340px; right:260px; height:140px; }
-#indices{ top:20px; right:20px; width:200px; line-height:28px; }
-#psa{ bottom:20px; left:50%; transform:translateX(-50%); width:700px; text-align:center; }
-
-/* CNT */
-#cnt{
-    font-size:58px;
-    letter-spacing:4px;
-    font-weight:300;
-    text-shadow:
-        0 0 8px rgba(120,220,255,.6),
-        0 0 20px rgba(0,200,255,.35);
-    animation:pulse 14s ease-in-out infinite;
-}
-
-/* brilho texto */
-#status, #indices, #psa{
     text-shadow:0 0 6px rgba(120,220,255,.35);
 }
 
+/* posições */
+#status{ top:20px; left:20px; width:280px; }
+#telemetry{ top:20px; left:340px; right:260px; height:120px; }
+#indices{ top:20px; right:20px; width:200px; line-height:26px; }
+#psa{
+    bottom:20px;
+    left:50%;
+    transform:translateX(-50%);
+    width:700px;
+    text-align:center;
+    opacity:.85;
+}
+
+/* CNT */
+#cnt{
+    font-size:56px;
+    letter-spacing:4px;
+    font-weight:300;
+    text-shadow:
+        0 0 10px rgba(120,220,255,.7),
+        0 0 24px rgba(0,200,255,.35);
+    animation:pulse 14s ease-in-out infinite;
+}
+
+/* pulso sistêmico */
 @keyframes pulse{
-    0%{opacity:.9; filter:brightness(1)}
-    50%{opacity:1; filter:brightness(1.15)}
-    100%{opacity:.9; filter:brightness(1)}
+    0%{opacity:.85}
+    50%{opacity:1}
+    100%{opacity:.85}
+}
+
+/* telemetria flutuante */
+#telemetry{
+    opacity:.75;
+    mix-blend-mode:screen;
 }
 
 canvas{
-    filter:drop-shadow(0 0 6px rgba(120,220,255,.6));
+    background:transparent;
+    filter:drop-shadow(0 0 8px rgba(120,220,255,.6));
 }
 </style>
 </head>
 
 <body>
 
+<!-- MAPA -->
 <div id="map">
     <img src="imagem_cnt.png" id="bg">
 </div>
 
 <div class="hud"></div>
 
+<!-- STATUS -->
 <div id="status" class="glass">
 <b>OS.CNT</b><br>
 Earth Environmental Monitoring Infrastructure<br><br>
@@ -115,8 +129,10 @@ Modo operacional: Monitoramento ativo<br>
 Status: Operacional
 </div>
 
+<!-- TELEMETRIA -->
 <div id="telemetry" class="glass"></div>
 
+<!-- ÍNDICES -->
 <div id="indices" class="glass">
 IBE .......... 88<br>
 IAB .......... 88<br>
@@ -126,43 +142,43 @@ ENT .......... 88<br>
 PAN .......... 78
 </div>
 
+<!-- PSA -->
 <div id="psa" class="glass">
 Compra/Pagamento por Conservação (PSA) — simulador
 </div>
 
 <script>
-/* gráfico fisiológico */
+/* ===== TELEMETRIA FISIOLÓGICA ===== */
 const t = document.getElementById("telemetry");
 const c = document.createElement("canvas");
 t.appendChild(c);
 
 function resize(){
-    c.width=t.clientWidth;
-    c.height=t.clientHeight;
+    c.width = t.clientWidth;
+    c.height = t.clientHeight;
 }
-window.onresize=resize;
+window.onresize = resize;
 resize();
 
-const ctx=c.getContext("2d");
+const ctx = c.getContext("2d");
 
-let x=0;
+let x = 0;
 function draw(){
-    ctx.fillStyle="rgba(0,20,40,.25)";
-    ctx.fillRect(0,0,c.width,c.height);
+    ctx.clearRect(0,0,c.width,c.height);
 
-    ctx.strokeStyle="#6df";
+    ctx.strokeStyle="#7fe9ff";
     ctx.lineWidth=2;
     ctx.beginPath();
 
     for(let i=0;i<c.width;i++){
         let y = c.height/2
-              + Math.sin((i+x)/40)*20
-              + Math.sin((i+x)/13)*8;
+              + Math.sin((i+x)/38)*18
+              + Math.sin((i+x)/12)*6;
         ctx.lineTo(i,y);
     }
 
     ctx.stroke();
-    x+=2;
+    x+=1.6;
     requestAnimationFrame(draw);
 }
 draw();
