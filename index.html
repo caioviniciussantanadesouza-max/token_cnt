@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CNT — Ecological Oracle</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style>
+body{
+  margin:0;
+  background:#020617;
+  font-family:Arial, Helvetica, sans-serif;
+  overflow:hidden;
+}
+
+/* MAPA REAL (invisível) */
+#realmap{
+  position:absolute;
+  inset:0;
+  opacity:0;
+}
+
+/* HOLOGRAMA PRINCIPAL */
+#holograma{
+  position:absolute;
+  inset:0;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  pointer-events:none;
+}
+
+#holograma img{
+  width:120%;
+  max-width:none;
+  filter:
+    drop-shadow(0 0 40px rgba(0,255,180,.35))
+    drop-shadow(0 0 120px rgba(0,180,255,.25))
+    saturate(1.15)
+    contrast(1.08);
+}
+
+/* partículas */
+canvas{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+}
+
+/* painel esquerdo */
+.panel{
+  position:absolute;
+  left:20px;
+  top:20px;
+  width:260px;
+  background:rgba(10,20,60,.45);
+  backdrop-filter:blur(10px);
+  border:1px solid rgba(0,255,200,.25);
+  border-radius:16px;
+  padding:14px;
+  color:#dff;
+  box-shadow:0 0 30px rgba(0,255,200,.15);
+}
+
+.panel h3{
+  margin:0 0 10px 0;
+  font-size:14px;
+  letter-spacing:1px;
+}
+
+.btn{
+  width:100%;
+  padding:10px;
+  margin-top:10px;
+  background:rgba(0,255,180,.15);
+  border:1px solid rgba(0,255,180,.4);
+  color:#aff;
+  border-radius:10px;
+  cursor:pointer;
+}
+
+/* painel inferior */
+.buy{
+  position:absolute;
+  bottom:20px;
+  left:50%;
+  transform:translateX(-50%);
+  width:420px;
+  background:rgba(10,20,60,.45);
+  backdrop-filter:blur(10px);
+  border:1px solid rgba(0,255,200,.25);
+  border-radius:16px;
+  padding:12px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  color:#dff;
+}
+</style>
+</head>
+
+<body>
+
+<div id="realmap"></div>
+
+<div id="holograma">
+<img src="imagem_cnt.png">
+</div>
+
+<canvas id="fx"></canvas>
+
+<div class="panel">
+<h3>CNT ECOLOGICAL ORACLE</h3>
+<div>Status: aguardando área</div>
+<button class="btn" onclick="amazonia()">Ir para Amazônia</button>
+<button class="btn" onclick="scan()">Escanear área</button>
+</div>
+
+<div class="buy">
+<div>CNT Token — ativo ecológico</div>
+<a href="https://pump.fun/coin/GCVyjNaCbXkwGUuktyNxSXad4ozmTp2fzQr2jieSpump" target="_blank">Abrir</a>
+</div>
+
+<script>
+
+/* MAPA REAL INVISÍVEL */
+const map = L.map('realmap').setView([-4,-63],5);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+/* sincroniza movimento com leve paralaxe */
+map.on("move",()=>{
+  const center = map.getCenter();
+  const img = document.querySelector("#holograma img");
+  img.style.transform =
+    `translate(${center.lng*2}px,${center.lat*-2}px)`;
+});
+
+function amazonia(){
+  map.setView([-4,-63],5);
+}
+
+function scan(){
+  alert("Escaneamento ecológico iniciado...");
+}
+
+/* partículas */
+const c = document.getElementById("fx");
+const ctx = c.getContext("2d");
+let w,h,p=[];
+function resize(){
+ w=c.width=innerWidth;
+ h=c.height=innerHeight;
+ p=[...Array(120)].map(()=>({x:Math.random()*w,y:Math.random()*h,v:Math.random()*0.5}));
+}
+addEventListener("resize",resize);
+resize();
+
+function draw(){
+ ctx.clearRect(0,0,w,h);
+ ctx.fillStyle="rgba(0,255,200,.5)";
+ p.forEach(pt=>{
+   pt.y-=pt.v;
+   if(pt.y<0)pt.y=h;
+   ctx.fillRect(pt.x,pt.y,2,2);
+ });
+ requestAnimationFrame(draw);
+}
+draw();
+
+</script>
+</body>
+</html>
