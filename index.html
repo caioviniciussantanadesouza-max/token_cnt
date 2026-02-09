@@ -15,19 +15,27 @@ html,body{
     overflow:hidden;
 }
 
-/* MAPA BASE */
+/* MAPA */
 #map{
     position:absolute;
     inset:0;
-    background:url("imagem_cnt.png") center/cover no-repeat;
+}
+
+#bg{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    object-fit:cover;
     filter:brightness(.85) contrast(1.15) saturate(1.15);
 }
 
-/* LINHAS HUD */
+/* HUD linhas */
 .hud{
     position:absolute;
     inset:0;
     pointer-events:none;
+    z-index:5;
 }
 .hud:before{
     content:"";
@@ -36,28 +44,29 @@ html,body{
     border:1px solid rgba(120,220,255,.08);
 }
 
-/* PAINEIS PROJETADOS */
+/* PAINEIS */
 .glass{
+    position:absolute;
     background:linear-gradient(to bottom,
         rgba(20,120,180,.10),
         rgba(0,20,40,.05)
     );
     backdrop-filter: blur(3px);
-    border:none;
     box-shadow:
         0 0 60px rgba(0,200,255,.12),
         inset 0 0 25px rgba(0,200,255,.08);
     border-radius:6px;
     padding:18px;
+    z-index:10;
 }
 
 /* POSIÇÕES */
-#status{ position:absolute; top:20px; left:20px; width:280px; }
-#telemetry{ position:absolute; top:20px; left:340px; right:260px; height:140px; }
-#indices{ position:absolute; top:20px; right:20px; width:200px; line-height:28px; }
-#psa{ position:absolute; bottom:20px; left:50%; transform:translateX(-50%); width:700px; text-align:center; }
+#status{ top:20px; left:20px; width:280px; }
+#telemetry{ top:20px; left:340px; right:260px; height:140px; }
+#indices{ top:20px; right:20px; width:200px; line-height:28px; }
+#psa{ bottom:20px; left:50%; transform:translateX(-50%); width:700px; text-align:center; }
 
-/* CNT LEITURA */
+/* CNT */
 #cnt{
     font-size:58px;
     letter-spacing:4px;
@@ -65,28 +74,32 @@ html,body{
     text-shadow:
         0 0 8px rgba(120,220,255,.6),
         0 0 20px rgba(0,200,255,.35);
+    animation:pulse 14s ease-in-out infinite;
 }
 
-/* texto */
+/* brilho texto */
 #status, #indices, #psa{
     text-shadow:0 0 6px rgba(120,220,255,.35);
 }
 
-/* pulso do sistema */
 @keyframes pulse{
     0%{opacity:.9; filter:brightness(1)}
     50%{opacity:1; filter:brightness(1.15)}
     100%{opacity:.9; filter:brightness(1)}
 }
-#cnt{ animation:pulse 14s ease-in-out infinite; }
 
-canvas{ filter:drop-shadow(0 0 6px rgba(120,220,255,.6)); }
+canvas{
+    filter:drop-shadow(0 0 6px rgba(120,220,255,.6));
+}
 </style>
 </head>
 
 <body>
 
-<div id="map"></div>
+<div id="map">
+    <img src="imagem_cnt.png" id="bg">
+</div>
+
 <div class="hud"></div>
 
 <div id="status" class="glass">
@@ -122,8 +135,14 @@ Compra/Pagamento por Conservação (PSA) — simulador
 const t = document.getElementById("telemetry");
 const c = document.createElement("canvas");
 t.appendChild(c);
-c.width=t.clientWidth;
-c.height=t.clientHeight;
+
+function resize(){
+    c.width=t.clientWidth;
+    c.height=t.clientHeight;
+}
+window.onresize=resize;
+resize();
+
 const ctx=c.getContext("2d");
 
 let x=0;
@@ -134,12 +153,15 @@ function draw(){
     ctx.strokeStyle="#6df";
     ctx.lineWidth=2;
     ctx.beginPath();
+
     for(let i=0;i<c.width;i++){
-        let y = 70 + Math.sin((i+x)/40)*20 + Math.sin((i+x)/13)*8;
+        let y = c.height/2
+              + Math.sin((i+x)/40)*20
+              + Math.sin((i+x)/13)*8;
         ctx.lineTo(i,y);
     }
-    ctx.stroke();
 
+    ctx.stroke();
     x+=2;
     requestAnimationFrame(draw);
 }
