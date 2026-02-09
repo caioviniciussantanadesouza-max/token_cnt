@@ -15,11 +15,8 @@ html,body{
     overflow:hidden;
 }
 
-/* ===== MAPA (PROTAGONISTA) ===== */
-#map{
-    position:absolute;
-    inset:0;
-}
+/* MAPA */
+#map{ position:absolute; inset:0; }
 
 #bg{
     position:absolute;
@@ -32,18 +29,13 @@ html,body{
 
 /* respiração ecológica */
 @keyframes biome{
-    0%   { filter:brightness(.85) contrast(1.15) saturate(1.1); }
-    50%  { filter:brightness(.95) contrast(1.25) saturate(1.25); }
-    100% { filter:brightness(.85) contrast(1.15) saturate(1.1); }
+    0%{ filter:brightness(.85) contrast(1.15) saturate(1.1); }
+    50%{ filter:brightness(.95) contrast(1.25) saturate(1.25); }
+    100%{ filter:brightness(.85) contrast(1.15) saturate(1.1); }
 }
 
-/* ===== HUD ===== */
-.hud{
-    position:absolute;
-    inset:0;
-    pointer-events:none;
-    z-index:5;
-}
+/* HUD */
+.hud{ position:absolute; inset:0; pointer-events:none; z-index:5; }
 .hud:before{
     content:"";
     position:absolute;
@@ -51,28 +43,26 @@ html,body{
     border:1px solid rgba(120,220,255,.06);
 }
 
-/* ===== PAINÉIS (LEITURA, NÃO BLOCO) ===== */
+/* PAINEIS */
 .glass{
     position:absolute;
     background:transparent;
     border:none;
-    box-shadow:none;
     padding:18px;
     z-index:10;
     text-shadow:0 0 6px rgba(120,220,255,.35);
 }
 
-/* posições */
 #status{ top:20px; left:20px; width:280px; }
 #telemetry{ top:20px; left:340px; right:260px; height:120px; }
 #indices{ top:20px; right:20px; width:200px; line-height:26px; }
+
 #psa{
     bottom:20px;
     left:50%;
     transform:translateX(-50%);
-    width:700px;
+    width:420px;
     text-align:center;
-    opacity:.85;
 }
 
 /* CNT */
@@ -86,53 +76,45 @@ html,body{
     animation:pulse 14s ease-in-out infinite;
 }
 
-/* pulso sistêmico */
 @keyframes pulse{
     0%{opacity:.85}
     50%{opacity:1}
     100%{opacity:.85}
 }
 
-/* telemetria flutuante */
-#telemetry{
-    opacity:.75;
-    mix-blend-mode:screen;
+input,button{
+    background:rgba(255,255,255,.05);
+    border:1px solid rgba(120,220,255,.3);
+    color:#9fdfff;
+    padding:6px;
+    margin-top:6px;
 }
 
-canvas{
-    background:transparent;
-    filter:drop-shadow(0 0 8px rgba(120,220,255,.6));
-}
+button:hover{ background:rgba(120,220,255,.15); cursor:pointer; }
 </style>
 </head>
 
 <body>
 
-<!-- MAPA -->
 <div id="map">
     <img src="imagem_cnt.png" id="bg">
 </div>
 
 <div class="hud"></div>
 
-<!-- STATUS -->
 <div id="status" class="glass">
 <b>OS.CNT</b><br>
 Earth Environmental Monitoring Infrastructure<br><br>
-
 <div id="cnt">72.4</div>
 Confiança: Alta<br><br>
-
 Estado do sistema:<br>
 <b>Regulação estável</b><br>
 Modo operacional: Monitoramento ativo<br>
 Status: Operacional
 </div>
 
-<!-- TELEMETRIA -->
 <div id="telemetry" class="glass"></div>
 
-<!-- ÍNDICES -->
 <div id="indices" class="glass">
 IBE .......... 88<br>
 IAB .......... 88<br>
@@ -142,46 +124,67 @@ ENT .......... 88<br>
 PAN .......... 78
 </div>
 
-<!-- PSA -->
+<!-- COMPRA TOKEN -->
 <div id="psa" class="glass">
-Compra/Pagamento por Conservação (PSA) — simulador
+<div id="walletStatus">Carteira não conectada</div><br>
+
+<button id="connectBtn">Conectar carteira</button><br><br>
+
+Valor em SOL:<br>
+<input id="amount" type="number" value="0.1" step="0.01"><br><br>
+
+<button id="buyBtn">Comprar CNT</button>
 </div>
 
+<!-- bibliotecas -->
+<script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.js"></script>
+
 <script>
-/* ===== TELEMETRIA FISIOLÓGICA ===== */
-const t = document.getElementById("telemetry");
-const c = document.createElement("canvas");
-t.appendChild(c);
+const { Connection, PublicKey, clusterApiUrl, Transaction } = solanaWeb3;
 
-function resize(){
-    c.width = t.clientWidth;
-    c.height = t.clientHeight;
-}
-window.onresize = resize;
-resize();
+let provider=null;
+let wallet=null;
+const connection=new Connection(clusterApiUrl("mainnet-beta"));
 
-const ctx = c.getContext("2d");
-
-let x = 0;
-function draw(){
-    ctx.clearRect(0,0,c.width,c.height);
-
-    ctx.strokeStyle="#7fe9ff";
-    ctx.lineWidth=2;
-    ctx.beginPath();
-
-    for(let i=0;i<c.width;i++){
-        let y = c.height/2
-              + Math.sin((i+x)/38)*18
-              + Math.sin((i+x)/12)*6;
-        ctx.lineTo(i,y);
+document.getElementById("connectBtn").onclick=async()=>{
+    if(window.solana){
+        provider=window.solana;
+        await provider.connect();
+        wallet=provider.publicKey.toString();
+        document.getElementById("walletStatus").innerText=
+        "Conectado: "+wallet.slice(0,4)+"..."+wallet.slice(-4);
+    }else{
+        alert("Instale Phantom Wallet");
     }
+};
 
-    ctx.stroke();
-    x+=1.6;
-    requestAnimationFrame(draw);
-}
-draw();
+document.getElementById("buyBtn").onclick=async()=>{
+    if(!wallet) return alert("Conecte a carteira primeiro");
+
+    const amount=parseFloat(document.getElementById("amount").value);
+
+    const TOKEN_MINT="COLOQUE_O_ENDERECO_DO_TOKEN_AQUI";
+
+    const quote=await fetch(`https://quote-api.jup.ag/v6/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=${TOKEN_MINT}&amount=${amount*1e9}&slippageBps=50`).then(r=>r.json());
+
+    const swap=await fetch("https://quote-api.jup.ag/v6/swap",{
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body:JSON.stringify({
+            quoteResponse:quote,
+            userPublicKey:wallet,
+            wrapAndUnwrapSol:true
+        })
+    }).then(r=>r.json());
+
+    const tx=Transaction.from(atob(swap.swapTransaction));
+    tx.feePayer=new PublicKey(wallet);
+
+    const signed=await provider.signTransaction(tx);
+    const sig=await connection.sendRawTransaction(signed.serialize());
+
+    alert("Transação enviada: "+sig);
+};
 </script>
 
 </body>
