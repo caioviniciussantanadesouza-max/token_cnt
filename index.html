@@ -5,26 +5,16 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>OS.CNT — Observatório CNT Amazônia</title>
 
-  <!-- MapLibre GL (mapa real) -->
-  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
-  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-
-  <!-- Solana web3 (para conectar wallets injetadas, ex: Phantom) -->
-  <script src="https://unpkg.com/@solana/web3.js@1.95.2/lib/index.iife.min.js"></script>
-
   <style>
     :root{
       --c: rgba(120,220,255,.92);
-      --c2: rgba(120,220,255,.35);
-      --glass: rgba(4,18,32,.28);
-      --glass2: rgba(4,18,32,.16);
-      --stroke: rgba(120,220,255,.22);
-      --text: #a7e8ff;
+      --c2: rgba(120,220,255,.28);
+      --glass: rgba(4,18,32,.20);
+      --glass2: rgba(4,18,32,.12);
+      --stroke: rgba(120,220,255,.18);
+      --text: #b9f1ff;
       --text2:#7fd6ff;
-      --ok: #6df;
-      --warn: #ffd36d;
-      --bad: #ff6d6d;
-      --shadow: 0 0 18px rgba(120,220,255,.12), 0 0 60px rgba(0,255,255,.05);
+      --shadow: 0 0 14px rgba(120,220,255,.10), 0 0 40px rgba(0,255,255,.05);
       --r: 14px;
     }
 
@@ -38,52 +28,69 @@
     }
 
     /* ===== STAGE ===== */
-    #stage{ position:fixed; inset:0; background:#01040a; }
-    #map{
-      position:absolute; inset:0;
+    #stage{
+      position:fixed; inset:0;
       background:#01040a;
-      filter: saturate(1.05) contrast(1.1);
     }
 
-    /* fallback imagem (se quiser) */
+    /* IMAGEM BASE (protagonista) */
     #bg{
       position:absolute; inset:0;
       width:100%; height:100%;
       object-fit:cover;
-      opacity:.22;
-      pointer-events:none;
-      mix-blend-mode:screen;
-      filter: brightness(.9) contrast(1.15) saturate(1.15);
+      transform: scale(1.02);
+      animation: biome 12s ease-in-out infinite;
+      filter: brightness(.92) contrast(1.08) saturate(1.06);
     }
 
-    /* camadas holográficas */
-    #fx{
+    /* pulso/respiração ecológica (na imagem) */
+    @keyframes biome{
+      0%   { filter:brightness(.90) contrast(1.06) saturate(1.05); }
+      50%  { filter:brightness(1.02) contrast(1.18) saturate(1.18); }
+      100% { filter:brightness(.90) contrast(1.06) saturate(1.05); }
+    }
+
+    /* glow difuso por cima (não tapa a imagem) */
+    #glow{
       position:absolute; inset:0;
       pointer-events:none;
+      background:
+        radial-gradient(circle at 50% 55%, rgba(120,220,255,.12), transparent 55%),
+        radial-gradient(circle at 65% 45%, rgba(120,220,255,.07), transparent 60%),
+        radial-gradient(circle at 35% 35%, rgba(120,220,255,.05), transparent 65%);
       mix-blend-mode:screen;
-      opacity:.95;
-      filter: drop-shadow(0 0 10px rgba(120,220,255,.25));
+      opacity:.9;
+      animation: glow 10s ease-in-out infinite;
     }
+    @keyframes glow{
+      0%{ opacity:.75; }
+      50%{ opacity:1; }
+      100%{ opacity:.75; }
+    }
+
+    /* canvas de FX (fluxo/torres/partículas) */
+    #fx{
+      position:absolute; inset:0;
+      width:100%; height:100%;
+      pointer-events:none;
+      mix-blend-mode:screen;
+      filter: drop-shadow(0 0 8px rgba(120,220,255,.25));
+      opacity:.95;
+    }
+
+    /* grade HUD bem sutil */
     #hudGrid{
       position:absolute; inset:0;
       pointer-events:none;
       background:
-        radial-gradient(circle at 40% 50%, rgba(120,220,255,.06), transparent 55%),
-        radial-gradient(circle at 70% 40%, rgba(120,220,255,.04), transparent 60%),
-        linear-gradient(to bottom, rgba(120,220,255,.05), transparent 25%, transparent 75%, rgba(120,220,255,.04));
-      opacity:.55;
+        linear-gradient(rgba(120,220,255,.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(120,220,255,.045) 1px, transparent 1px);
+      background-size: 84px 84px;
+      opacity:.12;
       mix-blend-mode:screen;
     }
 
-    /* respiração do bioma (no todo) */
-    @keyframes breathe{
-      0%   { filter: brightness(.92) contrast(1.12) saturate(1.05); }
-      50%  { filter: brightness(1.02) contrast(1.22) saturate(1.2); }
-      100% { filter: brightness(.92) contrast(1.12) saturate(1.05); }
-    }
-    #stage{ animation:breathe 14s ease-in-out infinite; }
-
-    /* ===== PAINÉIS (overlay) ===== */
+    /* ===== PAINÉIS (bem leves) ===== */
     .glass{
       position:absolute;
       background: linear-gradient(180deg, var(--glass), var(--glass2));
@@ -94,20 +101,10 @@
       -webkit-backdrop-filter: blur(10px);
       overflow:hidden;
     }
-    .glass:before{
-      content:"";
-      position:absolute; inset:0;
-      background:
-        radial-gradient(circle at 20% 10%, rgba(120,220,255,.12), transparent 40%),
-        radial-gradient(circle at 90% 30%, rgba(120,220,255,.08), transparent 45%),
-        linear-gradient( to right, rgba(120,220,255,.06), transparent 25%, transparent 75%, rgba(120,220,255,.04));
-      opacity:.8;
-      pointer-events:none;
-      mix-blend-mode:screen;
-    }
 
+    /* deixar painéis mais “finos” e menos invasivos */
     .panel{
-      padding:14px 14px 12px 14px;
+      padding:12px 12px 10px 12px;
       line-height:1.25;
       letter-spacing:.2px;
     }
@@ -119,148 +116,87 @@
       color:var(--text2);
       opacity:.95;
     }
-    .sub{
-      font-size:11px;
-      opacity:.9;
-      color:#bfefff;
-    }
+    .sub{ font-size:11px; opacity:.9; }
     .mono{
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
-      letter-spacing:.4px;
+      letter-spacing:.35px;
     }
+    .muted{ opacity:.78; }
 
-    /* layout */
-    #pLeft{ left:18px; top:18px; width:300px; }
-    #pCenter{ left:50%; top:18px; transform:translateX(-50%); width:min(560px, 58vw); height:130px; }
-    #pRight{ right:18px; top:18px; width:260px; }
-    #pBottom{ left:18px; right:18px; bottom:16px; height:110px; display:flex; gap:14px; padding:14px; }
+    /* layout conforme seu modelo */
+    #pLeft{ left:16px; top:16px; width:280px; }
+    #pCenter{ left:50%; top:16px; transform:translateX(-50%); width:min(520px, 56vw); height:110px; }
+    #pRight{ right:16px; top:16px; width:250px; }
+    #pBottom{ left:16px; right:16px; bottom:14px; height:92px; display:flex; gap:12px; padding:12px; }
 
-    /* evita painéis “pesarem” no mapa */
-    @media (max-width: 980px){
-      #pCenter{ width:52vw; }
-      #pLeft{ width:270px; }
-      #pRight{ width:240px; }
-    }
-    @media (max-width: 820px){
-      #pCenter{ display:none; }
-      #pBottom{ height:128px; }
-    }
-
-    /* CNT principal */
+    /* CNT (não focar demais no número) */
     #cntVal{
-      font-size:40px;
+      font-size:28px;
       font-weight:800;
       margin:6px 0 2px;
-      color:#d6fbff;
-      text-shadow: 0 0 20px rgba(120,220,255,.25);
+      color:#d9fbff;
+      text-shadow: 0 0 18px rgba(120,220,255,.22);
+      letter-spacing:1px;
     }
-    #cntMeta{ font-size:11px; opacity:.92; }
-    .pill{
+    #pulseTag{
       display:inline-block;
       padding:3px 8px;
-      border:1px solid rgba(120,220,255,.22);
       border-radius:999px;
-      background:rgba(120,220,255,.06);
-      margin-top:8px;
+      border:1px solid rgba(120,220,255,.16);
+      background:rgba(120,220,255,.05);
       font-size:11px;
+      margin-top:8px;
     }
 
-    /* índices */
+    /* indices compactos */
     .row{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:10px;
-      padding:6px 0;
-      border-bottom:1px solid rgba(120,220,255,.12);
+      display:flex; justify-content:space-between; gap:10px;
+      padding:5px 0;
+      border-bottom:1px solid rgba(120,220,255,.10);
     }
     .row:last-child{ border-bottom:none; }
-    .k{ font-size:12px; opacity:.95; }
-    .v{
-      font-size:12px;
-      font-weight:700;
-      color:#d6fbff;
-    }
-    .bar{
-      height:6px; border-radius:999px;
-      background:rgba(120,220,255,.10);
-      border:1px solid rgba(120,220,255,.10);
-      overflow:hidden;
-      margin-top:5px;
-    }
-    .bar > i{
-      display:block;
-      height:100%;
-      width:50%;
-      background:linear-gradient(90deg, rgba(120,220,255,.15), rgba(120,220,255,.65));
-      filter: drop-shadow(0 0 8px rgba(120,220,255,.35));
-    }
+    .k{ font-size:12px; }
+    .v{ font-size:12px; font-weight:700; color:#e5feff; }
 
     /* telemetria */
-    #teleWrap{
-      position:relative;
-      height:100%;
-    }
     #teleCanvas{
       width:100%; height:100%;
-      filter: drop-shadow(0 0 10px rgba(120,220,255,.35));
+      filter: drop-shadow(0 0 10px rgba(120,220,255,.30));
     }
     #teleLabel{
-      position:absolute;
-      left:14px; top:10px;
-      font-size:11px;
-      opacity:.9;
+      position:absolute; left:12px; top:8px;
+      font-size:11px; opacity:.88;
     }
 
     /* bottom */
-    .bCol{
-      flex:1;
-      min-width:0;
-      display:flex;
-      flex-direction:column;
-      justify-content:space-between;
-    }
-    .btns{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      align-items:center;
-    }
+    .bCol{ flex:1; min-width:0; display:flex; flex-direction:column; justify-content:space-between; }
+    .btns{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
     button{
       cursor:pointer;
-      border:1px solid rgba(120,220,255,.22);
-      background:rgba(120,220,255,.08);
-      color:#d6fbff;
-      border-radius:12px;
-      padding:10px 12px;
-      font-weight:700;
-      letter-spacing:.3px;
-      box-shadow: 0 0 20px rgba(120,220,255,.08);
-    }
-    button:hover{ background:rgba(120,220,255,.12); }
-    button:active{ transform:translateY(1px); }
-    input{
-      width:100%;
-      padding:10px 12px;
-      border-radius:12px;
-      border:1px solid rgba(120,220,255,.18);
-      background:rgba(1,6,12,.35);
-      color:#d6fbff;
-      outline:none;
-    }
-    .small{ font-size:11px; opacity:.88; }
-    .muted{ opacity:.8; }
-    .ok{ color: var(--ok); }
-    .warn{ color: var(--warn); }
-    .bad{ color: var(--bad); }
-
-    /* status de wallet */
-    #walletLine{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-    #walletAddr{
-      font-size:11px;
-      opacity:.9;
       border:1px solid rgba(120,220,255,.18);
       background:rgba(120,220,255,.06);
+      color:#e8feff;
+      border-radius:12px;
+      padding:9px 12px;
+      font-weight:700;
+      letter-spacing:.3px;
+    }
+    button:hover{ background:rgba(120,220,255,.10); }
+    input{
+      width:100%;
+      padding:9px 12px;
+      border-radius:12px;
+      border:1px solid rgba(120,220,255,.14);
+      background:rgba(1,6,12,.30);
+      color:#e8feff;
+      outline:none;
+    }
+    #walletAddr{
+      display:none;
+      font-size:11px;
+      opacity:.9;
+      border:1px solid rgba(120,220,255,.14);
+      background:rgba(120,220,255,.05);
       padding:6px 10px;
       border-radius:999px;
       max-width: 320px;
@@ -269,105 +205,82 @@
       white-space:nowrap;
     }
 
-    /* tooltip simples */
-    .hint{
-      display:inline-block;
-      padding:3px 8px;
-      border:1px solid rgba(120,220,255,.16);
-      border-radius:999px;
-      background:rgba(120,220,255,.05);
-      font-size:11px;
-      opacity:.9;
+    /* responsivo */
+    @media (max-width: 820px){
+      #pCenter{ display:none; }
+      #pBottom{ height:112px; }
+      #pRight{ width:235px; }
+      #pLeft{ width:260px; }
     }
   </style>
 </head>
 
 <body>
   <div id="stage">
-    <div id="map"></div>
+    <!-- SUA IMAGEM (sem mapa) -->
+    <img id="bg" src="imagem_cnt.png" alt="CNT base" />
 
-    <!-- fallback visual (coloque imagem_cnt.png na pasta) -->
-    <img id="bg" src="imagem_cnt.png" alt="CNT overlay" onerror="this.style.display='none'"/>
-
-    <!-- campo energético (canvas) -->
+    <div id="glow"></div>
     <canvas id="fx"></canvas>
     <div id="hudGrid"></div>
 
-    <!-- LEFT: identidade + índice -->
+    <!-- LEFT -->
     <div id="pLeft" class="glass">
       <div class="panel">
         <div class="title mono">OS.CNT</div>
-        <div class="sub">Earth Environmental Monitoring Infrastructure</div>
+        <div class="sub muted">Earth Environmental Monitoring Infrastructure</div>
 
         <div id="cntVal" class="mono">72.4</div>
-        <div id="cntMeta" class="mono">
+        <div class="sub mono">
           Confiança: <b id="conf">Alta</b><br>
-          Estado do sistema: <b id="estado">Regulação estável</b><br>
-          Modo operacional: Monitoramento ativo<br>
-          Status: Operacional
+          Sistema: <b id="estado">Regulação estável</b><br>
+          Modo: Monitoramento ativo
         </div>
 
-        <div class="pill mono" id="meaningPill">PULSO • FLUXO • RESPIRAÇÃO ECOLÓGICA</div>
+        <div id="pulseTag" class="mono">PULSO • FLUXO</div>
       </div>
     </div>
 
-    <!-- CENTER: telemetria -->
+    <!-- CENTER -->
     <div id="pCenter" class="glass">
-      <div id="teleWrap">
-        <div id="teleLabel" class="mono">Telemetria ecológica — 30 dias (metabolismo)</div>
-        <canvas id="teleCanvas"></canvas>
-      </div>
+      <div id="teleLabel" class="mono">Telemetria — oscilação funcional (30d)</div>
+      <canvas id="teleCanvas"></canvas>
     </div>
 
-    <!-- RIGHT: sub-índices -->
+    <!-- RIGHT -->
     <div id="pRight" class="glass">
       <div class="panel">
         <div class="title mono">SUB-ÍNDICES</div>
-        <div class="small muted">Alimentam matematicamente o CNT</div>
-
+        <div class="sub muted">Significado embutido (científico)</div>
         <div id="idx"></div>
       </div>
     </div>
 
-    <!-- BOTTOM: token / compra / PSA -->
+    <!-- BOTTOM -->
     <div id="pBottom" class="glass">
       <div class="bCol">
-        <div class="title mono">TOKEN CNT — MERCADO (SOLANA)</div>
-        <div class="small">
-          Mint: <span class="mono">GCVy…Spump</span> • Fonte: DexScreener
-        </div>
-        <div class="small">
-          Cotação: <b class="mono" id="cntQuote">carregando…</b> &nbsp;|&nbsp;
+        <div class="title mono">TOKEN CNT (SOLANA)</div>
+        <div class="sub">
+          Cotação: <b class="mono" id="cntQuote">carregando…</b><br>
           Preço (USD): <b class="mono" id="cntUsd">—</b>
         </div>
-        <div class="small muted">
-          *Não custodiamos fundos. Compra ocorre via Pump.fun.
-        </div>
+        <div class="sub muted">Compra abre Pump.fun (assinatura na wallet)</div>
       </div>
 
       <div class="bCol">
-        <div class="title mono">SIMULAÇÃO — TROCA SOL → CNT</div>
-        <div class="small muted">Digite SOL para estimar CNT (com preço real quando disponível)</div>
-        <input id="solIn" type="number" step="0.01" value="0.10" placeholder="0.10">
-        <div class="small">
-          Você recebe aprox.: <b class="mono" id="cntOut">—</b>
-        </div>
+        <div class="title mono">TROCA SOL → CNT</div>
+        <input id="solIn" type="number" step="0.01" value="0.10" />
+        <div class="sub">Você recebe aprox.: <b class="mono" id="cntOut">—</b></div>
       </div>
 
       <div class="bCol">
-        <div class="title mono">CARTEIRA & COMPRA</div>
-        <div id="walletLine">
-          <button id="btnConnect">Conectar Wallet</button>
-          <button id="btnDisconnect" style="display:none">Desconectar</button>
-          <span id="walletAddr" class="mono" style="display:none"></span>
-        </div>
+        <div class="title mono">CARTEIRA & ORDEM</div>
         <div class="btns">
-          <button id="btnBuy">Comprar no Pump.fun</button>
-          <span class="hint mono" id="netHint">Rede: Solana</span>
+          <button id="btnConnect">Conectar Wallet</button>
+          <button id="btnBuy">Comprar</button>
+          <span id="walletAddr" class="mono"></span>
         </div>
-        <div class="small muted">
-          Link token: <span class="mono">pump.fun/coin/GCVy…Spump</span>
-        </div>
+        <div class="sub muted mono">Rede: Solana</div>
       </div>
     </div>
   </div>
@@ -380,46 +293,7 @@
     const PUMP_URL = "https://pump.fun/coin/GCVyjNaCbXkwGUuktyNxSXad4ozmTp2fzQr2jieSpump";
 
     /***********************
-     * MAPA REAL (MapLibre)
-     ***********************/
-    let map;
-    function initMap(){
-      try{
-        map = new maplibregl.Map({
-          container: "map",
-          style: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
-          center: [-60.0, -4.5],  // Amazônia
-          zoom: 4.1,
-          pitch: 45,
-          bearing: -12,
-          antialias: true
-        });
-
-        map.addControl(new maplibregl.NavigationControl({ visualizePitch:true }), "top-left");
-
-        map.on("load", () => {
-          // glow sutil
-          const layers = map.getStyle().layers || [];
-          // tenta deixar labels mais "científicos"
-          layers.forEach(l=>{
-            if(l.type === "symbol"){
-              map.setLayoutProperty(l.id, "text-field", ["get","name"]);
-              map.setPaintProperty(l.id, "text-color", "rgba(160,240,255,0.65)");
-              map.setPaintProperty(l.id, "text-halo-color", "rgba(0,0,0,0.8)");
-              map.setPaintProperty(l.id, "text-halo-width", 1.2);
-            }
-          });
-        });
-
-      }catch(e){
-        console.log("Falha MapLibre:", e);
-        // se falhar, fica só com imagem_cnt.png
-      }
-    }
-    initMap();
-
-    /***********************
-     * CAMPO ENERGÉTICO (canvas)
+     * FX (fluxo/torres/partículas) — SEM MAPA
      ***********************/
     const fx = document.getElementById("fx");
     const fctx = fx.getContext("2d");
@@ -433,20 +307,19 @@
     addEventListener("resize", resizeFx);
     resizeFx();
 
-    // pontos (torres) - aproximado dentro da Amazônia
+    // torres (coloquei na área central para não “comer” painéis)
     const towers = Array.from({length: 26}, () => ({
-      x: Math.random(),
-      y: Math.random(),
+      x: 0.18 + Math.random()*0.64,
+      y: 0.18 + Math.random()*0.64,
       h: 0.35 + Math.random()*0.9,
       p: Math.random()*Math.PI*2,
       s: 0.6 + Math.random()*1.2
     }));
 
-    // partículas
     const particles = Array.from({length: 140}, ()=>({
       x: Math.random(),
       y: Math.random(),
-      r: 0.6 + Math.random()*1.8,
+      r: 0.6 + Math.random()*1.6,
       v: 0.15 + Math.random()*0.65,
       p: Math.random()*Math.PI*2
     }));
@@ -456,11 +329,10 @@
       const w = innerWidth, h = innerHeight;
       fctx.clearRect(0,0,w,h);
 
-      // pulso geral
-      const pulse = 0.55 + Math.sin(T*0.6)*0.12;
+      const pulse = 0.55 + Math.sin(T*0.65)*0.13;
 
-      // brilho difuso central
-      const gx = w*0.52, gy = h*0.52;
+      // campo energético difuso
+      const gx = w*0.52, gy = h*0.56;
       const rg = Math.min(w,h)*0.62;
       const grad = fctx.createRadialGradient(gx,gy,rg*0.05,gx,gy,rg);
       grad.addColorStop(0, `rgba(120,220,255,${0.10*pulse})`);
@@ -481,22 +353,22 @@
 
         const px = p.x*w, py = p.y*h;
         fctx.beginPath();
-        fctx.fillStyle = `rgba(120,220,255,${0.07*pulse})`;
+        fctx.fillStyle = `rgba(120,220,255,${0.06*pulse})`;
         fctx.arc(px,py,p.r,0,Math.PI*2);
         fctx.fill();
       }
 
-      // torres (polos de atividade)
+      // torres (atividade)
       for(const t of towers){
-        const x = (0.18 + t.x*0.64)*w;
-        const y = (0.18 + t.y*0.64)*h;
-        const amp = (0.5 + Math.sin(T*1.2 + t.p)*0.5);
+        const x = t.x*w;
+        const y = t.y*h;
+        const amp = (0.5 + Math.sin(T*1.25 + t.p)*0.5);
         const height = (18 + t.h*92) * (0.75 + amp*0.7);
-        const width = 2.2 + amp*1.8;
+        const width = 2.0 + amp*1.6;
 
         // halo base
         const hg = fctx.createRadialGradient(x,y,1,x,y,34);
-        hg.addColorStop(0, `rgba(120,220,255,${0.24*pulse})`);
+        hg.addColorStop(0, `rgba(120,220,255,${0.22*pulse})`);
         hg.addColorStop(1, "rgba(120,220,255,0)");
         fctx.fillStyle = hg;
         fctx.beginPath();
@@ -506,14 +378,14 @@
         // coluna
         const lg = fctx.createLinearGradient(x,y-height,x,y);
         lg.addColorStop(0, `rgba(120,220,255,0)`);
-        lg.addColorStop(0.25, `rgba(120,220,255,${0.10*pulse})`);
-        lg.addColorStop(0.75, `rgba(120,220,255,${0.22*pulse})`);
+        lg.addColorStop(0.25, `rgba(120,220,255,${0.09*pulse})`);
+        lg.addColorStop(0.75, `rgba(120,220,255,${0.20*pulse})`);
         lg.addColorStop(1, `rgba(120,220,255,${0.10*pulse})`);
         fctx.fillStyle = lg;
         fctx.fillRect(x-width/2, y-height, width, height);
 
         // topo
-        fctx.fillStyle = `rgba(180,255,255,${0.18*pulse})`;
+        fctx.fillStyle = `rgba(180,255,255,${0.16*pulse})`;
         fctx.beginPath();
         fctx.arc(x, y-height, 4 + amp*2, 0, Math.PI*2);
         fctx.fill();
@@ -521,10 +393,10 @@
 
       fctx.globalCompositeOperation = "source-over";
 
-      // vinheta sutil
+      // vinheta sutil (pra parecer “terminal”)
       const vg = fctx.createRadialGradient(w/2,h/2,Math.min(w,h)*0.35,w/2,h/2,Math.min(w,h)*0.92);
       vg.addColorStop(0,"rgba(0,0,0,0)");
-      vg.addColorStop(1,"rgba(0,0,0,0.55)");
+      vg.addColorStop(1,"rgba(0,0,0,0.45)");
       fctx.fillStyle = vg;
       fctx.fillRect(0,0,w,h);
 
@@ -534,7 +406,7 @@
     drawFx();
 
     /***********************
-     * TELEMETRIA (canvas)
+     * TELEMETRIA
      ***********************/
     const tele = document.getElementById("teleCanvas");
     const tctx = tele.getContext("2d");
@@ -552,35 +424,21 @@
       const w = tele.getBoundingClientRect().width;
       const h = tele.getBoundingClientRect().height;
 
-      // fundo translúcido
       tctx.clearRect(0,0,w,h);
-      tctx.fillStyle = "rgba(0,20,40,.22)";
+      tctx.fillStyle = "rgba(0,20,40,.18)";
       tctx.fillRect(0,0,w,h);
 
-      // linha fisiológica
       tctx.lineWidth = 2;
-      tctx.strokeStyle = "rgba(120,220,255,.95)";
+      tctx.strokeStyle = "rgba(120,220,255,.92)";
       tctx.beginPath();
       for(let i=0;i<w;i++){
         const a = (i+shift)/42;
         const b = (i+shift)/13;
         const c = (i+shift)/90;
-        const y = h*0.58
+        const y = h*0.60
           + Math.sin(a)*h*0.10
           + Math.sin(b)*h*0.04
           + Math.sin(c)*h*0.06;
-        if(i===0) tctx.moveTo(i,y);
-        else tctx.lineTo(i,y);
-      }
-      tctx.stroke();
-
-      // “batimento” fino
-      tctx.strokeStyle = "rgba(120,220,255,.35)";
-      tctx.lineWidth = 1;
-      tctx.beginPath();
-      for(let i=0;i<w;i++){
-        const a = (i+shift)/22;
-        const y = h*0.62 + Math.sin(a)*h*0.02;
         if(i===0) tctx.moveTo(i,y);
         else tctx.lineTo(i,y);
       }
@@ -592,7 +450,7 @@
     drawTele();
 
     /***********************
-     * SUB-ÍNDICES (dinâmicos e coerentes)
+     * ÍNDICES + SIGNIFICADO (embutido)
      ***********************/
     const idxBox = document.getElementById("idx");
     const cntValEl = document.getElementById("cntVal");
@@ -600,12 +458,12 @@
     const estadoEl = document.getElementById("estado");
 
     const defs = [
-      { key:"IBE", name:"Índice Bioelétrico", v:88 },
-      { key:"IAB", name:"Índice Abiótico",    v:88 },
-      { key:"IBI", name:"Índice Biótico",     v:11 },
-      { key:"HID", name:"Índice Hídrico",     v:83 },
-      { key:"ENT", name:"Entropia",           v:88 },
-      { key:"PAN", name:"Pressão Antrópica",  v:78 }
+      { key:"IBE", name:"Bioelétrico", v:88 },
+      { key:"IAB", name:"Abiótico",    v:88 },
+      { key:"IBI", name:"Biótico",     v:11 },
+      { key:"HID", name:"Hídrico",     v:83 },
+      { key:"ENT", name:"Entropia",    v:88 },
+      { key:"PAN", name:"Antrópico",   v:78 }
     ];
 
     function clamp(n,a,b){ return Math.max(a, Math.min(b,n)); }
@@ -616,38 +474,28 @@
         const row = document.createElement("div");
         row.className = "row";
         row.innerHTML = `
-          <div style="min-width:0">
-            <div class="k mono">${d.key} <span class="muted">— ${d.name}</span></div>
-            <div class="bar"><i style="width:${d.v.toFixed(0)}%"></i></div>
-          </div>
+          <div class="k mono">${d.key} <span class="muted">(${d.name})</span></div>
           <div class="v mono">${d.v.toFixed(0)}</div>
         `;
         idxBox.appendChild(row);
       });
     }
 
-    // Simulação “realista” (não randômico tosco)
-    // PAN/ENT penalizam, HID/IBI/IBE/IAB sustentam
     let tSim = 0;
-    function tickIndices(){
+    function tick(){
       tSim += 0.016;
-
-      // ondas lentas: parecem sensores / séries temporais
       const w1 = Math.sin(tSim*0.35);
       const w2 = Math.sin(tSim*0.18 + 1.2);
       const w3 = Math.sin(tSim*0.24 + 2.0);
 
-      // base
       const HID = clamp(80 + w2*8 + w3*4, 0, 100);
-      const IBI = clamp(22 + w1*7 + w2*4, 0, 100); // baixo (Amazônia sob pressão)
+      const IBI = clamp(22 + w1*7 + w2*4, 0, 100);
       const IAB = clamp(86 + w3*6, 0, 100);
       const IBE = clamp(84 + w1*6 + w3*3, 0, 100);
 
-      // penalidades
       const PAN = clamp(72 + (-w2)*7 + (w1)*5, 0, 100);
       const ENT = clamp(78 + (PAN-70)*0.35 + (-IBI)*0.05 + w3*3, 0, 100);
 
-      // aplica
       defs.find(x=>x.key==="HID").v = HID;
       defs.find(x=>x.key==="IBI").v = IBI;
       defs.find(x=>x.key==="IAB").v = IAB;
@@ -655,14 +503,12 @@
       defs.find(x=>x.key==="PAN").v = PAN;
       defs.find(x=>x.key==="ENT").v = ENT;
 
-      // CNT (vitalidade líquida)
       const base = (IBE*0.22 + IAB*0.20 + IBI*0.18 + HID*0.20);
       const pen  = (ENT*0.10 + PAN*0.10);
       const CNT  = clamp(base - (pen-12), 0, 100);
 
       cntValEl.textContent = CNT.toFixed(1);
 
-      // confiança / estado (simples, institucional)
       let conf = "Alta";
       if(CNT < 55) conf = "Média";
       if(CNT < 40) conf = "Baixa";
@@ -673,23 +519,22 @@
       if(CNT < 42) estado = "Estresse sistêmico";
       estadoEl.textContent = estado;
 
-      // render
       renderIndices();
-      requestAnimationFrame(tickIndices);
+      requestAnimationFrame(tick);
     }
     renderIndices();
-    tickIndices();
+    tick();
 
     /***********************
-     * COTAÇÃO REAL DO TOKEN CNT (DexScreener)
+     * COTAÇÃO REAL DO TOKEN (DexScreener)
      ***********************/
     const cntQuote = document.getElementById("cntQuote");
     const cntUsd = document.getElementById("cntUsd");
     const solIn = document.getElementById("solIn");
     const cntOut = document.getElementById("cntOut");
 
-    let cntPerSol = 0;   // calculado
-    let priceSol = 0;    // 1 CNT em SOL
+    let cntPerSol = 0;
+    let priceSol = 0;
     let priceUSD = 0;
 
     function updateQuote(){
@@ -709,17 +554,15 @@
         const data = await r.json();
 
         if(!data.pairs || data.pairs.length === 0){
-          cntQuote.textContent = "sem liquidez ainda";
+          cntQuote.textContent = "sem liquidez";
           cntUsd.textContent = "—";
           cntPerSol = 0;
           updateQuote();
           return;
         }
 
-        // pega o primeiro par mais relevante
         const pair = data.pairs[0];
-
-        priceSol = parseFloat(pair.priceNative); // 1 CNT em SOL
+        priceSol = parseFloat(pair.priceNative);
         priceUSD = parseFloat(pair.priceUsd || "0");
 
         if(!priceSol || !isFinite(priceSol)){
@@ -741,77 +584,48 @@
             : "—";
 
         updateQuote();
-
       }catch(e){
-        console.log("Preço indisponível", e);
         cntQuote.textContent = "carregando…";
         cntUsd.textContent = "—";
       }
     }
-
     atualizarPrecoCNT();
     setInterval(atualizarPrecoCNT, 20000);
 
     /***********************
-     * SOLANA WALLET (injetadas)
+     * WALLET SOLANA (injetada) + COMPRA
      ***********************/
     const btnConnect = document.getElementById("btnConnect");
-    const btnDisconnect = document.getElementById("btnDisconnect");
-    const walletAddr = document.getElementById("walletAddr");
     const btnBuy = document.getElementById("btnBuy");
-
-    let provider = null;
+    const walletAddr = document.getElementById("walletAddr");
 
     function getProvider(){
-      // Phantom / Solflare / Backpack etc (injetadas)
       if(window.solana && window.solana.isPhantom) return window.solana;
       if(window.solflare && window.solflare.isSolflare) return window.solflare;
-      // fallback: window.solana mesmo (algumas wallets expõem só solana)
       if(window.solana) return window.solana;
       return null;
     }
+    function shortAddr(a){ return a.slice(0,4) + "…" + a.slice(-4); }
 
-    function shortAddr(a){
-      return a.slice(0,4) + "…" + a.slice(-4);
-    }
-
-    async function connectWallet(){
-      provider = getProvider();
+    btnConnect.addEventListener("click", async ()=>{
+      const provider = getProvider();
       if(!provider){
         alert("Nenhuma wallet Solana detectada. Instale Phantom ou Solflare e recarregue.");
         return;
       }
       try{
         const res = await provider.connect();
-        const pubkey = (res && res.publicKey) ? res.publicKey.toString() : (provider.publicKey ? provider.publicKey.toString() : "");
-        if(pubkey){
+        const pub = (res && res.publicKey) ? res.publicKey.toString() : (provider.publicKey ? provider.publicKey.toString() : "");
+        if(pub){
           walletAddr.style.display = "";
-          walletAddr.textContent = shortAddr(pubkey);
-          btnDisconnect.style.display = "";
+          walletAddr.textContent = shortAddr(pub);
         }
-      }catch(e){
-        console.log("connect cancelado/erro", e);
-      }
-    }
-
-    async function disconnectWallet(){
-      try{
-        if(provider && provider.disconnect) await provider.disconnect();
       }catch(e){}
-      walletAddr.style.display = "none";
-      walletAddr.textContent = "";
-      btnDisconnect.style.display = "none";
-      provider = null;
-    }
-
-    btnConnect.addEventListener("click", connectWallet);
-    btnDisconnect.addEventListener("click", disconnectWallet);
-
-    btnBuy.addEventListener("click", ()=>{
-      // compra segura: abre Pump.fun (usuário assina na wallet)
-      window.open(PUMP_URL, "_blank", "noopener,noreferrer");
     });
 
+    btnBuy.addEventListener("click", ()=>{
+      window.open(PUMP_URL, "_blank", "noopener,noreferrer");
+    });
   </script>
 </body>
 </html>
