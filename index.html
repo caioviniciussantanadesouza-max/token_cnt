@@ -15,7 +15,6 @@ html,body{
     overflow:hidden;
 }
 
-/* MAPA */
 #map{ position:absolute; inset:0; }
 
 #bg{
@@ -27,29 +26,15 @@ html,body{
     animation:biome 18s ease-in-out infinite;
 }
 
-/* respiração ecológica */
 @keyframes biome{
-    0%{ filter:brightness(.85) contrast(1.15) saturate(1.1); }
-    50%{ filter:brightness(.95) contrast(1.25) saturate(1.25); }
-    100%{ filter:brightness(.85) contrast(1.15) saturate(1.1); }
+    0%{ filter:brightness(.85) contrast(1.15) saturate(1.1);}
+    50%{ filter:brightness(.95) contrast(1.25) saturate(1.25);}
+    100%{ filter:brightness(.85) contrast(1.15) saturate(1.1);}
 }
 
-/* HUD */
-.hud{ position:absolute; inset:0; pointer-events:none; z-index:5; }
-.hud:before{
-    content:"";
-    position:absolute;
-    inset:14px;
-    border:1px solid rgba(120,220,255,.06);
-}
-
-/* PAINEIS */
 .glass{
     position:absolute;
-    background:transparent;
-    border:none;
     padding:18px;
-    z-index:10;
     text-shadow:0 0 6px rgba(120,220,255,.35);
 }
 
@@ -65,31 +50,19 @@ html,body{
     text-align:center;
 }
 
-/* CNT */
 #cnt{
     font-size:56px;
     letter-spacing:4px;
     font-weight:300;
-    text-shadow:
-        0 0 10px rgba(120,220,255,.7),
-        0 0 24px rgba(0,200,255,.35);
-    animation:pulse 14s ease-in-out infinite;
+    text-shadow:0 0 10px rgba(120,220,255,.7);
 }
 
-@keyframes pulse{
-    0%{opacity:.85}
-    50%{opacity:1}
-    100%{opacity:.85}
-}
-
-input,button{
+button,input{
     background:rgba(255,255,255,.05);
     border:1px solid rgba(120,220,255,.3);
     color:#9fdfff;
     padding:6px;
-    margin-top:6px;
 }
-
 button:hover{ background:rgba(120,220,255,.15); cursor:pointer; }
 </style>
 </head>
@@ -97,10 +70,8 @@ button:hover{ background:rgba(120,220,255,.15); cursor:pointer; }
 <body>
 
 <div id="map">
-    <img src="imagem_cnt.png" id="bg">
+<img src="imagem_cnt.png" id="bg">
 </div>
-
-<div class="hud"></div>
 
 <div id="status" class="glass">
 <b>OS.CNT</b><br>
@@ -113,8 +84,6 @@ Modo operacional: Monitoramento ativo<br>
 Status: Operacional
 </div>
 
-<div id="telemetry" class="glass"></div>
-
 <div id="indices" class="glass">
 IBE .......... 88<br>
 IAB .......... 88<br>
@@ -124,10 +93,8 @@ ENT .......... 88<br>
 PAN .......... 78
 </div>
 
-<!-- COMPRA TOKEN -->
 <div id="psa" class="glass">
 <div id="walletStatus">Carteira não conectada</div><br>
-
 <button id="connectBtn">Conectar carteira</button><br><br>
 
 Valor em SOL:<br>
@@ -136,15 +103,14 @@ Valor em SOL:<br>
 <button id="buyBtn">Comprar CNT</button>
 </div>
 
-<!-- bibliotecas -->
 <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.js"></script>
 
 <script>
-const { Connection, PublicKey, clusterApiUrl, Transaction } = solanaWeb3;
+const { Connection, PublicKey, Transaction } = solanaWeb3;
+const connection=new Connection("https://api.mainnet-beta.solana.com");
 
 let provider=null;
 let wallet=null;
-const connection=new Connection(clusterApiUrl("mainnet-beta"));
 
 document.getElementById("connectBtn").onclick=async()=>{
     if(window.solana){
@@ -153,19 +119,16 @@ document.getElementById("connectBtn").onclick=async()=>{
         wallet=provider.publicKey.toString();
         document.getElementById("walletStatus").innerText=
         "Conectado: "+wallet.slice(0,4)+"..."+wallet.slice(-4);
-    }else{
-        alert("Instale Phantom Wallet");
-    }
+    }else alert("Instale Phantom Wallet");
 };
 
 document.getElementById("buyBtn").onclick=async()=>{
-    if(!wallet) return alert("Conecte a carteira primeiro");
+    if(!wallet) return alert("Conecte a carteira");
 
     const amount=parseFloat(document.getElementById("amount").value);
+    const TOKEN="GCVyjNaCbXkwGUuktyNxSXad4ozmTp2fzQr2jieSpump";
 
-    const TOKEN_MINT="COLOQUE_O_ENDERECO_DO_TOKEN_AQUI";
-
-    const quote=await fetch(`https://quote-api.jup.ag/v6/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=${TOKEN_MINT}&amount=${amount*1e9}&slippageBps=50`).then(r=>r.json());
+    const quote=await fetch(`https://quote-api.jup.ag/v6/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=${TOKEN}&amount=${Math.floor(amount*1e9)}&slippageBps=50`).then(r=>r.json());
 
     const swap=await fetch("https://quote-api.jup.ag/v6/swap",{
         method:"POST",
@@ -177,13 +140,13 @@ document.getElementById("buyBtn").onclick=async()=>{
         })
     }).then(r=>r.json());
 
-    const tx=Transaction.from(atob(swap.swapTransaction));
+    const tx=Transaction.from(Uint8Array.from(atob(swap.swapTransaction),c=>c.charCodeAt(0)));
     tx.feePayer=new PublicKey(wallet);
 
     const signed=await provider.signTransaction(tx);
     const sig=await connection.sendRawTransaction(signed.serialize());
 
-    alert("Transação enviada: "+sig);
+    alert("Compra enviada ✔\nTx: "+sig);
 };
 </script>
 
