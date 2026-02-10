@@ -1,574 +1,207 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>OS.CNT — Observatório CNT Amazônia</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OS.CNT — Observatório CNT Amazônia</title>
 
-  <style>
-    :root{
-      --c: rgba(120,220,255,.92);
-      --c2: rgba(120,220,255,.35);
-      --glass: rgba(4,18,32,.28);
-      --glass2: rgba(4,18,32,.18);
-      --stroke: rgba(120,220,255,.22);
-      --text: #a7e8ff;
-      --text2:#7fd6ff;
-      --shadow: 0 0 18px rgba(120,220,255,.12), 0 0 60px rgba(0,255,255,.05);
-    }
+<style>
+:root{
+  --c: rgba(120,220,255,.9);
+  --glass: rgba(4,18,32,.30);
+}
 
-    html,body{
-      margin:0;
-      height:100%;
-      background:#01040a;
-      color:var(--text);
-      font-family: "Segoe UI", Arial, sans-serif;
-      overflow:hidden;
-    }
+html,body{
+  margin:0;
+  height:100%;
+  background:#01040a;
+  color:#a7e8ff;
+  font-family:Segoe UI, Arial;
+  overflow:hidden;
+}
 
-    /* ===== STAGE ===== */
-    #stage{
-      position:fixed;
-      inset:0;
-      background:#01040a;
-    }
+/* MAPA */
+#stage{position:fixed; inset:0; z-index:0;}
+#bg{
+  position:absolute; inset:0;
+  width:100%; height:100%;
+  object-fit:contain;
+  object-position:center;
+  transform:scale(.92);
+  opacity:.95;
+  filter:brightness(.9) contrast(1.2) saturate(1.2);
+  animation:biome 18s ease-in-out infinite;
+}
 
-    /* mapa protagonista (NÃO estica / mais afastado) */
-    #bg{
-      position:absolute;
-      inset:0;
-      width:100%;
-      height:100%;
-      object-fit:contain;        /* NÃO ESTICA */
-      object-position:center;
-      transform:scale(.92);      /* mais afastado */
-      opacity:.98;
+@keyframes biome{
+  0%{filter:brightness(.85) contrast(1.15) saturate(1.1);}
+  50%{filter:brightness(.98) contrast(1.25) saturate(1.25);}
+  100%{filter:brightness(.85) contrast(1.15) saturate(1.1);}
+}
 
-      animation:biome 14s ease-in-out infinite;
-      will-change: filter, transform;
-    }
+/* HUD */
+.glass{
+  background:var(--glass);
+  backdrop-filter:blur(12px);
+  border:1px solid rgba(120,220,255,.25);
+  border-radius:18px;
+  box-shadow:0 0 25px rgba(120,220,255,.12);
+  padding:14px;
+  z-index:10;
+  position:absolute;
+}
 
-    @keyframes biome{
-      0%   { filter:brightness(.82) contrast(1.12) saturate(1.08); transform:scale(.92); }
-      50%  { filter:brightness(.96) contrast(1.26) saturate(1.22); transform:scale(.935); }
-      100% { filter:brightness(.82) contrast(1.12) saturate(1.08); transform:scale(.92); }
-    }
+/* ESQUERDA */
+#status{left:18px; top:18px; width:320px;}
 
-    #glow{
-      position:absolute; inset:-10%;
-      pointer-events:none;
-      background:
-        radial-gradient(closest-side at 50% 45%, rgba(120,220,255,.10), transparent 65%),
-        radial-gradient(closest-side at 60% 65%, rgba(0,255,220,.06), transparent 70%);
-      mix-blend-mode:screen;
-      filter:blur(2px);
-      animation:glow 9s ease-in-out infinite;
-    }
-    @keyframes glow{
-      0%{ opacity:.30; transform:translate3d(0,0,0) scale(1); }
-      50%{ opacity:.52; transform:translate3d(0,-8px,0) scale(1.02); }
-      100%{ opacity:.30; transform:translate3d(0,0,0) scale(1); }
-    }
+.cnt{
+  font-size:72px;
+  margin:8px 0;
+  font-weight:300;
+}
 
-    #particles{
-      position:absolute; inset:0;
-      pointer-events:none;
-      opacity:.6;
-      mix-blend-mode:screen;
-    }
+.divider{
+  height:1px;
+  background:linear-gradient(90deg,transparent,rgba(120,220,255,.3),transparent);
+  margin:10px 0;
+}
 
-    /* ===== HUD GLASS ===== */
-    .glass{
-      background: linear-gradient(180deg, rgba(4,18,32,.38), rgba(4,18,32,.18));
-      border:1px solid var(--stroke);
-      box-shadow: var(--shadow);
-      border-radius:16px;
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-    }
+.idxline{
+  display:flex;
+  justify-content:space-between;
+  font-size:12px;
+  margin:4px 0;
+}
 
-    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
-    .small{ font-size:11px; color:rgba(180,245,255,.78); }
-    .panel-title{
-      font-size:12px;
-      letter-spacing:.12em;
-      text-transform:uppercase;
-      color:rgba(165,245,255,.86);
-      margin-bottom:8px;
-    }
+/* DIREITA */
+#token{right:18px; top:18px; width:420px;}
 
-    /* ===== LAYOUT ===== */
-    #status{
-      position:absolute;
-      left:18px;
-      top:18px;
-      width:320px;
-      padding:16px 16px 14px;
-      z-index:20;
-    }
+/* TELEMETRIA */
+#telemetry{
+  left:50%;
+  transform:translateX(-50%);
+  bottom:18px;
+  width:min(900px,80vw);
+  height:140px;
+}
 
-    #cntNum{
-      font-size:64px;
-      line-height:1;
-      color:rgba(210,255,255,.95);
-      text-shadow: 0 0 18px rgba(120,220,255,.25);
-      margin:10px 0 6px;
-    }
+/* BOTÕES */
+button{
+  background:linear-gradient(180deg,rgba(120,220,255,.25),rgba(0,0,0,.2));
+  border:1px solid rgba(120,220,255,.4);
+  border-radius:14px;
+  padding:10px 16px;
+  color:white;
+  cursor:pointer;
+}
+button:hover{box-shadow:0 0 18px rgba(120,220,255,.35);}
 
-    #telemetry{
-      position:absolute;
-      left:50%;
-      top:18px;
-      transform:translateX(-50%);
-      width:min(920px, 66vw);
-      height:160px;
-      padding:14px 16px 12px;
-      z-index:20;
-      overflow:hidden;
-    }
-
-    #indices{
-      position:absolute;
-      right:18px;
-      top:18px;
-      width:270px;
-      padding:16px 16px 14px;
-      z-index:20;
-    }
-
-    .idx{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      padding:6px 0;
-      border-bottom:1px solid rgba(120,220,255,.08);
-    }
-    .idx:last-child{ border-bottom:none; }
-
-    .k{ color:rgba(190,250,255,.90); letter-spacing:.08em; }
-    .v{ color:rgba(220,255,255,.96); }
-
-    .idxbtn{
-      width:100%;
-      background:transparent;
-      border:none;
-      color:inherit;
-      text-align:left;
-      cursor:pointer;
-      padding:0;
-      border-radius:12px;
-    }
-    .idxbtn:hover .idx{
-      background:rgba(120,220,255,.06);
-      border-radius:12px;
-      padding-left:10px;
-      padding-right:10px;
-    }
-    .idxbtn:focus{ outline:none; }
-    .idxbtn:focus .idx{ box-shadow:0 0 0 2px rgba(120,220,255,.18) inset; border-radius:12px; }
-
-    /* ===== TOKEN / COMPRA (mais visível) ===== */
-    #token{
-      position:absolute;
-      left:18px;
-      right:18px;
-      bottom:16px;
-      height:98px;
-      padding:14px 16px 12px;
-      z-index:25;
-
-      background:linear-gradient(180deg, rgba(4,18,32,.50), rgba(4,18,32,.28));
-      border:1px solid rgba(120,220,255,.30);
-      box-shadow: 0 0 26px rgba(120,220,255,.14), 0 0 90px rgba(0,255,255,.06);
-    }
-
-    #tokenGrid{
-      display:grid;
-      grid-template-columns: 1.2fr 1.6fr 1.2fr;
-      gap:14px;
-      height:100%;
-      align-items:center;
-    }
-
-    .tokenBox{
-      height:100%;
-      display:flex;
-      flex-direction:column;
-      justify-content:center;
-      gap:6px;
-      padding:4px 8px;
-    }
-
-    .row{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      flex-wrap:wrap;
-    }
-
-    input{
-      width:140px;
-      max-width:42vw;
-      background:rgba(0,0,0,.25);
-      border:1px solid rgba(120,220,255,.22);
-      color:rgba(220,255,255,.96);
-      border-radius:12px;
-      padding:10px 12px;
-      font-size:15px;
-      outline:none;
-      box-shadow: inset 0 0 18px rgba(120,220,255,.06);
-    }
-    input:focus{
-      border-color: rgba(120,220,255,.40);
-      box-shadow: 0 0 0 2px rgba(120,220,255,.14);
-    }
-
-    button{
-      cursor:pointer;
-      user-select:none;
-      background: linear-gradient(180deg, rgba(120,220,255,.26), rgba(0,0,0,.10));
-      border:1px solid rgba(120,220,255,.34);
-      color:rgba(220,255,255,.96);
-      border-radius:14px;
-      padding:10px 14px;
-      font-weight:600;
-      box-shadow: 0 0 20px rgba(120,220,255,.10);
-    }
-    button:hover{ filter:brightness(1.08); }
-    button:active{ transform:translateY(1px); }
-
-    #btnBuy{
-      box-shadow: 0 0 22px rgba(120,220,255,.22), 0 0 70px rgba(0,255,200,.10);
-    }
-
-    #outCnt{
-      font-size:16px;
-      color:rgba(220,255,255,.96);
-    }
-
-    /* ===== MODAL ===== */
-    #modal{
-      display:none;
-      position:fixed;
-      left:50%;
-      top:18%;
-      transform:translateX(-50%);
-      width:min(560px, 92vw);
-      padding:14px 14px 12px;
-      z-index:9999;
-      overflow:hidden;
-    }
-    #modal::before{
-      content:"";
-      position:absolute; inset:0;
-      background:
-        repeating-linear-gradient(180deg, rgba(120,220,255,.06) 0px, rgba(120,220,255,.06) 1px, transparent 2px, transparent 6px);
-      opacity:.35;
-      pointer-events:none;
-      mix-blend-mode:screen;
-    }
-    #modalInner{ position:relative; }
-    #mBody{
-      font-size:12px;
-      line-height:1.65;
-      color:rgba(190,250,255,.86);
-    }
-    #mClose{
-      background:rgba(0,0,0,.18);
-      border:1px solid rgba(120,220,255,.26);
-      padding:8px 12px;
-      border-radius:12px;
-    }
-
-    @media (max-width: 980px){
-      #telemetry{ width:min(720px, 64vw); height:140px; }
-      #status{ width:300px; }
-      #indices{ width:250px; }
-      #cntNum{ font-size:56px; }
-      #token{ height:auto; }
-      #tokenGrid{ grid-template-columns: 1fr; }
-      .tokenBox{ padding:10px 6px; }
-    }
-  </style>
+input{
+  background:rgba(0,0,0,.3);
+  border:1px solid rgba(120,220,255,.4);
+  border-radius:10px;
+  padding:8px;
+  color:white;
+  width:120px;
+}
+</style>
 </head>
 
 <body>
-  <div id="stage">
-    <img id="bg" src="imagem_cnt.png" alt="Amazônia CNT" />
-    <div id="glow"></div>
-    <canvas id="particles"></canvas>
-  </div>
 
-  <!-- STATUS -->
-  <div id="status" class="glass">
-    <div class="panel-title">OS.CNT</div>
-    <div class="small">Earth Environmental Monitoring Infrastructure</div>
+<!-- MAPA -->
+<div id="stage">
+<img id="bg" src="imagem_cnt.png">
+</div>
 
-    <div id="cntNum" class="mono">72.4</div>
+<!-- ESQUERDA -->
+<div id="status" class="glass">
+<b>OS.CNT</b><br>
+Earth Environmental Monitoring Infrastructure
 
-    <div class="small">
-      Confiança: <b id="conf">Alta</b>
-    </div>
+<div class="cnt" id="cnt">68.0</div>
+Confiança: Média<br><br>
 
-    <div style="margin-top:10px" class="small">
-      Estado do sistema:<br>
-      <b id="estado">Regulação estável</b><br>
-      Modo operacional: <span id="modo">Monitoramento ativo</span><br>
-      Status: <span id="statusTxt">Operacional</span>
-    </div>
+Estado do sistema:<br>
+<b>Transição funcional</b><br>
+Modo operacional: Monitoramento ativo<br>
+Status: Operacional
 
-    <div class="small" style="margin-top:10px">
-      <b>Token CNT (Solana)</b>: ativo do Observatório para financiar conservação e registrar ordens de aquisição/monitoramento.
-    </div>
-  </div>
+<div class="divider"></div>
+<b>Token CNT (Solana)</b>: ativo do Observatório para financiar conservação e registrar ordens de aquisição/monitoramento.
 
-  <!-- TELEMETRIA -->
-  <div id="telemetry" class="glass">
-    <div class="panel-title">Telemetria — oscilação funcional (30d)</div>
-    <canvas id="telemetryCanvas"></canvas>
-  </div>
+<div class="divider"></div>
+<b>Sub-índices</b>
+<div class="idxline">IBE <span id="ibe">88</span></div>
+<div class="idxline">IAB <span id="iab">88</span></div>
+<div class="idxline">IBI <span id="ibi">11</span></div>
+<div class="idxline">HID <span id="hid">83</span></div>
+<div class="idxline">ENT <span id="ent">88</span></div>
+<div class="idxline">PAN <span id="pan">78</span></div>
+</div>
 
-  <!-- SUB-ÍNDICES -->
-  <div id="indices" class="glass">
-    <div class="panel-title">Sub-índices (clique para ver)</div>
+<!-- DIREITA -->
+<div id="token" class="glass">
+<b>TROCA SOL → CNT</b><br><br>
 
-    <button class="idxbtn" data-key="IBE"><div class="idx"><span class="k mono">IBE</span><span class="v mono" id="ibe">88</span></div></button>
-    <button class="idxbtn" data-key="IAB"><div class="idx"><span class="k mono">IAB</span><span class="v mono" id="iab">88</span></div></button>
-    <button class="idxbtn" data-key="IBI"><div class="idx"><span class="k mono">IBI</span><span class="v mono" id="ibi">11</span></div></button>
-    <button class="idxbtn" data-key="HID"><div class="idx"><span class="k mono">HID</span><span class="v mono" id="hid">83</span></div></button>
-    <button class="idxbtn" data-key="ENT"><div class="idx"><span class="k mono">ENT</span><span class="v mono" id="ent">88</span></div></button>
-    <button class="idxbtn" data-key="PAN"><div class="idx"><span class="k mono">PAN</span><span class="v mono" id="pan">78</span></div></button>
+Valor em SOL:<br>
+<input id="sol" value="0.10">
 
-    <div class="small" style="margin-top:10px; opacity:.85">Dica: ENT e PAN são penalidades.</div>
-  </div>
+<p>Você recebe aprox:<br>
+<b id="out">14.744.913 CNT</b></p>
 
-  <!-- TOKEN / COMPRA -->
-  <div id="token" class="glass">
-    <div id="tokenGrid">
-      <div class="tokenBox">
-        <div class="panel-title">TOKEN CNT (Solana)</div>
-        <div class="small mono">Mint: <span id="mint">GCVyjNaCbXkwGUuktyNxSXad4ozmTp2fzQr2jieSpump</span></div>
-        <div class="small">Preço estimado (demo): <b class="mono" id="pxUsd">$ 0.00000059</b></div>
-        <div class="small">Cotação 1 SOL = <b class="mono" id="solToCnt">147.449.130 CNT</b></div>
-      </div>
+<button onclick="connect()">Conectar Wallet</button>
+<button onclick="buy()">Comprar</button>
 
-      <div class="tokenBox">
-        <div class="panel-title">TROCA SOL → CNT</div>
-        <div class="row">
-          <div class="small">Valor em SOL:</div>
-          <input id="inSol" type="number" step="0.01" min="0" value="0.10" />
-          <div class="small">Você recebe aprox:</div>
-          <div id="outCnt" class="mono">14.744.913 CNT</div>
-        </div>
-        <div class="small">Compra abre Pump.fun (assinatura na wallet).</div>
-      </div>
+<p style="font-size:12px;opacity:.7">Rede: Solana</p>
+</div>
 
-      <div class="tokenBox" style="align-items:flex-end">
-        <div class="panel-title">CARTEIRA & ORDEM</div>
-        <div class="row" style="justify-content:flex-end">
-          <button id="btnConnect">Conectar Wallet</button>
-          <button id="btnBuy">Comprar</button>
-        </div>
-        <div class="small">Rede: <b class="mono">Solana</b></div>
-        <div class="small" id="walletState">Carteira não conectada</div>
-      </div>
-    </div>
-  </div>
+<!-- TELEMETRIA -->
+<div id="telemetry" class="glass">
+<canvas id="wave"></canvas>
+</div>
 
-  <!-- MODAL -->
-  <div id="modal" class="glass" role="dialog" aria-modal="true">
-    <div id="modalInner">
-      <div class="panel-title" id="mTitle">—</div>
-      <div id="mBody"></div>
-      <div style="display:flex; justify-content:flex-end; margin-top:12px;">
-        <button id="mClose">Fechar</button>
-      </div>
-    </div>
-  </div>
+<script>
+/* TELEMETRIA */
+const c=document.getElementById("wave");
+c.width=c.parentElement.clientWidth;
+c.height=c.parentElement.clientHeight;
+const ctx=c.getContext("2d");
 
-  <script>
-    const PUMP_URL = "https://pump.fun/coin/GCVyjNaCbXkwGUuktyNxSXad4ozmTp2fzQr2jieSpump";
-    const MINT = "GCVyjNaCbXkwGUuktyNxSXad4ozmTp2fzQr2jieSpump";
+let t=0;
+function draw(){
+ ctx.fillStyle="rgba(0,20,40,.25)";
+ ctx.fillRect(0,0,c.width,c.height);
+ ctx.strokeStyle="#6df";
+ ctx.lineWidth=2;
+ ctx.beginPath();
+ for(let i=0;i<c.width;i++){
+  let y=70+Math.sin((i+t)/40)*20+Math.sin((i+t)/13)*8;
+  ctx.lineTo(i,y);
+ }
+ ctx.stroke();
+ t+=2;
+ requestAnimationFrame(draw);
+}
+draw();
 
-    let SOL_TO_CNT = 147_449_130; // demo
-    let PRICE_USD = 0.00000059;   // demo
+/* CONVERSÃO DEMO */
+const rate=147449130;
+document.getElementById("sol").oninput=e=>{
+ let sol=parseFloat(e.target.value)||0;
+ document.getElementById("out").innerText=
+ (sol*rate).toLocaleString()+" CNT";
+};
 
-    const fmtInt = (n)=> (Math.floor(n)).toLocaleString("pt-BR");
-    const fmtUsd = (n)=> "$ " + (Number(n)).toFixed(8);
+/* WALLET */
+function connect(){
+ alert("Wallet Phantom conectar aqui depois");
+}
 
-    document.getElementById("mint").textContent = MINT;
-    document.getElementById("pxUsd").textContent = fmtUsd(PRICE_USD);
-    document.getElementById("solToCnt").textContent = fmtInt(SOL_TO_CNT) + " CNT";
+function buy(){
+ window.open("https://pump.fun/coin/GCVyjNaCbXkwGUuktyNxSXad4ozmTp2fzQr2jieSpump");
+}
+</script>
 
-    const inSol = document.getElementById("inSol");
-    const outCnt = document.getElementById("outCnt");
-
-    function updateSwap(){
-      const sol = Math.max(0, Number(inSol.value || 0));
-      const cnt = sol * SOL_TO_CNT;
-      outCnt.textContent = fmtInt(cnt) + " CNT";
-    }
-    inSol.addEventListener("input", updateSwap);
-    updateSwap();
-
-    document.getElementById("btnBuy").addEventListener("click", ()=>{
-      window.open(PUMP_URL, "_blank", "noopener,noreferrer");
-    });
-
-    let connected = false;
-    document.getElementById("btnConnect").addEventListener("click", ()=>{
-      connected = !connected;
-      document.getElementById("walletState").textContent = connected ? "Carteira conectada (demo)" : "Carteira não conectada";
-      document.getElementById("btnConnect").textContent = connected ? "Desconectar" : "Conectar Wallet";
-    });
-
-    const defs = {
-      IBE:{ t:"IBE — Índice Bioelétrico", b:"Mede sinais de atividade elétrica do sistema vivo. Indica pulso e reatividade ecológica." },
-      IAB:{ t:"IAB — Índice Abiótico", b:"Integra variáveis físicas: temperatura, umidade, precipitação, vento, radiação e pressão." },
-      IBI:{ t:"IBI — Índice Biótico", b:"Representa vitalidade biológica: cobertura vegetal, vigor e dinâmica funcional." },
-      HID:{ t:"HID — Índice Hídrico", b:"Reflete água disponível e circulação hídrica no território." },
-      ENT:{ t:"ENT — Entropia (penalidade)", b:"Quanto maior, maior desordem funcional. ENT alto reduz o CNT final." },
-      PAN:{ t:"PAN — Pressão Antrópica (penalidade)", b:"Intensidade de pressão humana. PAN alto reduz o CNT final." }
-    };
-
-    const modal = document.getElementById("modal");
-    const mTitle = document.getElementById("mTitle");
-    const mBody  = document.getElementById("mBody");
-    document.getElementById("mClose").onclick = ()=> modal.style.display="none";
-
-    document.querySelectorAll(".idxbtn").forEach(btn=>{
-      btn.addEventListener("click", ()=>{
-        const k = btn.dataset.key;
-        const d = defs[k];
-        if(!d) return;
-        mTitle.textContent = d.t;
-        mBody.textContent  = d.b;
-        modal.style.display="block";
-      });
-    });
-
-    /* TELEMETRIA */
-    const canvas = document.getElementById("telemetryCanvas");
-    const tWrap = document.getElementById("telemetry");
-
-    function fitTelemetry(){
-      canvas.width  = tWrap.clientWidth  - 20;
-      canvas.height = tWrap.clientHeight - 44;
-      canvas.style.display = "block";
-      canvas.style.marginTop = "6px";
-      canvas.style.filter = "drop-shadow(0 0 6px rgba(120,220,255,.6))";
-    }
-    fitTelemetry();
-    window.addEventListener("resize", fitTelemetry);
-
-    const ctx = canvas.getContext("2d");
-    let x = 0;
-
-    function telemetry(){
-      const w = canvas.width, h = canvas.height;
-      ctx.fillStyle = "rgba(0,20,40,.22)";
-      ctx.fillRect(0,0,w,h);
-
-      ctx.strokeStyle = "rgba(120,220,255,.92)";
-      ctx.lineWidth = 2.2;
-      ctx.beginPath();
-      for(let i=0;i<w;i++){
-        const y = (h*0.55)
-          + Math.sin((i+x)/40)* (h*0.14)
-          + Math.sin((i+x)/13)* (h*0.06);
-        if(i===0) ctx.moveTo(i,y); else ctx.lineTo(i,y);
-      }
-      ctx.stroke();
-
-      ctx.strokeStyle = "rgba(120,220,255,.22)";
-      ctx.lineWidth = 6;
-      ctx.beginPath();
-      for(let i=0;i<w;i++){
-        const y = (h*0.55)
-          + Math.sin((i+x)/40)* (h*0.14)
-          + Math.sin((i+x)/13)* (h*0.06);
-        if(i===0) ctx.moveTo(i,y); else ctx.lineTo(i,y);
-      }
-      ctx.stroke();
-
-      x += 2.0;
-      requestAnimationFrame(telemetry);
-    }
-    telemetry();
-
-    /* PARTICULAS */
-    const p = document.getElementById("particles");
-    const pctx = p.getContext("2d");
-    let W,H, dots;
-
-    function resizeP(){
-      W = p.width = innerWidth;
-      H = p.height = innerHeight;
-      const n = Math.floor((W*H)/45000);
-      dots = new Array(n).fill(0).map(()=>({
-        x: Math.random()*W,
-        y: Math.random()*H,
-        r: Math.random()*1.6+0.2,
-        vx:(Math.random()-0.5)*0.18,
-        vy:(Math.random()-0.5)*0.18,
-        a: Math.random()*0.5 + 0.15
-      }));
-    }
-    resizeP();
-    addEventListener("resize", resizeP);
-
-    function drawP(){
-      pctx.clearRect(0,0,W,H);
-      pctx.fillStyle = "rgba(0,15,35,.08)";
-      pctx.fillRect(0,0,W,H);
-
-      for(const d of dots){
-        d.x += d.vx; d.y += d.vy;
-        if(d.x<0) d.x=W; if(d.x>W) d.x=0;
-        if(d.y<0) d.y=H; if(d.y>H) d.y=0;
-
-        pctx.beginPath();
-        pctx.fillStyle = `rgba(120,220,255,${d.a})`;
-        pctx.arc(d.x,d.y,d.r,0,Math.PI*2);
-        pctx.fill();
-      }
-      requestAnimationFrame(drawP);
-    }
-    drawP();
-
-    /* “tempo real” SIMULADO (sem API) */
-    function clamp01(v){ return Math.max(0, Math.min(100, v)); }
-    function drift(v, s=1.2){ return v + (Math.random()-0.5)*s; }
-
-    let IBE=88, IAB=88, IBI=11, HID=83, ENT=88, PAN=78;
-
-    setInterval(()=>{
-      IBE = clamp01(drift(IBE, 1.4));
-      IAB = clamp01(drift(IAB, 1.1));
-      IBI = clamp01(drift(IBI, 0.8));
-      HID = clamp01(drift(HID, 1.0));
-      ENT = clamp01(drift(ENT, 0.7));
-      PAN = clamp01(drift(PAN, 0.7));
-
-      const base = (IBE*0.22 + IAB*0.20 + IBI*0.20 + HID*0.18);
-      const pen  = (ENT*0.12 + PAN*0.08);
-      let CNT = clamp01(base - pen + 30);
-
-      const conf = CNT > 70 ? "Alta" : CNT > 45 ? "Média" : "Baixa";
-      document.getElementById("conf").textContent = conf;
-
-      document.getElementById("cntNum").textContent = CNT.toFixed(1);
-      document.getElementById("ibe").textContent = Math.round(IBE);
-      document.getElementById("iab").textContent = Math.round(IAB);
-      document.getElementById("ibi").textContent = Math.round(IBI);
-      document.getElementById("hid").textContent = Math.round(HID);
-      document.getElementById("ent").textContent = Math.round(ENT);
-      document.getElementById("pan").textContent = Math.round(PAN);
-
-      document.getElementById("estado").textContent =
-        CNT > 72 ? "Regulação estável" : (CNT > 55 ? "Transição funcional" : "Estresse ambiental");
-    }, 1400);
-  </script>
 </body>
 </html>
