@@ -1,812 +1,479 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>OS.CNT — Earth Environmental Monitoring Infrastructure</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>CNT — Centro Natural Tecnológico</title>
 
-  <style>
-    :root{
-      /* Ajuste aqui a cor do fundo (você disse “quero que o fundo do site tenha essa cor”) */
-      --bg: #061019;
+<style>
+:root{
+  /* FUNDO (cor do seu print) */
+  --bgSolid: #0f3f48;
 
-      --card: rgba(10, 22, 34, 0.72);
-      --card2: rgba(10, 22, 34, 0.55);
-      --border: rgba(120, 220, 255, 0.18);
+  /* HUD azul */
+  --hud: rgba(110,210,255,.95);
+  --hud2: rgba(110,210,255,.45);
+  --stroke: rgba(110,210,255,.20);
+  --glass: rgba(2,12,24,.34);
+  --glass2: rgba(2,12,24,.22);
+  --text: #c8f3ff;
+  --muted:#86dcff;
+  --shadow: 0 0 22px rgba(110,210,255,.12), 0 0 70px rgba(0,200,255,.06);
+}
 
-      --txt: rgba(230,245,255,0.92);
-      --muted: rgba(230,245,255,0.62);
+html,body{
+  margin:0;
+  height:100%;
+  background: var(--bgSolid);
+  color:var(--text);
+  font-family:"Segoe UI", Arial, sans-serif;
+  overflow:hidden;
+}
 
-      --c1: rgba(95, 210, 255, 0.95);
-      --c2: rgba(0, 255, 190, 0.75);
-      --c3: rgba(125, 120, 255, 0.65);
-    }
+/* ===== MAPA ===== */
+#stage{
+  position:fixed;
+  inset:0;
+  z-index:0;
+  background: var(--bgSolid);
+}
 
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
-      color: var(--txt);
-      background: radial-gradient(1200px 700px at 65% 30%, rgba(90,190,255,0.10), transparent 55%),
-                  radial-gradient(900px 600px at 25% 70%, rgba(0,255,190,0.08), transparent 60%),
-                  var(--bg);
-      overflow:hidden;
-    }
+/* Mapa: não estica + “afastado” */
+#bg{
+  position:absolute; inset:0;
+  width:100%; height:100%;
+  object-fit:contain;
+  object-position:center;
+  transform: translateY(14px) scale(.90);
+  opacity:.98;
 
-    /* brilho “holográfico” do fundo */
-    body:before{
-      content:"";
-      position:fixed; inset:0;
-      background:
-        linear-gradient(115deg, rgba(0,255,190,0.08), transparent 40%),
-        linear-gradient(245deg, rgba(95,210,255,0.10), transparent 45%);
-      mix-blend-mode: screen;
-      opacity: .55;
-      pointer-events:none;
-      animation: glow 6s ease-in-out infinite;
-    }
-    @keyframes glow{
-      0%,100%{opacity:.45; filter:blur(0px)}
-      50%{opacity:.68; filter:blur(0.2px)}
-    }
+  /* holografia base */
+  filter: brightness(.92) contrast(1.18) saturate(1.15);
+  animation: biome 10s ease-in-out infinite;
+}
 
-    .app{
-      height:100%;
-      display:grid;
-      grid-template-columns: 390px 1fr;
-      gap: 16px;
-      padding: 16px;
-    }
+/* “Pulso” (respiração) + brilho */
+@keyframes biome{
+  0%   { filter:brightness(.86) contrast(1.14) saturate(1.08); }
+  50%  { filter:brightness(1.05) contrast(1.28) saturate(1.28); }
+  100% { filter:brightness(.86) contrast(1.14) saturate(1.08); }
+}
 
-    .panel{
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      background: linear-gradient(180deg, var(--card), rgba(10, 18, 28, 0.35));
-      box-shadow: 0 12px 40px rgba(0,0,0,0.35);
-      overflow:hidden;
-      position:relative;
-    }
+/* Glow extra do mapa (camada) */
+#mapGlow{
+  position:absolute; inset:0;
+  pointer-events:none;
+  mix-blend-mode: screen;
+  opacity:.32;
+  filter: blur(10px);
+  background:
+    radial-gradient(circle at 40% 55%, rgba(120,220,255,.22), transparent 55%),
+    radial-gradient(circle at 70% 45%, rgba(120,220,255,.16), transparent 60%);
+  animation: glowPulse 6s ease-in-out infinite;
+}
+@keyframes glowPulse{
+  0%{ opacity:.20; transform:scale(1); }
+  50%{ opacity:.38; transform:scale(1.02); }
+  100%{ opacity:.20; transform:scale(1); }
+}
 
-    .panel:after{
-      content:"";
-      position:absolute; inset:0;
-      background: repeating-linear-gradient(
-        180deg,
-        rgba(120,220,255,0.0) 0px,
-        rgba(120,220,255,0.0) 8px,
-        rgba(120,220,255,0.04) 9px,
-        rgba(120,220,255,0.0) 12px
-      );
-      opacity:.35;
-      pointer-events:none;
-      mix-blend-mode: screen;
-      animation: scan 2.8s linear infinite;
-    }
-    @keyframes scan{
-      0%{transform:translateY(-12px)}
-      100%{transform:translateY(12px)}
-    }
+/* Scanlines holográficas */
+#scanlines{
+  position:absolute; inset:0;
+  pointer-events:none;
+  opacity:.22;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      rgba(120,220,255,.06) 0px,
+      rgba(120,220,255,.06) 1px,
+      transparent 2px,
+      transparent 6px
+    );
+  mix-blend-mode: overlay;
+  animation: scan 3.2s linear infinite;
+}
+@keyframes scan{
+  0%{ transform:translateY(-20px); }
+  100%{ transform:translateY(20px); }
+}
 
-    .header{
-      padding: 14px 14px 10px 14px;
-      border-bottom: 1px solid rgba(120,220,255,0.10);
-    }
-    .brand{
-      display:flex; align-items:center; gap:10px;
-    }
-    .badge{
-      width:12px; height:12px; border-radius:50%;
-      background: var(--c1);
-      box-shadow: 0 0 14px rgba(95,210,255,0.8), 0 0 32px rgba(0,255,190,0.45);
-      animation: pulseDot 1.6s ease-in-out infinite;
-    }
-    @keyframes pulseDot{
-      0%,100%{transform:scale(1); opacity:.85}
-      50%{transform:scale(1.35); opacity:1}
-    }
-    .title{
-      font-weight:700;
-      letter-spacing: .5px;
-      font-size: 15px;
-      line-height: 1.1;
-    }
-    .subtitle{
-      margin-top:2px;
-      font-size: 12px;
-      color: var(--muted);
-      line-height:1.2;
-    }
+/* Partículas suaves */
+#dust{
+  position:absolute; inset:-20%;
+  background:
+    radial-gradient(circle at 20% 30%, rgba(120,220,255,.12), transparent 35%),
+    radial-gradient(circle at 70% 20%, rgba(120,220,255,.10), transparent 40%),
+    radial-gradient(circle at 40% 80%, rgba(120,220,255,.08), transparent 45%);
+  filter: blur(2px);
+  opacity:.6;
+  animation: drift 18s linear infinite;
+  pointer-events:none;
+}
+@keyframes drift{
+  0%{ transform:translate3d(0,0,0); }
+  100%{ transform:translate3d(-3%,2%,0); }
+}
 
-    .content{
-      padding: 12px 14px 14px 14px;
-      display:flex;
-      flex-direction:column;
-      gap: 12px;
-    }
+/* ===== GLASS ===== */
+.glass{
+  background: var(--glass);
+  backdrop-filter: blur(14px);
+  border:1px solid var(--stroke);
+  border-radius:18px;
+  box-shadow: var(--shadow);
+  position:fixed;
+  z-index:10;
+}
 
-    .row{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
+/* ===== HEADER topo centro ===== */
+#header{
+  top:16px;
+  left:50%;
+  transform:translateX(-50%);
+  padding:12px 16px;
+  border-radius:14px;
+  max-width:560px;
+  min-width:360px;
+}
+#header .t1{
+  font-weight:900;
+  letter-spacing:.8px;
+  font-size:22px;
+  color:#d7fbff;
+}
+#header .t2{
+  margin-top:6px;
+  font-size:12px;
+  color:var(--muted);
+  opacity:.95;
+}
 
-    .card{
-      border: 1px solid rgba(120,220,255,0.12);
-      border-radius: 14px;
-      padding: 10px 10px;
-      background: linear-gradient(180deg, var(--card2), rgba(10,18,28,0.28));
-    }
+/* ===== PAINEL ESQUERDO ===== */
+#leftPanel{
+  left:16px;
+  top:16px;
+  width:360px;
+  padding:16px;
+  border-radius:22px;
+}
+.big{
+  font-size:78px;
+  font-weight:260;
+  line-height:1;
+  margin:8px 0 0;
+  color:#d9fbff;
+}
+.small{ font-size:12px; color:var(--muted); opacity:.95; }
+.divider{
+  height:1px;
+  background:linear-gradient(90deg,transparent,rgba(110,210,255,.25),transparent);
+  margin:12px 0;
+}
+strong{ color:#e8fdff; }
 
-    .k{
-      font-size:11px;
-      color: var(--muted);
-      letter-spacing:.3px;
-    }
-    .v{
-      margin-top:4px;
-      font-size: 20px;
-      font-weight: 800;
-    }
+.grid2{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:8px 10px;
+  margin-top:10px;
+}
+.kv{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-size:12px;
+  padding:9px 10px;
+  border:1px solid rgba(110,210,255,.16);
+  border-radius:12px;
+  background:rgba(0,0,0,.16);
+  cursor:pointer;
+  user-select:none;
+}
+.kv:hover{
+  border-color: rgba(110,210,255,.35);
+  box-shadow: 0 0 14px rgba(110,210,255,.18);
+}
+.kv b{
+  font-weight:900;
+  letter-spacing:.4px;
+  color:#e9fdff;
+}
+.kv span{ color:#d0fbff; font-weight:800; }
 
-    .statusLine{
-      display:flex;
-      gap:8px;
-      flex-wrap:wrap;
-      font-size:12px;
-      color: var(--muted);
-    }
-    .pill{
-      padding: 6px 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(120,220,255,0.15);
-      background: rgba(6,16,25,0.45);
-    }
+.pill{
+  display:inline-block;
+  font-size:11px;
+  padding:6px 10px;
+  border-radius:999px;
+  border:1px solid rgba(110,210,255,.18);
+  background:rgba(0,0,0,.14);
+  margin-top:10px;
+  opacity:.95;
+}
 
-    .subindexes{
-      display:grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap:8px;
-    }
-    .kv{
-      cursor:pointer;
-      padding:10px;
-      border-radius: 12px;
-      border:1px solid rgba(120,220,255,0.14);
-      background: rgba(6,16,25,0.35);
-      transition: transform .12s ease, border-color .12s ease, background .12s ease;
-      position:relative;
-      overflow:hidden;
-    }
-    .kv:hover{
-      transform: translateY(-1px);
-      border-color: rgba(120,220,255,0.28);
-      background: rgba(6,16,25,0.46);
-    }
-    .kv b{
-      display:block;
-      font-size:12px;
-      letter-spacing:.5px;
-      color: rgba(230,245,255,0.85);
-    }
-    .kv span{
-      display:block;
-      margin-top:4px;
-      font-size: 18px;
-      font-weight: 900;
-    }
-    .kv:after{
-      content:"";
-      position:absolute; inset:-20% -20%;
-      background: radial-gradient(circle at 30% 40%, rgba(95,210,255,0.18), transparent 55%),
-                  radial-gradient(circle at 70% 70%, rgba(0,255,190,0.12), transparent 55%);
-      mix-blend-mode: screen;
-      opacity:.65;
-      transform: rotate(12deg);
-      animation: holo 3.2s ease-in-out infinite;
-      pointer-events:none;
-    }
-    @keyframes holo{
-      0%,100%{transform:translate(-2%, -2%) rotate(12deg)}
-      50%{transform:translate(2%, 2%) rotate(12deg)}
-    }
+/* ===== DIREITA (TOKEN) — METADE DA ALTURA ===== */
+#rightPanel{
+  right:16px;
+  top:16px;
+  width:340px;
+  padding:14px;
+  border-radius:18px;
 
-    /* Telemetria menor (você pediu: “diminui o painel da telemetria e token pela metade a altura dele.”) */
-    .telemetryWrap{
-      height: 110px; /* menor */
-      padding: 10px;
-      border-radius: 14px;
-      border: 1px solid rgba(120,220,255,0.14);
-      background: rgba(6,16,25,0.35);
-      position:relative;
-      overflow:hidden;
-    }
-    .telemetryHead{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      margin-bottom: 6px;
-    }
-    .telemetryHead .k{font-size:11px}
-    canvas#telemetry{
-      width:100%;
-      height: 70px; /* menor */
-      display:block;
-      border-radius: 10px;
-      background: rgba(0,0,0,0.18);
-      border: 1px solid rgba(120,220,255,0.10);
-    }
+  /* metade da altura (aprox) */
+  height: 170px;
+  overflow:hidden;
+}
+.title{
+  font-weight:900;
+  letter-spacing:.6px;
+  color:#e9fdff;
+  margin-bottom:8px;
+}
+label{ display:block; font-size:12px; color:var(--muted); margin:10px 0 6px; }
+.row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
 
-    /* Token menor também */
-    .tokenBox{
-      display:flex;
-      gap: 10px;
-      align-items:stretch;
-    }
-    .tokenBox .card{flex:1}
-    .tokenBox input{
-      width:100%;
-      margin-top:6px;
-      padding:10px 10px;
-      border-radius: 12px;
-      border: 1px solid rgba(120,220,255,0.18);
-      background: rgba(6,16,25,0.55);
-      color: var(--txt);
-      outline:none;
-      font-weight:700;
-    }
-    .tokenBox input:focus{
-      border-color: rgba(95,210,255,0.55);
-      box-shadow: 0 0 0 3px rgba(95,210,255,0.10);
-    }
+input{
+  width:150px;
+  padding:10px 10px;
+  border-radius:12px;
+  border:1px solid rgba(110,210,255,.38);
+  background:rgba(0,0,0,.18);
+  color:#e9fbff;
+  outline:none;
+}
+input:focus{
+  border-color: rgba(110,210,255,.65);
+  box-shadow: 0 0 16px rgba(110,210,255,.18);
+}
 
-    .btns{
-      display:flex; gap:10px;
-    }
-    button{
-      cursor:pointer;
-      border:none;
-      border-radius: 14px;
-      padding: 11px 12px;
-      font-weight: 800;
-      letter-spacing: .2px;
-      color: rgba(10,18,28,0.95);
-      background: linear-gradient(90deg, rgba(95,210,255,0.95), rgba(0,255,190,0.85));
-      box-shadow: 0 10px 26px rgba(0,0,0,0.35);
-      transition: transform .12s ease, filter .12s ease;
-      flex:1;
-      min-height: 44px;
-    }
-    button:hover{transform: translateY(-1px); filter:brightness(1.05)}
-    button.secondary{
-      background: rgba(230,245,255,0.10);
-      color: rgba(230,245,255,0.9);
-      border: 1px solid rgba(120,220,255,0.22);
-      box-shadow:none;
-    }
+.btn{
+  background:linear-gradient(180deg,rgba(110,210,255,.18),rgba(0,0,0,.14));
+  border:1px solid rgba(110,210,255,.45);
+  color:#eafcff;
+  border-radius:14px;
+  padding:10px 14px;
+  cursor:pointer;
+  font-weight:800;
+}
+.btn:hover{ box-shadow:0 0 18px rgba(110,210,255,.30); }
+.btn.secondary{ opacity:.95; }
 
-    /* Área do mapa (direita) */
-    .mapStage{
-      position:relative;
-      border: 1px solid rgba(120,220,255,0.16);
-      border-radius: 18px;
-      background: rgba(6,16,25,0.30);
-      overflow:hidden;
-      box-shadow: 0 14px 50px rgba(0,0,0,0.35);
-    }
+.valueLine{ margin-top:10px; font-size:12px; color:#bdf4ff; }
+.valueLine b{ font-size:18px; color:#e9fdff; }
+.note{ margin-top:6px; font-size:11px; color:var(--muted); opacity:.95; }
 
-    .mapTitleBar{
-      position:absolute;
-      left:14px; top:14px;
-      right:14px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 10px;
-      z-index: 6;
-      pointer-events:none;
-    }
+/* ===== TELEMETRIA — METADE DA ALTURA ===== */
+#telemetry{
+  left:50%;
+  transform:translateX(-50%);
+  bottom:16px;
+  width:min(860px, 60vw);
 
-    .miniInfo{
-      pointer-events:none;
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-    }
-    .miniInfo .pill{
-      background: rgba(6,16,25,0.58);
-      border-color: rgba(120,220,255,0.18);
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
-    }
+  /* metade da altura */
+  height: 78px;
 
-    .mapFrame{
-      position:absolute; inset:0;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding: 56px 18px 18px 18px;
-    }
+  padding:10px 14px;
+  border-radius:18px;
+}
+#telemetryTitle{
+  font-size:11px;
+  letter-spacing:.8px;
+  color:#d4fbff;
+  opacity:.95;
+  margin-bottom:6px;
+}
+canvas{
+  width:100%;
+  height:44px; /* metade */
+  display:block;
+  filter: drop-shadow(0 0 8px rgba(110,210,255,.55));
+}
 
-    /* imagem base */
-    #mapImg{
-      max-width: min(920px, 92%);
-      max-height: 86%;
-      width:auto; height:auto;
-      image-rendering: auto;
-      filter:
-        drop-shadow(0 0 18px rgba(95,210,255,0.22))
-        drop-shadow(0 0 40px rgba(0,255,190,0.12));
-      opacity: .92;
-    }
+/* ===== MODAL ===== */
+#modalOverlay{
+  position:fixed; inset:0;
+  background: rgba(0,0,0,.45);
+  backdrop-filter: blur(2px);
+  display:none;
+  z-index:50;
+}
+#modal{
+  position:fixed;
+  left:50%; top:50%;
+  transform:translate(-50%,-50%);
+  width:min(520px, 92vw);
+  padding:16px;
+  border-radius:18px;
+  z-index:60;
+  display:none;
+}
+#modal h3{ margin:0 0 6px; letter-spacing:.6px; }
+#modal .mtext{ color:#c9f7ff; font-size:13px; line-height:1.35; }
+#modal .closeRow{ display:flex; justify-content:flex-end; margin-top:12px; }
 
-    /* “pulso” da imagem (você pediu a imagem pulsando) */
-    .imgPulse{
-      animation: imgPulse 2.2s ease-in-out infinite;
-      transform-origin: center;
-    }
-    @keyframes imgPulse{
-      0%,100%{transform: scale(1); filter: drop-shadow(0 0 18px rgba(95,210,255,0.22)) drop-shadow(0 0 40px rgba(0,255,190,0.12))}
-      50%{transform: scale(1.012); filter: drop-shadow(0 0 24px rgba(95,210,255,0.34)) drop-shadow(0 0 55px rgba(0,255,190,0.18))}
-    }
-
-    /* Canvas holográfico por cima */
-    #holo{
-      position:absolute;
-      inset:0;
-      z-index: 5;
-      pointer-events:none;
-      mix-blend-mode: screen;
-    }
-
-    /* “neblina” holográfica */
-    .fog{
-      position:absolute; inset:-20%;
-      background:
-        radial-gradient(circle at 25% 40%, rgba(95,210,255,0.12), transparent 55%),
-        radial-gradient(circle at 70% 65%, rgba(0,255,190,0.10), transparent 55%),
-        radial-gradient(circle at 55% 25%, rgba(125,120,255,0.10), transparent 55%);
-      filter: blur(10px);
-      opacity:.55;
-      z-index:4;
-      animation: fog 7s ease-in-out infinite;
-      pointer-events:none;
-      mix-blend-mode: screen;
-    }
-    @keyframes fog{
-      0%,100%{transform: translate(-1%, -1%)}
-      50%{transform: translate(1%, 1%)}
-    }
-
-    /* Modal */
-    #modalOverlay{
-      position:fixed; inset:0;
-      background: rgba(0,0,0,0.55);
-      display:none;
-      z-index: 90;
-    }
-    #modal{
-      position:fixed;
-      left:50%; top:50%;
-      transform: translate(-50%,-50%);
-      width: min(520px, 92vw);
-      border-radius: 16px;
-      border:1px solid rgba(120,220,255,0.22);
-      background: rgba(6,16,25,0.88);
-      box-shadow: 0 18px 60px rgba(0,0,0,0.55);
-      padding: 14px;
-      display:none;
-      z-index: 91;
-    }
-    #modal h3{margin:0 0 8px 0}
-    #modal p{margin:0; color: var(--muted); line-height:1.45}
-    #closeBtn{
-      margin-top: 12px;
-      width:100%;
-    }
-
-    /* Responsivo */
-    @media (max-width: 980px){
-      body{overflow:auto}
-      .app{
-        height:auto;
-        grid-template-columns: 1fr;
-      }
-      .mapStage{height: 72vh; min-height: 520px;}
-    }
-  </style>
+/* ===== RESPONSIVO ===== */
+@media (max-width: 1100px){
+  #leftPanel{ width:340px; }
+  #rightPanel{ width:320px; height:165px; }
+  #telemetry{ width:min(780px, 56vw); }
+  #bg{ transform: translateY(18px) scale(.88); }
+}
+@media (max-width: 900px){
+  #telemetry{ width:92vw; }
+  #bg{ transform: translateY(24px) scale(.86); }
+}
+</style>
 </head>
 
 <body>
-  <div class="app">
 
-    <!-- PAINEL ESQUERDO -->
-    <aside class="panel">
-      <div class="header">
-        <div class="brand">
-          <div class="badge"></div>
-          <div>
-            <div class="title">OS.CNT</div>
-            <div class="subtitle">Earth Environmental Monitoring Infrastructure</div>
-          </div>
-        </div>
-      </div>
+<!-- MAPA -->
+<div id="stage">
+  <!-- CORRIGIDO: agora aponta pra imagem_cnt.jpg.png + cache-bust -->
+  <img id="bg" src="./imagem_cnt.jpg.png" alt="Mapa CNT Amazônia">
+  <div id="mapGlow"></div>
+  <div id="scanlines"></div>
+  <div id="dust"></div>
+</div>
 
-      <div class="content">
+<!-- HEADER -->
+<div id="header" class="glass">
+  <div class="t1">CNT</div>
+  <div class="t2">Centro Natural Tecnológico (Monitoring Infrastructure Bioecológica)</div>
+</div>
 
-        <div class="row">
-          <div class="card">
-            <div class="k">Token CNT (Solana)</div>
-            <div class="v">ativo</div>
-          </div>
-          <div class="card">
-            <div class="k">Confiança</div>
-            <div class="v" style="font-size:18px">Média</div>
-          </div>
-        </div>
-
-        <div class="statusLine">
-          <div class="pill">Estado do sistema: <b>Transição funcional</b></div>
-          <div class="pill">Modo operacional: <b>Monitoramento ativo</b></div>
-          <div class="pill">Status: <b>Operacional</b></div>
-        </div>
-
-        <div class="card">
-          <div class="k" style="margin-bottom:8px">Sub-índices (clique para ver)</div>
-          <div class="subindexes">
-            <div class="kv" data-k="IBE"><b>IBE</b><span>88</span></div>
-            <div class="kv" data-k="IAB"><b>IAB</b><span>88</span></div>
-            <div class="kv" data-k="IBI"><b>IBI</b><span>11</span></div>
-            <div class="kv" data-k="HID"><b>HID</b><span>83</span></div>
-            <div class="kv" data-k="ENT"><b>ENT</b><span>88</span></div>
-            <div class="kv" data-k="PAN"><b>PAN</b><span>78</span></div>
-          </div>
-          <div class="k" style="margin-top:10px">Dica: ENT e PAN são penalidades (ajuste depois no modelo).</div>
-        </div>
-
-        <!-- TELEMETRIA (MENOR) -->
-        <div class="telemetryWrap">
-          <div class="telemetryHead">
-            <div class="k">TELEMETRIA — OSCILAÇÃO FUNCIONAL (30D)</div>
-            <div class="k" id="telemetryHint">holo-flow</div>
-          </div>
-          <canvas id="telemetry"></canvas>
-        </div>
-
-        <!-- TOKEN (MENOR) -->
-        <div class="tokenBox">
-          <div class="card">
-            <div class="k">Conversão (DEMO)</div>
-            <input id="sol" type="number" step="0.01" min="0" value="0.50" placeholder="SOL" />
-            <div class="k" style="margin-top:8px">Saída</div>
-            <div class="v" id="out" style="font-size:18px">0 CNT</div>
-          </div>
-          <div class="card" style="display:flex; flex-direction:column; justify-content:space-between;">
-            <div>
-              <div class="k">Ações</div>
-              <div class="k" style="margin-top:6px; line-height:1.35">
-                Conectar carteira / comprar no pump.fun (placeholder).
-              </div>
-            </div>
-            <div class="btns" style="margin-top:10px">
-              <button class="secondary" onclick="connect()">Conectar</button>
-              <button onclick="buy()">Comprar</button>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </aside>
-
-    <!-- MAPA / HOLOGRAMA -->
-    <main class="mapStage">
-      <div class="fog"></div>
-
-      <div class="mapTitleBar">
-        <div class="miniInfo">
-          <div class="pill">Observatório: <b>CNT</b></div>
-          <div class="pill">Camada: <b>Mapa base</b></div>
-        </div>
-        <div class="miniInfo">
-          <div class="pill">Holografia: <b>Ativa</b></div>
-        </div>
-      </div>
-
-      <div class="mapFrame" id="mapFrame">
-        <!-- IMPORTANTE: arquivo deve estar na MESMA pasta do index.html -->
-        <img
-          id="mapImg"
-          class="imgPulse"
-          src="./imagem_cnt.jpg.png"
-          alt="Mapa CNT"
-        />
-      </div>
-
-      <canvas id="holo"></canvas>
-    </main>
-
+<!-- ESQUERDA -->
+<div id="leftPanel" class="glass">
+  <div class="small">
+    <strong>Token CNT (Solana)</strong>: ativo do Observatório para financiar conservação e registrar ordens de aquisição/monitoramento.
   </div>
 
-  <!-- MODAL -->
-  <div id="modalOverlay"></div>
-  <div id="modal">
-    <h3 id="mTitle">IBE</h3>
-    <p id="mText">...</p>
-    <button id="closeBtn" class="secondary" onclick="closeModal()">Fechar</button>
+  <div class="big" id="cnt">68.0</div>
+  <div class="small">Confiança: <strong>Média</strong></div>
+
+  <div class="divider"></div>
+
+  <div class="small">Estado do sistema:</div>
+  <div><strong>Sistema estável</strong></div>
+  <div class="small">Modo operacional: Monitoramento ativo</div>
+  <div class="small">Status: Operacional</div>
+
+  <div class="divider"></div>
+
+  <div style="font-weight:900; letter-spacing:.5px; font-size:13px;">Sub-índices (clique para ver)</div>
+
+  <div class="grid2">
+    <div class="kv" data-k="IBE"><b>IBE</b><span id="ibe">88</span></div>
+    <div class="kv" data-k="IAB"><b>IAB</b><span id="iab">88</span></div>
+    <div class="kv" data-k="IBI"><b>IBI</b><span id="ibi">11</span></div>
+    <div class="kv" data-k="HID"><b>HID</b><span id="hid">83</span></div>
+    <div class="kv" data-k="ENT"><b>ENT</b><span id="ent">88</span></div>
+    <div class="kv" data-k="PAN"><b>PAN</b><span id="pan">78</span></div>
   </div>
+
+  <div class="pill">Dica: ENT e PAN podem atuar como fatores de ajuste.</div>
+</div>
+
+<!-- DIREITA (TOKEN) -->
+<div id="rightPanel" class="glass">
+  <div class="title">TROCA SOL → CNT</div>
+
+  <label for="sol">Valor em SOL</label>
+  <div class="row">
+    <input id="sol" type="number" step="0.01" min="0" value="0.10" />
+    <button class="btn secondary" onclick="connect()">Conectar Wallet</button>
+    <button class="btn" onclick="buy()">Comprar</button>
+  </div>
+
+  <div class="valueLine">
+    Você recebe aprox: <b id="out">14.744.913 CNT</b>
+  </div>
+
+  <div class="note">Rede: Solana • Compra abre Pump.fun.</div>
+</div>
+
+<!-- TELEMETRIA (menor) -->
+<div id="telemetry" class="glass">
+  <div id="telemetryTitle">TELEMETRIA — OSCILAÇÃO FUNCIONAL (30D)</div>
+  <canvas id="wave"></canvas>
+</div>
+
+<!-- MODAL -->
+<div id="modalOverlay"></div>
+<div id="modal" class="glass">
+  <h3 id="mTitle">IBE</h3>
+  <div class="mtext" id="mText"></div>
+  <div class="closeRow">
+    <button class="btn secondary" id="closeBtn">Fechar</button>
+  </div>
+</div>
 
 <script>
-/* =========================================================
-   1) TELEMETRIA (onda holográfica)
-   ========================================================= */
-const tcv = document.getElementById("telemetry");
-const tctx = tcv.getContext("2d");
+/* ====== FIX IMAGEM (GitHub Pages) ======
+   - cache-bust pra não ficar preso no arquivo antigo
+   - mostra erro claro se não existir
+*/
+(function(){
+  const bg = document.getElementById("bg");
+  const base = "./imagem_cnt.jpg.png";
+  if(!bg) return;
 
-function sizeTelemetry(){
-  // canvas em pixels reais
-  const r = devicePixelRatio || 1;
-  const rect = tcv.getBoundingClientRect();
-  tcv.width = Math.max(2, Math.floor(rect.width * r));
-  tcv.height = Math.max(2, Math.floor(rect.height * r));
-  tctx.setTransform(r,0,0,r,0,0);
+  // cache bust
+  bg.src = base + "?v=" + Date.now();
+
+  bg.addEventListener("load", () => {
+    console.log("OK: imagem carregou:", bg.src);
+  });
+
+  bg.addEventListener("error", () => {
+    console.error("ERRO: não encontrei a imagem:", base);
+    alert("ERRO: não achei ./imagem_cnt.jpg.png. Coloque o arquivo na MESMA pasta do index.html e com o nome EXATO.");
+  });
+})();
+
+/* ===== Telemetria ===== */
+const canvas = document.getElementById("wave");
+const ctx = canvas.getContext("2d");
+
+function resize(){
+  const dpr = Math.max(1, window.devicePixelRatio || 1);
+  canvas.width = Math.floor(canvas.clientWidth * dpr);
+  canvas.height = Math.floor(canvas.clientHeight * dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
 }
-window.addEventListener("resize", sizeTelemetry);
-sizeTelemetry();
+window.addEventListener("resize", resize);
+resize();
 
-let tt = 0;
-function drawTelemetry(){
-  const w = tcv.getBoundingClientRect().width;
-  const h = tcv.getBoundingClientRect().height;
+let tt=0;
+function draw(){
+  const w = canvas.clientWidth;
+  const h = canvas.clientHeight;
 
-  // fundo
-  tctx.clearRect(0,0,w,h);
-  tctx.globalCompositeOperation = "source-over";
-  tctx.fillStyle = "rgba(0,0,0,0.10)";
-  tctx.fillRect(0,0,w,h);
+  ctx.fillStyle = "rgba(0,18,38,.18)";
+  ctx.fillRect(0,0,w,h);
 
-  // grade leve
-  tctx.strokeStyle = "rgba(120,220,255,0.07)";
-  tctx.lineWidth = 1;
-  for(let x=0; x<=w; x+=40){
-    tctx.beginPath();
-    tctx.moveTo(x,0); tctx.lineTo(x,h);
-    tctx.stroke();
-  }
-  for(let y=0; y<=h; y+=24){
-    tctx.beginPath();
-    tctx.moveTo(0,y); tctx.lineTo(w,y);
-    tctx.stroke();
-  }
+  ctx.strokeStyle = "#6fe0ff";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
 
-  // linha principal (onda)
-  tctx.globalCompositeOperation = "screen";
-  tctx.lineWidth = 2;
-
-  // brilho
-  tctx.strokeStyle = "rgba(95,210,255,0.35)";
-  tctx.beginPath();
-  for(let i=0;i<=w;i++){
-    const y =
-      (h*0.58)
-      + Math.sin((i+tt)/38)*(h*0.22)
-      + Math.sin((i+tt)/13)*(h*0.08);
-    if(i===0) tctx.moveTo(i,y);
-    else tctx.lineTo(i,y);
-  }
-  tctx.stroke();
-
-  // traço forte
-  tctx.strokeStyle = "rgba(0,255,190,0.45)";
-  tctx.beginPath();
-  for(let i=0;i<=w;i++){
-    const y =
-      (h*0.58)
-      + Math.sin((i+tt)/38)*(h*0.22)
-      + Math.sin((i+tt)/13)*(h*0.08);
-    if(i===0) tctx.moveTo(i,y);
-    else tctx.lineTo(i,y);
-  }
-  tctx.stroke();
-
-  // pontinhos na onda
-  for(let i=0;i<=w;i+=14){
+  for(let i=0;i<w;i++){
     const y =
       (h*0.58)
       + Math.sin((i+tt)/38)*(h*0.22)
       + Math.sin((i+tt)/13)*(h*0.08);
 
-    const p = 0.35 + 0.35*Math.sin((tt+i)/25);
-    tctx.fillStyle = `rgba(95,210,255,${p})`;
-    tctx.beginPath();
-    tctx.arc(i, y, 1.8, 0, Math.PI*2);
-    tctx.fill();
-
-    tctx.fillStyle = `rgba(0,255,190,${p*0.65})`;
-    tctx.beginPath();
-    tctx.arc(i, y, 3.8, 0, Math.PI*2);
-    tctx.fill();
+    if(i===0) ctx.moveTo(i,y);
+    else ctx.lineTo(i,y);
   }
+  ctx.stroke();
 
   tt += 2;
-  requestAnimationFrame(drawTelemetry);
+  requestAnimationFrame(draw);
 }
-drawTelemetry();
+draw();
 
-/* =========================================================
-   2) HOLOGRAMA DO MAPA (pontos pulsando + fluxo)
-   - tenta criar pontos "em cima do mapa" usando pixels da imagem
-   - funciona melhor se o mapa tiver fundo transparente OU for claro
-   ========================================================= */
-const holo = document.getElementById("holo");
-const hctx = holo.getContext("2d");
-
-const mapImg = document.getElementById("mapImg");
-const mapFrame = document.getElementById("mapFrame");
-
-let points = [];
-let flowT = 0;
-
-function sizeHolo(){
-  const r = devicePixelRatio || 1;
-  const rect = mapFrame.getBoundingClientRect();
-  holo.width  = Math.max(2, Math.floor(rect.width * r));
-  holo.height = Math.max(2, Math.floor(rect.height * r));
-  holo.style.width = rect.width + "px";
-  holo.style.height = rect.height + "px";
-  hctx.setTransform(r,0,0,r,0,0);
-}
-window.addEventListener("resize", ()=>{ sizeHolo(); rebuildPoints(); });
-sizeHolo();
-
-function rebuildPoints(){
-  points = [];
-  // precisamos esperar a imagem ter dimensões
-  if(!mapImg.complete || mapImg.naturalWidth === 0) return;
-
-  // posição / tamanho exibido da imagem dentro do frame
-  const frameRect = mapFrame.getBoundingClientRect();
-  const imgRect = mapImg.getBoundingClientRect();
-
-  // Canvas "offscreen" para ler pixels da imagem (local)
-  const off = document.createElement("canvas");
-  const octx = off.getContext("2d", { willReadFrequently:true });
-
-  // desenha a imagem em resolução reduzida para amostrar
-  const sampleW = 420;
-  const scale = sampleW / mapImg.naturalWidth;
-  const sampleH = Math.max(2, Math.floor(mapImg.naturalHeight * scale));
-
-  off.width = sampleW;
-  off.height = sampleH;
-  octx.clearRect(0,0,off.width, off.height);
-  octx.drawImage(mapImg, 0, 0, off.width, off.height);
-
-  const imgData = octx.getImageData(0,0,off.width, off.height).data;
-
-  // Heurística:
-  // - Se alpha alto -> é "mapa"
-  // - Se alpha baixo, mas pixel claro (não preto) -> também pode ser mapa
-  // Ajuste se precisar
-  const alphaMin = 40;      // para transparência
-  const luminMin = 35;      // para fundo preto
-
-  // quantos pontos você quer no holograma
-  const target = 1400;
-
-  // área exibida do img no frame
-  const imgW = imgRect.width;
-  const imgH = imgRect.height;
-  const imgX = imgRect.left - frameRect.left;
-  const imgY = imgRect.top - frameRect.top;
-
-  let attempts = 0;
-  while(points.length < target && attempts < target * 25){
-    attempts++;
-
-    const sx = Math.floor(Math.random() * off.width);
-    const sy = Math.floor(Math.random() * off.height);
-    const idx = (sy*off.width + sx)*4;
-    const r = imgData[idx];
-    const g = imgData[idx+1];
-    const b = imgData[idx+2];
-    const a = imgData[idx+3];
-    const lum = (r+g+b)/3;
-
-    // regra "pertence ao mapa?"
-    const isMap = (a >= alphaMin) || (lum >= luminMin);
-
-    if(!isMap) continue;
-
-    // converte ponto da amostra para coordenadas do frame na tela
-    const px = imgX + (sx / off.width) * imgW;
-    const py = imgY + (sy / off.height) * imgH;
-
-    // características do ponto
-    points.push({
-      x: px,
-      y: py,
-      base: 0.6 + Math.random()*1.6,
-      phase: Math.random()*Math.PI*2,
-      drift: (Math.random()*2-1) * 0.35,
-      drift2:(Math.random()*2-1) * 0.35
-    });
-  }
-}
-
-mapImg.addEventListener("load", ()=>{
-  sizeHolo();
-  rebuildPoints();
-});
-
-// Se já carregou do cache
-if(mapImg.complete) rebuildPoints();
-
-function drawHolo(){
-  const w = holo.getBoundingClientRect().width;
-  const h = holo.getBoundingClientRect().height;
-
-  hctx.clearRect(0,0,w,h);
-  hctx.globalCompositeOperation = "screen";
-
-  // scanlines
-  hctx.fillStyle = "rgba(120,220,255,0.03)";
-  for(let y=0; y<h; y+=10){
-    hctx.fillRect(0, y, w, 1);
-  }
-
-  // fluxo “holo”
-  flowT += 0.018;
-
-  for(let i=0; i<points.length; i++){
-    const p = points[i];
-
-    // movimento leve em "fluxo"
-    const fx = Math.sin(flowT*1.2 + p.phase) * (1.0 + p.drift);
-    const fy = Math.cos(flowT*1.5 + p.phase) * (1.0 + p.drift2);
-
-    const x = p.x + fx*2.0;
-    const y = p.y + fy*2.0;
-
-    const pulse = 0.35 + 0.65 * (0.5 + 0.5*Math.sin(flowT*3.0 + p.phase));
-    const r = p.base + pulse*1.6;
-
-    // cor alternando entre c1/c2/c3
-    const sw = (Math.sin(flowT*2.2 + p.phase) + 1)/2;
-    const sw2 = (Math.sin(flowT*1.3 + p.phase*1.7) + 1)/2;
-
-    // brilho externo
-    hctx.beginPath();
-    hctx.fillStyle = `rgba(95,210,255,${0.10*pulse})`;
-    hctx.arc(x, y, r*3.2, 0, Math.PI*2);
-    hctx.fill();
-
-    // núcleo
-    const coreA = 0.18 + 0.40*pulse;
-    const core = `rgba(${Math.floor(95 + 60*sw)}, ${Math.floor(210 - 40*sw2)}, ${Math.floor(255 - 80*sw)}, ${coreA})`;
-    hctx.beginPath();
-    hctx.fillStyle = core;
-    hctx.arc(x, y, r, 0, Math.PI*2);
-    hctx.fill();
-
-    // “trilha” curta para parecer fluxo
-    if(i % 6 === 0){
-      hctx.strokeStyle = `rgba(0,255,190,${0.08*pulse})`;
-      hctx.lineWidth = 1;
-      hctx.beginPath();
-      hctx.moveTo(x, y);
-      hctx.lineTo(x - fx*6.0, y - fy*6.0);
-      hctx.stroke();
-    }
-  }
-
-  requestAnimationFrame(drawHolo);
-}
-drawHolo();
-
-/* =========================================================
-   3) Conversão DEMO
-   ========================================================= */
+/* ===== Conversão DEMO ===== */
 const rate = 147449130; // 1 SOL -> CNT (demo)
 const solInput = document.getElementById("sol");
 const out = document.getElementById("out");
@@ -817,9 +484,7 @@ function update(){
 solInput.addEventListener("input", update);
 update();
 
-/* =========================================================
-   4) Botões (placeholder)
-   ========================================================= */
+/* ===== Botões (placeholder) ===== */
 function connect(){
   alert("Conexão Phantom/Solana entra aqui depois (ainda é DEMO).");
 }
@@ -827,9 +492,7 @@ function buy(){
   window.open("https://pump.fun/coin/GCVyjNaCbXkwGUuktyNxSXad4ozmTp2fzQr2jieSpump","_blank");
 }
 
-/* =========================================================
-   5) Modal Sub-índices
-   ========================================================= */
+/* ===== Modal Sub-índices ===== */
 const meanings = {
   IBE: "Índice Bioelétrico: pulso/atividade elétrica do sistema vivo (fisiologia ambiental).",
   IAB: "Índice Abiótico: condições físicas (clima, solo, energia) que sustentam o sistema.",
@@ -843,6 +506,7 @@ const modal = document.getElementById("modal");
 const overlay = document.getElementById("modalOverlay");
 const mTitle = document.getElementById("mTitle");
 const mText  = document.getElementById("mText");
+const closeBtn = document.getElementById("closeBtn");
 
 function openModal(key){
   mTitle.textContent = key;
@@ -854,18 +518,12 @@ function closeModal(){
   overlay.style.display = "none";
   modal.style.display = "none";
 }
-
 document.querySelectorAll(".kv").forEach(el=>{
   el.addEventListener("click", ()=> openModal(el.dataset.k));
 });
 overlay.addEventListener("click", closeModal);
-
-/* =========================================================
-   6) Se a imagem não abrir: aviso claro no console
-   ========================================================= */
-mapImg.addEventListener("error", ()=>{
-  console.error("ERRO: a imagem ./imagem_cnt.jpg.png não foi encontrada. Confere o nome e se está na mesma pasta do index.html.");
-});
+closeBtn.addEventListener("click", closeModal);
 </script>
+
 </body>
 </html>
