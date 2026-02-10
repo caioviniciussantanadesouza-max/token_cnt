@@ -3,16 +3,19 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>OS.CNT — Observatório CNT Amazônia</title>
+<title>CNT — Centro Natural Tecnológico</title>
 
 <style>
 :root{
-  --c: rgba(120,220,255,.95);
-  --glass: rgba(4,18,32,.30);
-  --stroke: rgba(120,220,255,.22);
-  --text: #a7e8ff;
-  --muted:#7fd6ff;
-  --shadow: 0 0 25px rgba(120,220,255,.12);
+  /* Azul HUD (mais próximo da sua imagem) */
+  --hud: rgba(110,210,255,.95);
+  --hud2: rgba(110,210,255,.45);
+  --stroke: rgba(110,210,255,.20);
+  --glass: rgba(2,12,24,.36);
+  --glass2: rgba(2,12,24,.22);
+  --text: #c8f3ff;
+  --muted:#86dcff;
+  --shadow: 0 0 22px rgba(110,210,255,.12), 0 0 60px rgba(0,200,255,.06);
 }
 
 html,body{
@@ -20,33 +23,53 @@ html,body{
   height:100%;
   background:#01040a;
   color:var(--text);
-  font-family: "Segoe UI", Arial, sans-serif;
+  font-family:"Segoe UI", Arial, sans-serif;
   overflow:hidden;
 }
 
 /* ===== MAPA ===== */
-#stage{ position:fixed; inset:0; z-index:0; }
+#stage{ position:fixed; inset:0; z-index:0; background:#01040a; }
 #bg{
   position:absolute; inset:0;
   width:100%; height:100%;
-  object-fit:contain;            /* NÃO ESTICA */
+  object-fit:contain;                 /* não estica */
   object-position:center;
-  transform: translateY(10px) scale(.92); /* “afasta” e centraliza */
-  opacity:.98;
-  filter: brightness(.9) contrast(1.18) saturate(1.18);
-  animation: biome 18s ease-in-out infinite;
+  transform: translateY(14px) scale(.90); /* mais “afastado” */
+  opacity: .98;
+
+  /* brilho “holográfico” */
+  filter: brightness(.92) contrast(1.18) saturate(1.15);
+  animation: biome 16s ease-in-out infinite;
 }
 
+/* respiração/pulso do bioma (sutil) */
 @keyframes biome{
-  0%{ filter:brightness(.85) contrast(1.12) saturate(1.08); }
-  50%{ filter:brightness(.98) contrast(1.25) saturate(1.25); }
-  100%{ filter:brightness(.85) contrast(1.12) saturate(1.08); }
+  0%   { filter:brightness(.86) contrast(1.14) saturate(1.08); }
+  50%  { filter:brightness(1.00) contrast(1.26) saturate(1.25); }
+  100% { filter:brightness(.86) contrast(1.14) saturate(1.08); }
+}
+
+/* partículas leves (overlay) */
+#dust{
+  position:absolute; inset:-20%;
+  background:
+    radial-gradient(circle at 20% 30%, rgba(120,220,255,.12), transparent 35%),
+    radial-gradient(circle at 70% 20%, rgba(120,220,255,.10), transparent 40%),
+    radial-gradient(circle at 40% 80%, rgba(120,220,255,.08), transparent 45%);
+  filter: blur(2px);
+  opacity:.6;
+  animation: drift 18s linear infinite;
+  pointer-events:none;
+}
+@keyframes drift{
+  0%{ transform:translate3d(0,0,0); }
+  100%{ transform:translate3d(-3%,2%,0); }
 }
 
 /* ===== GLASS ===== */
 .glass{
-  background:var(--glass);
-  backdrop-filter: blur(12px);
+  background: var(--glass);
+  backdrop-filter: blur(14px);
   border:1px solid var(--stroke);
   border-radius:18px;
   box-shadow: var(--shadow);
@@ -54,62 +77,51 @@ html,body{
   z-index:10;
 }
 
-/* ===== LAYOUT (igual seu modelo) ===== */
-
-/* Header topo centro (pequeno) */
+/* ===== HEADER topo centro ===== */
 #header{
   top:16px;
   left:50%;
   transform:translateX(-50%);
-  padding:14px 18px;
+  padding:12px 16px;
   border-radius:14px;
-  max-width:520px;
-  text-align:left;
+  max-width:540px;
+  min-width:360px;
 }
-#header .t1{ font-weight:800; letter-spacing:.6px; font-size:22px; }
-#header .t2{ color:var(--muted); opacity:.92; margin-top:6px; font-size:13px; }
+#header .t1{
+  font-weight:900;
+  letter-spacing:.8px;
+  font-size:22px;
+  color:#d7fbff;
+}
+#header .t2{
+  margin-top:6px;
+  font-size:12px;
+  color:var(--muted);
+  opacity:.95;
+}
 
-/* Painel esquerdo (grande) */
+/* ===== PAINEL ESQUERDO (STATUS + SUB-ÍNDICES juntos) ===== */
 #leftPanel{
-  left:16px; top:16px;
-  width:340px;
+  left:16px;
+  top:16px;
+  width:360px;
   padding:16px;
   border-radius:22px;
 }
-
-/* Painel direito (troca) */
-#rightPanel{
-  right:16px; top:16px;
-  width:320px;
-  padding:16px;
-  border-radius:18px;
-}
-
-/* Telemetria embaixo central */
-#telemetry{
-  left:50%;
-  transform:translateX(-50%);
-  bottom:16px;
-  width:min(980px, 68vw);
-  height:170px;
-  padding:12px 14px;
-  border-radius:18px;
-}
-
-/* ===== Conteúdo ===== */
 .big{
-  font-size:82px;
-  font-weight:250;
-  margin:8px 0 0;
+  font-size:78px;
+  font-weight:260;
   line-height:1;
+  margin:8px 0 0;
+  color:#d9fbff;
 }
-.small{ font-size:12px; color:var(--muted); opacity:.92; }
+.small{ font-size:12px; color:var(--muted); opacity:.95; }
 .divider{
   height:1px;
-  background:linear-gradient(90deg,transparent,rgba(120,220,255,.25),transparent);
+  background:linear-gradient(90deg,transparent,rgba(110,210,255,.25),transparent);
   margin:12px 0;
 }
-strong{ color:#d7f7ff; }
+strong{ color:#e8fdff; }
 
 .grid2{
   display:grid;
@@ -120,77 +132,151 @@ strong{ color:#d7f7ff; }
 .kv{
   display:flex;
   justify-content:space-between;
+  align-items:center;
   font-size:12px;
-  padding:7px 9px;
-  border:1px solid rgba(120,220,255,.14);
+  padding:9px 10px;
+  border:1px solid rgba(110,210,255,.16);
   border-radius:12px;
-  background:rgba(0,0,0,.18);
+  background:rgba(0,0,0,.20);
+  cursor:pointer;
+  user-select:none;
 }
-.kv b{ font-weight:800; color:#d7f7ff; }
+.kv:hover{
+  border-color: rgba(110,210,255,.35);
+  box-shadow: 0 0 14px rgba(110,210,255,.18);
+}
+.kv b{
+  font-weight:900;
+  letter-spacing:.4px;
+  color:#e9fdff;
+}
+.kv span{ color:#d0fbff; font-weight:800; }
+
 .pill{
   display:inline-block;
   font-size:11px;
   padding:6px 10px;
   border-radius:999px;
-  border:1px solid rgba(120,220,255,.18);
+  border:1px solid rgba(110,210,255,.18);
   background:rgba(0,0,0,.18);
   margin-top:10px;
-  opacity:.9;
+  opacity:.95;
 }
 
+/* ===== DIREITA (TROCA/COMPRA) ===== */
+#rightPanel{
+  right:16px;
+  top:16px;
+  width:340px;
+  padding:16px;
+  border-radius:18px;
+}
+.title{
+  font-weight:900;
+  letter-spacing:.6px;
+  color:#e9fdff;
+  margin-bottom:8px;
+}
 label{ display:block; font-size:12px; color:var(--muted); margin:10px 0 6px; }
+.row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+
 input{
-  width:140px;
+  width:160px;
   padding:10px 10px;
   border-radius:12px;
-  border:1px solid rgba(120,220,255,.35);
-  background:rgba(0,0,0,.25);
+  border:1px solid rgba(110,210,255,.38);
+  background:rgba(0,0,0,.22);
   color:#e9fbff;
   outline:none;
 }
-
-.row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+input:focus{
+  border-color: rgba(110,210,255,.65);
+  box-shadow: 0 0 16px rgba(110,210,255,.18);
+}
 
 .btn{
-  background:linear-gradient(180deg,rgba(120,220,255,.22),rgba(0,0,0,.18));
-  border:1px solid rgba(120,220,255,.42);
+  background:linear-gradient(180deg,rgba(110,210,255,.18),rgba(0,0,0,.18));
+  border:1px solid rgba(110,210,255,.45);
   color:#eafcff;
   border-radius:14px;
   padding:10px 14px;
   cursor:pointer;
-  font-weight:700;
+  font-weight:800;
 }
-.btn:hover{ box-shadow:0 0 18px rgba(120,220,255,.35); }
+.btn:hover{ box-shadow:0 0 18px rgba(110,210,255,.30); }
 .btn.secondary{ opacity:.95; }
 
-.valueLine{ margin-top:10px; font-size:13px; }
-.valueLine b{ font-size:18px; }
+.valueLine{ margin-top:10px; font-size:13px; color:#bdf4ff; }
+.valueLine b{ font-size:20px; color:#e9fdff; }
+.note{ margin-top:10px; font-size:11px; color:var(--muted); opacity:.95; }
 
+/* ===== TELEMETRIA (MENOR e MAIS EMBAIXO) ===== */
+#telemetry{
+  left:50%;
+  transform:translateX(-50%);
+  bottom:16px;
+  width:min(860px, 60vw);
+  height:130px;             /* menor */
+  padding:12px 14px;
+  border-radius:18px;
+}
 #telemetryTitle{
   font-size:12px;
   letter-spacing:.8px;
-  color:#c9f6ff;
+  color:#d4fbff;
   opacity:.95;
   margin-bottom:8px;
 }
 canvas{
   width:100%;
-  height:120px;
+  height:86px;              /* menor */
   display:block;
-  filter: drop-shadow(0 0 6px rgba(120,220,255,.55));
+  filter: drop-shadow(0 0 8px rgba(110,210,255,.55));
 }
 
-/* ===== Evitar “sobreposição” em telas menores ===== */
+/* ===== MODAL (explicação dos sub-índices) ===== */
+#modalOverlay{
+  position:fixed; inset:0;
+  background: rgba(0,0,0,.45);
+  backdrop-filter: blur(2px);
+  display:none;
+  z-index:50;
+}
+#modal{
+  position:fixed;
+  left:50%; top:50%;
+  transform:translate(-50%,-50%);
+  width:min(520px, 92vw);
+  padding:16px;
+  border-radius:18px;
+  z-index:60;
+  display:none;
+}
+#modal h3{
+  margin:0 0 6px;
+  letter-spacing:.6px;
+}
+#modal .mtext{
+  color:#c9f7ff;
+  font-size:13px;
+  line-height:1.35;
+}
+#modal .closeRow{
+  display:flex;
+  justify-content:flex-end;
+  margin-top:12px;
+}
+
+/* ===== RESPONSIVO (evita encostar) ===== */
 @media (max-width: 1100px){
-  #leftPanel{ width:320px; }
-  #rightPanel{ width:300px; }
-  #telemetry{ width:min(900px, 62vw); }
-  #bg{ transform: translateY(18px) scale(.90); }
+  #leftPanel{ width:340px; }
+  #rightPanel{ width:320px; }
+  #telemetry{ width:min(780px, 56vw); }
+  #bg{ transform: translateY(18px) scale(.88); }
 }
 @media (max-width: 900px){
-  #header{ max-width:420px; }
   #telemetry{ width:92vw; }
-  #bg{ transform: translateY(22px) scale(.88); }
+  #bg{ transform: translateY(24px) scale(.86); }
 }
 </style>
 </head>
@@ -199,47 +285,53 @@ canvas{
 
 <!-- MAPA -->
 <div id="stage">
+  <!-- TROQUE para o nome real do arquivo se for diferente -->
   <img id="bg" src="imagem_cnt.jpg" alt="Mapa CNT Amazônia">
+  <div id="dust"></div>
 </div>
 
-<!-- HEADER (TOPO CENTRO) -->
+<!-- HEADER -->
 <div id="header" class="glass">
-  <div class="t1">OS.CNT</div>
-  <div class="t2">Earth Environmental Monitoring Infrastructure</div>
+  <div class="t1">CNT</div>
+  <div class="t2">Centro Natural Tecnológico (Monitoring Infrastructure Bioecológica)</div>
 </div>
 
 <!-- ESQUERDA -->
 <div id="leftPanel" class="glass">
-  <div class="small"><strong>Token CNT (Solana)</strong>: ativo do Observatório para financiar conservação e registrar ordens de aquisição/monitoramento.</div>
+  <div class="small">
+    <strong>Token CNT (Solana)</strong>: ativo do Observatório para financiar conservação e registrar ordens de aquisição/monitoramento.
+  </div>
 
   <div class="big" id="cnt">68.0</div>
   <div class="small">Confiança: <strong>Média</strong></div>
 
   <div class="divider"></div>
 
+  <!-- Texto neutro/positivo (sem “problema na Amazônia”) -->
   <div class="small">Estado do sistema:</div>
-  <div><strong>Transição funcional</strong></div>
+  <div><strong>Sistema estável</strong></div>
   <div class="small">Modo operacional: Monitoramento ativo</div>
   <div class="small">Status: Operacional</div>
 
   <div class="divider"></div>
 
-  <div style="font-weight:800; letter-spacing:.4px; font-size:13px;">Sub-índices</div>
+  <div style="font-weight:900; letter-spacing:.5px; font-size:13px;">Sub-índices (clique para ver)</div>
+
   <div class="grid2">
-    <div class="kv"><b>IBE</b><span id="ibe">88</span></div>
-    <div class="kv"><b>IAB</b><span id="iab">88</span></div>
-    <div class="kv"><b>IBI</b><span id="ibi">11</span></div>
-    <div class="kv"><b>HID</b><span id="hid">83</span></div>
-    <div class="kv"><b>ENT</b><span id="ent">88</span></div>
-    <div class="kv"><b>PAN</b><span id="pan">78</span></div>
+    <div class="kv" data-k="IBE"><b>IBE</b><span id="ibe">88</span></div>
+    <div class="kv" data-k="IAB"><b>IAB</b><span id="iab">88</span></div>
+    <div class="kv" data-k="IBI"><b>IBI</b><span id="ibi">11</span></div>
+    <div class="kv" data-k="HID"><b>HID</b><span id="hid">83</span></div>
+    <div class="kv" data-k="ENT"><b>ENT</b><span id="ent">88</span></div>
+    <div class="kv" data-k="PAN"><b>PAN</b><span id="pan">78</span></div>
   </div>
 
-  <div class="pill">Dica: ENT e PAN são penalidades.</div>
+  <div class="pill">Dica: ENT e PAN podem atuar como fatores de ajuste.</div>
 </div>
 
-<!-- DIREITA (TROCA) -->
+<!-- DIREITA -->
 <div id="rightPanel" class="glass">
-  <div style="font-weight:900; letter-spacing:.4px;">TROCA SOL → CNT</div>
+  <div class="title">TROCA SOL → CNT</div>
 
   <label for="sol">Valor em SOL</label>
   <div class="row">
@@ -249,21 +341,31 @@ canvas{
   </div>
 
   <div class="valueLine">
-    Você recebe aprox:<br />
+    Você recebe aprox:<br>
     <b id="out">14.744.913 CNT</b>
   </div>
 
-  <div class="pill">Rede: Solana</div>
+  <div class="note">Rede: Solana • Compra abre Pump.fun (assinatura na wallet).</div>
 </div>
 
-<!-- TELEMETRIA (EMBAIXO) -->
+<!-- TELEMETRIA (MENOR) -->
 <div id="telemetry" class="glass">
   <div id="telemetryTitle">TELEMETRIA — OSCILAÇÃO FUNCIONAL (30D)</div>
   <canvas id="wave"></canvas>
 </div>
 
+<!-- MODAL -->
+<div id="modalOverlay"></div>
+<div id="modal" class="glass">
+  <h3 id="mTitle">IBE</h3>
+  <div class="mtext" id="mText"></div>
+  <div class="closeRow">
+    <button class="btn secondary" id="closeBtn">Fechar</button>
+  </div>
+</div>
+
 <script>
-/* ===== Telemetria ===== */
+/* ===== Telemetria (menor) ===== */
 const canvas = document.getElementById("wave");
 const ctx = canvas.getContext("2d");
 
@@ -281,17 +383,19 @@ function draw(){
   const w = canvas.clientWidth;
   const h = canvas.clientHeight;
 
-  ctx.fillStyle = "rgba(0,20,40,.25)";
+  ctx.fillStyle = "rgba(0,18,38,.22)";
   ctx.fillRect(0,0,w,h);
 
-  ctx.strokeStyle = "#6df";
+  ctx.strokeStyle = "#6fe0ff";
   ctx.lineWidth = 2;
   ctx.beginPath();
 
   for(let i=0;i<w;i++){
-    const y = (h*0.55)
-      + Math.sin((i+tt)/42)*(h*0.16)
-      + Math.sin((i+tt)/15)*(h*0.06);
+    const y =
+      (h*0.55)
+      + Math.sin((i+tt)/48)*(h*0.22)
+      + Math.sin((i+tt)/17)*(h*0.08);
+
     if(i===0) ctx.moveTo(i,y);
     else ctx.lineTo(i,y);
   }
@@ -302,7 +406,8 @@ function draw(){
 }
 draw();
 
-/* ===== Conversão DEMO ===== */
+/* ===== Conversão DEMO =====
+   (quando você tiver API real, trocamos esse rate pelo preço real) */
 const rate = 147449130; // 1 SOL -> CNT (demo)
 const solInput = document.getElementById("sol");
 const out = document.getElementById("out");
@@ -314,13 +419,48 @@ function update(){
 solInput.addEventListener("input", update);
 update();
 
-/* ===== Botões (DEMO) ===== */
+/* ===== Botões (placeholder) ===== */
 function connect(){
-  alert("Conexão Phantom/Solana entra aqui depois.");
+  alert("Conexão Phantom/Solana entra aqui depois (ainda é DEMO).");
 }
 function buy(){
   window.open("https://pump.fun/coin/GCVyjNaCbXkwGUuktyNxSXad4ozmTp2fzQr2jieSpump","_blank");
 }
+
+/* ===== Sub-índices clicáveis (significado) ===== */
+const meanings = {
+  IBE: "Índice Bioelétrico: leitura do pulso/atividade elétrica do sistema vivo (sinal fisiológico ambiental).",
+  IAB: "Índice Abiótico: condições físicas (clima, solo, energia, estabilidade ambiental) que sustentam o sistema.",
+  IBI: "Índice Biótico: presença/atividade biológica (dinâmica de vida, padrão funcional da biosfera).",
+  HID: "Índice Hídrico: dinâmica de água (umidade, disponibilidade, estabilidade hidrológica).",
+  ENT: "Entropia: indicador de dispersão/desordem do sistema (pode ajustar o índice final).",
+  PAN: "Pressão Antrópica: influência humana/uso do território (pode ajustar o índice final)."
+};
+
+const modal = document.getElementById("modal");
+const overlay = document.getElementById("modalOverlay");
+const mTitle = document.getElementById("mTitle");
+const mText  = document.getElementById("mText");
+const closeBtn = document.getElementById("closeBtn");
+
+function openModal(key){
+  mTitle.textContent = key;
+  mText.textContent = meanings[key] || "Sem descrição.";
+  overlay.style.display = "block";
+  modal.style.display = "block";
+}
+function closeModal(){
+  overlay.style.display = "none";
+  modal.style.display = "none";
+}
+
+document.querySelectorAll(".kv").forEach(el=>{
+  el.addEventListener("click", ()=>{
+    openModal(el.dataset.k);
+  });
+});
+overlay.addEventListener("click", closeModal);
+closeBtn.addEventListener("click", closeModal);
 </script>
 
 </body>
