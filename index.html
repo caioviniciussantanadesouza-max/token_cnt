@@ -9,100 +9,175 @@
 :root{
   --c: rgba(120,220,255,.9);
   --glass: rgba(4,18,32,.30);
+  --stroke: rgba(120,220,255,.22);
+  --text: #a7e8ff;
+  --muted:#7fd6ff;
 }
 
 html,body{
   margin:0;
   height:100%;
   background:#01040a;
-  color:#a7e8ff;
-  font-family:Segoe UI, Arial;
+  color:var(--text);
+  font-family:Segoe UI, Arial, sans-serif;
   overflow:hidden;
 }
 
-/* MAPA */
+/* ===== MAPA ===== */
 #stage{position:fixed; inset:0; z-index:0;}
 #bg{
   position:absolute; inset:0;
   width:100%; height:100%;
-  object-fit:contain;
+  object-fit:contain;             /* não estica */
   object-position:center;
-  transform:scale(.92);
+  transform:scale(.92);           /* “afasta” a imagem */
   opacity:.95;
   filter:brightness(.9) contrast(1.2) saturate(1.2);
   animation:biome 18s ease-in-out infinite;
 }
 
+/* respiração */
 @keyframes biome{
   0%{filter:brightness(.85) contrast(1.15) saturate(1.1);}
   50%{filter:brightness(.98) contrast(1.25) saturate(1.25);}
   100%{filter:brightness(.85) contrast(1.15) saturate(1.1);}
 }
 
-/* HUD */
+/* ===== HUD / PAINÉIS ===== */
 .glass{
   background:var(--glass);
-  backdrop-filter:blur(12px);
-  border:1px solid rgba(120,220,255,.25);
+  backdrop-filter: blur(12px);
+  border:1px solid var(--stroke);
   border-radius:18px;
   box-shadow:0 0 25px rgba(120,220,255,.12);
-  padding:14px;
-  z-index:10;
   position:absolute;
+  z-index:10;
 }
 
-/* ESQUERDA */
-#status{left:18px; top:18px; width:320px;}
-
-.cnt{
-  font-size:72px;
-  margin:8px 0;
-  font-weight:300;
+/* Layout em “grade” (sem sobrepor) */
+#leftPanel{
+  left:16px; top:16px;
+  width:340px;
+  padding:16px;
 }
 
-.divider{
-  height:1px;
-  background:linear-gradient(90deg,transparent,rgba(120,220,255,.3),transparent);
-  margin:10px 0;
+#rightPanel{
+  right:16px; top:16px;
+  width:420px;
+  padding:16px;
 }
 
-.idxline{
-  display:flex;
-  justify-content:space-between;
-  font-size:12px;
-  margin:4px 0;
-}
-
-/* DIREITA */
-#token{right:18px; top:18px; width:420px;}
-
-/* TELEMETRIA */
+/* Telemetria central embaixo (não encosta nos painéis) */
 #telemetry{
   left:50%;
   transform:translateX(-50%);
-  bottom:18px;
-  width:min(900px,80vw);
-  height:140px;
+  bottom:16px;
+  width:min(920px, 64vw);
+  height:170px;
+  padding:12px 14px;
 }
 
-/* BOTÕES */
-button{
-  background:linear-gradient(180deg,rgba(120,220,255,.25),rgba(0,0,0,.2));
-  border:1px solid rgba(120,220,255,.4);
+/* Conteúdo do painel esquerdo */
+.h1{font-weight:700; letter-spacing:.5px;}
+.big{
+  font-size:76px;
+  font-weight:300;
+  margin:6px 0 2px;
+}
+
+.small{font-size:12px; color:var(--muted); opacity:.92;}
+.divider{
+  height:1px;
+  background:linear-gradient(90deg,transparent,rgba(120,220,255,.25),transparent);
+  margin:12px 0;
+}
+strong{color:#d7f7ff;}
+
+/* Sub-índices em 2 colunas */
+.grid2{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:8px 14px;
+  margin-top:10px;
+}
+.kv{
+  display:flex;
+  justify-content:space-between;
+  font-size:12px;
+  padding:6px 8px;
+  border:1px solid rgba(120,220,255,.14);
+  border-radius:10px;
+  background:rgba(0,0,0,.18);
+}
+.kv b{font-weight:700; color:#d7f7ff;}
+.kv span{opacity:.95}
+
+/* Painel token */
+label{display:block; font-size:12px; color:var(--muted); margin-bottom:6px;}
+input{
+  width:140px;
+  padding:10px 10px;
+  border-radius:12px;
+  border:1px solid rgba(120,220,255,.35);
+  background:rgba(0,0,0,.25);
+  color:#e9fbff;
+  outline:none;
+}
+.row{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+
+.btn{
+  background:linear-gradient(180deg,rgba(120,220,255,.22),rgba(0,0,0,.18));
+  border:1px solid rgba(120,220,255,.42);
+  color:#eafcff;
   border-radius:14px;
   padding:10px 16px;
-  color:white;
   cursor:pointer;
+  font-weight:600;
 }
-button:hover{box-shadow:0 0 18px rgba(120,220,255,.35);}
+.btn:hover{box-shadow:0 0 18px rgba(120,220,255,.35);}
+.btn.secondary{opacity:.9}
 
-input{
-  background:rgba(0,0,0,.3);
-  border:1px solid rgba(120,220,255,.4);
-  border-radius:10px;
-  padding:8px;
-  color:white;
-  width:120px;
+.pill{
+  display:inline-block;
+  font-size:11px;
+  padding:6px 10px;
+  border-radius:999px;
+  border:1px solid rgba(120,220,255,.18);
+  background:rgba(0,0,0,.18);
+  margin-top:10px;
+  opacity:.9;
+}
+
+.valueLine{
+  margin-top:10px;
+  font-size:13px;
+}
+.valueLine b{font-size:18px;}
+
+/* Canvas da telemetria */
+#telemetryTitle{
+  font-size:12px;
+  letter-spacing:.8px;
+  color:#c9f6ff;
+  opacity:.95;
+  margin-bottom:8px;
+}
+canvas{ width:100%; height:120px; display:block; filter:drop-shadow(0 0 6px rgba(120,220,255,.55)); }
+
+/* Responsivo: em telas menores, telemetria vira mais estreita */
+@media (max-width: 1100px){
+  #telemetry{ width:min(760px, 62vw); height:160px; }
+  #leftPanel{ width:320px; }
+  #rightPanel{ width:380px; }
+}
+@media (max-width: 900px){
+  #rightPanel{ width:340px; }
+  #telemetry{ width:92vw; }
 }
 </style>
 </head>
@@ -111,95 +186,133 @@ input{
 
 <!-- MAPA -->
 <div id="stage">
-<img id="bg" src="imagem_cnt.png">
+  <!-- ✅ AQUI corrigido para JPG -->
+  <img id="bg" src="imagem_cnt.jpg" alt="Mapa CNT Amazônia">
 </div>
 
-<!-- ESQUERDA -->
-<div id="status" class="glass">
-<b>OS.CNT</b><br>
-Earth Environmental Monitoring Infrastructure
+<!-- PAINEL ESQUERDO -->
+<div id="leftPanel" class="glass">
+  <div class="h1">OS.CNT</div>
+  <div class="small">Earth Environmental Monitoring Infrastructure</div>
 
-<div class="cnt" id="cnt">68.0</div>
-Confiança: Média<br><br>
+  <div class="big" id="cnt">68.0</div>
+  <div class="small">Confiança: <strong>Média</strong></div>
 
-Estado do sistema:<br>
-<b>Transição funcional</b><br>
-Modo operacional: Monitoramento ativo<br>
-Status: Operacional
+  <div class="divider"></div>
 
-<div class="divider"></div>
-<b>Token CNT (Solana)</b>: ativo do Observatório para financiar conservação e registrar ordens de aquisição/monitoramento.
+  <div class="small">Estado do sistema:</div>
+  <div><strong>Transição funcional</strong></div>
+  <div class="small">Modo operacional: Monitoramento ativo</div>
+  <div class="small">Status: Operacional</div>
 
-<div class="divider"></div>
-<b>Sub-índices</b>
-<div class="idxline">IBE <span id="ibe">88</span></div>
-<div class="idxline">IAB <span id="iab">88</span></div>
-<div class="idxline">IBI <span id="ibi">11</span></div>
-<div class="idxline">HID <span id="hid">83</span></div>
-<div class="idxline">ENT <span id="ent">88</span></div>
-<div class="idxline">PAN <span id="pan">78</span></div>
+  <div class="divider"></div>
+
+  <div class="small">
+    <strong>Token CNT (Solana)</strong>: ativo do Observatório para financiar conservação e registrar ordens de aquisição/monitoramento.
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="h1" style="font-size:13px">Sub-índices</div>
+  <div class="grid2">
+    <div class="kv"><b>IBE</b><span id="ibe">88</span></div>
+    <div class="kv"><b>IAB</b><span id="iab">88</span></div>
+    <div class="kv"><b>IBI</b><span id="ibi">11</span></div>
+    <div class="kv"><b>HID</b><span id="hid">83</span></div>
+    <div class="kv"><b>ENT</b><span id="ent">88</span></div>
+    <div class="kv"><b>PAN</b><span id="pan">78</span></div>
+  </div>
+
+  <div class="pill">Dica: ENT e PAN são penalidades.</div>
 </div>
 
-<!-- DIREITA -->
-<div id="token" class="glass">
-<b>TROCA SOL → CNT</b><br><br>
+<!-- PAINEL DIREITO (COMPRA) -->
+<div id="rightPanel" class="glass">
+  <div class="h1" style="font-size:14px">TROCA SOL → CNT</div>
 
-Valor em SOL:<br>
-<input id="sol" value="0.10">
+  <div class="divider"></div>
 
-<p>Você recebe aprox:<br>
-<b id="out">14.744.913 CNT</b></p>
+  <label for="sol">Valor em SOL</label>
+  <div class="row">
+    <input id="sol" type="number" step="0.01" min="0" value="0.10">
+    <button class="btn secondary" onclick="connect()">Conectar Wallet</button>
+    <button class="btn" onclick="buy()">Comprar</button>
+  </div>
 
-<button onclick="connect()">Conectar Wallet</button>
-<button onclick="buy()">Comprar</button>
+  <div class="valueLine">
+    Você recebe aprox:<br>
+    <b id="out">14.744.913 CNT</b>
+  </div>
 
-<p style="font-size:12px;opacity:.7">Rede: Solana</p>
+  <div class="pill">Rede: Solana</div>
 </div>
 
-<!-- TELEMETRIA -->
+<!-- TELEMETRIA (EMBAIXO) -->
 <div id="telemetry" class="glass">
-<canvas id="wave"></canvas>
+  <div id="telemetryTitle">TELEMETRIA — OSCILAÇÃO FUNCIONAL (30D)</div>
+  <canvas id="wave"></canvas>
 </div>
 
 <script>
-/* TELEMETRIA */
-const c=document.getElementById("wave");
-c.width=c.parentElement.clientWidth;
-c.height=c.parentElement.clientHeight;
-const ctx=c.getContext("2d");
+/* ===== TELEMETRIA ===== */
+const canvas = document.getElementById("wave");
+const ctx = canvas.getContext("2d");
 
-let t=0;
+function resize(){
+  const cssW = canvas.clientWidth;
+  const cssH = canvas.clientHeight;
+  const dpr = Math.max(1, window.devicePixelRatio || 1);
+  canvas.width = Math.floor(cssW * dpr);
+  canvas.height = Math.floor(cssH * dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+window.addEventListener("resize", resize);
+resize();
+
+let tt = 0;
 function draw(){
- ctx.fillStyle="rgba(0,20,40,.25)";
- ctx.fillRect(0,0,c.width,c.height);
- ctx.strokeStyle="#6df";
- ctx.lineWidth=2;
- ctx.beginPath();
- for(let i=0;i<c.width;i++){
-  let y=70+Math.sin((i+t)/40)*20+Math.sin((i+t)/13)*8;
-  ctx.lineTo(i,y);
- }
- ctx.stroke();
- t+=2;
- requestAnimationFrame(draw);
+  const w = canvas.clientWidth;
+  const h = canvas.clientHeight;
+
+  ctx.fillStyle = "rgba(0,20,40,.25)";
+  ctx.fillRect(0,0,w,h);
+
+  ctx.strokeStyle = "#6df";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+
+  for(let i=0;i<w;i++){
+    const y = (h*0.55)
+      + Math.sin((i+tt)/42)* (h*0.16)
+      + Math.sin((i+tt)/15)* (h*0.06);
+    if(i===0) ctx.moveTo(i,y);
+    else ctx.lineTo(i,y);
+  }
+  ctx.stroke();
+
+  tt += 2;
+  requestAnimationFrame(draw);
 }
 draw();
 
-/* CONVERSÃO DEMO */
-const rate=147449130;
-document.getElementById("sol").oninput=e=>{
- let sol=parseFloat(e.target.value)||0;
- document.getElementById("out").innerText=
- (sol*rate).toLocaleString()+" CNT";
-};
+/* ===== CONVERSÃO DEMO (ajuste seu rate real depois) ===== */
+const rate = 147449130; // 1 SOL -> CNT (demo)
+const solInput = document.getElementById("sol");
+const out = document.getElementById("out");
 
-/* WALLET */
-function connect(){
- alert("Wallet Phantom conectar aqui depois");
+function update(){
+  const sol = parseFloat(solInput.value) || 0;
+  out.textContent = (sol * rate).toLocaleString("pt-BR") + " CNT";
 }
+solInput.addEventListener("input", update);
+update();
 
+/* ===== BOTÕES (DEMO) ===== */
+function connect(){
+  alert("Conexão Phantom/Solana entra aqui depois.");
+}
 function buy(){
- window.open("https://pump.fun/coin/GCVyjNaCbXkwGUuktyNxSXad4ozmTp2fzQr2jieSpump");
+  window.open("https://pump.fun/coin/GCVyjNaCbXkwGUuktyNxSXad4ozmTp2fzQr2jieSpump", "_blank");
 }
 </script>
 
