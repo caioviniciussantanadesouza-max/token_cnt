@@ -7,49 +7,98 @@
 
 <style>
 :root{
-  /* Azul HUD (mais próximo da sua imagem) */
+  /* FUNDO (cor do seu print) */
+  --bgSolid: #0f3f48;
+
+  /* HUD azul */
   --hud: rgba(110,210,255,.95);
   --hud2: rgba(110,210,255,.45);
   --stroke: rgba(110,210,255,.20);
-  --glass: rgba(2,12,24,.36);
+  --glass: rgba(2,12,24,.34);
   --glass2: rgba(2,12,24,.22);
   --text: #c8f3ff;
   --muted:#86dcff;
-  --shadow: 0 0 22px rgba(110,210,255,.12), 0 0 60px rgba(0,200,255,.06);
+  --shadow: 0 0 22px rgba(110,210,255,.12), 0 0 70px rgba(0,200,255,.06);
 }
 
 html,body{
   margin:0;
   height:100%;
-  background:#01040a;
+  background: var(--bgSolid);
   color:var(--text);
   font-family:"Segoe UI", Arial, sans-serif;
   overflow:hidden;
 }
 
 /* ===== MAPA ===== */
-#stage{ position:fixed; inset:0; z-index:0; background:#01040a; }
+#stage{
+  position:fixed;
+  inset:0;
+  z-index:0;
+  background: var(--bgSolid);
+}
+
+/* Mapa: não estica + “afastado” */
 #bg{
   position:absolute; inset:0;
   width:100%; height:100%;
-  object-fit:contain;                 /* não estica */
+  object-fit:contain;
   object-position:center;
-  transform: translateY(14px) scale(.90); /* mais “afastado” */
-  opacity: .98;
+  transform: translateY(14px) scale(.90);
+  opacity:.98;
 
-  /* brilho “holográfico” */
+  /* holografia base */
   filter: brightness(.92) contrast(1.18) saturate(1.15);
-  animation: biome 16s ease-in-out infinite;
+  animation: biome 10s ease-in-out infinite;
 }
 
-/* respiração/pulso do bioma (sutil) */
+/* “Pulso” (respiração) + brilho */
 @keyframes biome{
   0%   { filter:brightness(.86) contrast(1.14) saturate(1.08); }
-  50%  { filter:brightness(1.00) contrast(1.26) saturate(1.25); }
+  50%  { filter:brightness(1.05) contrast(1.28) saturate(1.28); }
   100% { filter:brightness(.86) contrast(1.14) saturate(1.08); }
 }
 
-/* partículas leves (overlay) */
+/* Glow extra do mapa (camada) */
+#mapGlow{
+  position:absolute; inset:0;
+  pointer-events:none;
+  mix-blend-mode: screen;
+  opacity:.32;
+  filter: blur(10px);
+  background:
+    radial-gradient(circle at 40% 55%, rgba(120,220,255,.22), transparent 55%),
+    radial-gradient(circle at 70% 45%, rgba(120,220,255,.16), transparent 60%);
+  animation: glowPulse 6s ease-in-out infinite;
+}
+@keyframes glowPulse{
+  0%{ opacity:.20; transform:scale(1); }
+  50%{ opacity:.38; transform:scale(1.02); }
+  100%{ opacity:.20; transform:scale(1); }
+}
+
+/* Scanlines holográficas */
+#scanlines{
+  position:absolute; inset:0;
+  pointer-events:none;
+  opacity:.22;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      rgba(120,220,255,.06) 0px,
+      rgba(120,220,255,.06) 1px,
+      transparent 2px,
+      transparent 6px
+    );
+  mix-blend-mode: overlay;
+  animation: scan 3.2s linear infinite;
+}
+@keyframes scan{
+  0%{ transform:translateY(-20px); }
+  100%{ transform:translateY(20px); }
+}
+
+/* Partículas suaves */
 #dust{
   position:absolute; inset:-20%;
   background:
@@ -84,7 +133,7 @@ html,body{
   transform:translateX(-50%);
   padding:12px 16px;
   border-radius:14px;
-  max-width:540px;
+  max-width:560px;
   min-width:360px;
 }
 #header .t1{
@@ -100,7 +149,7 @@ html,body{
   opacity:.95;
 }
 
-/* ===== PAINEL ESQUERDO (STATUS + SUB-ÍNDICES juntos) ===== */
+/* ===== PAINEL ESQUERDO ===== */
 #leftPanel{
   left:16px;
   top:16px;
@@ -137,7 +186,7 @@ strong{ color:#e8fdff; }
   padding:9px 10px;
   border:1px solid rgba(110,210,255,.16);
   border-radius:12px;
-  background:rgba(0,0,0,.20);
+  background:rgba(0,0,0,.16);
   cursor:pointer;
   user-select:none;
 }
@@ -158,18 +207,22 @@ strong{ color:#e8fdff; }
   padding:6px 10px;
   border-radius:999px;
   border:1px solid rgba(110,210,255,.18);
-  background:rgba(0,0,0,.18);
+  background:rgba(0,0,0,.14);
   margin-top:10px;
   opacity:.95;
 }
 
-/* ===== DIREITA (TROCA/COMPRA) ===== */
+/* ===== DIREITA (TOKEN) — METADE DA ALTURA ===== */
 #rightPanel{
   right:16px;
   top:16px;
   width:340px;
-  padding:16px;
+  padding:14px;
   border-radius:18px;
+
+  /* metade da altura (aprox) */
+  height: 170px;
+  overflow:hidden;
 }
 .title{
   font-weight:900;
@@ -181,11 +234,11 @@ label{ display:block; font-size:12px; color:var(--muted); margin:10px 0 6px; }
 .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
 
 input{
-  width:160px;
+  width:150px;
   padding:10px 10px;
   border-radius:12px;
   border:1px solid rgba(110,210,255,.38);
-  background:rgba(0,0,0,.22);
+  background:rgba(0,0,0,.18);
   color:#e9fbff;
   outline:none;
 }
@@ -195,7 +248,7 @@ input:focus{
 }
 
 .btn{
-  background:linear-gradient(180deg,rgba(110,210,255,.18),rgba(0,0,0,.18));
+  background:linear-gradient(180deg,rgba(110,210,255,.18),rgba(0,0,0,.14));
   border:1px solid rgba(110,210,255,.45);
   color:#eafcff;
   border-radius:14px;
@@ -206,35 +259,38 @@ input:focus{
 .btn:hover{ box-shadow:0 0 18px rgba(110,210,255,.30); }
 .btn.secondary{ opacity:.95; }
 
-.valueLine{ margin-top:10px; font-size:13px; color:#bdf4ff; }
-.valueLine b{ font-size:20px; color:#e9fdff; }
-.note{ margin-top:10px; font-size:11px; color:var(--muted); opacity:.95; }
+.valueLine{ margin-top:10px; font-size:12px; color:#bdf4ff; }
+.valueLine b{ font-size:18px; color:#e9fdff; }
+.note{ margin-top:6px; font-size:11px; color:var(--muted); opacity:.95; }
 
-/* ===== TELEMETRIA (MENOR e MAIS EMBAIXO) ===== */
+/* ===== TELEMETRIA — METADE DA ALTURA ===== */
 #telemetry{
   left:50%;
   transform:translateX(-50%);
   bottom:16px;
   width:min(860px, 60vw);
-  height:130px;             /* menor */
-  padding:12px 14px;
+
+  /* metade da altura */
+  height: 78px;
+
+  padding:10px 14px;
   border-radius:18px;
 }
 #telemetryTitle{
-  font-size:12px;
+  font-size:11px;
   letter-spacing:.8px;
   color:#d4fbff;
   opacity:.95;
-  margin-bottom:8px;
+  margin-bottom:6px;
 }
 canvas{
   width:100%;
-  height:86px;              /* menor */
+  height:44px; /* metade */
   display:block;
   filter: drop-shadow(0 0 8px rgba(110,210,255,.55));
 }
 
-/* ===== MODAL (explicação dos sub-índices) ===== */
+/* ===== MODAL ===== */
 #modalOverlay{
   position:fixed; inset:0;
   background: rgba(0,0,0,.45);
@@ -252,25 +308,14 @@ canvas{
   z-index:60;
   display:none;
 }
-#modal h3{
-  margin:0 0 6px;
-  letter-spacing:.6px;
-}
-#modal .mtext{
-  color:#c9f7ff;
-  font-size:13px;
-  line-height:1.35;
-}
-#modal .closeRow{
-  display:flex;
-  justify-content:flex-end;
-  margin-top:12px;
-}
+#modal h3{ margin:0 0 6px; letter-spacing:.6px; }
+#modal .mtext{ color:#c9f7ff; font-size:13px; line-height:1.35; }
+#modal .closeRow{ display:flex; justify-content:flex-end; margin-top:12px; }
 
-/* ===== RESPONSIVO (evita encostar) ===== */
+/* ===== RESPONSIVO ===== */
 @media (max-width: 1100px){
   #leftPanel{ width:340px; }
-  #rightPanel{ width:320px; }
+  #rightPanel{ width:320px; height:165px; }
   #telemetry{ width:min(780px, 56vw); }
   #bg{ transform: translateY(18px) scale(.88); }
 }
@@ -285,8 +330,10 @@ canvas{
 
 <!-- MAPA -->
 <div id="stage">
-  <!-- TROQUE para o nome real do arquivo se for diferente -->
+  <!-- TROQUE o nome aqui se for .png -->
   <img id="bg" src="imagem_cnt.jpg" alt="Mapa CNT Amazônia">
+  <div id="mapGlow"></div>
+  <div id="scanlines"></div>
   <div id="dust"></div>
 </div>
 
@@ -307,7 +354,6 @@ canvas{
 
   <div class="divider"></div>
 
-  <!-- Texto neutro/positivo (sem “problema na Amazônia”) -->
   <div class="small">Estado do sistema:</div>
   <div><strong>Sistema estável</strong></div>
   <div class="small">Modo operacional: Monitoramento ativo</div>
@@ -329,7 +375,7 @@ canvas{
   <div class="pill">Dica: ENT e PAN podem atuar como fatores de ajuste.</div>
 </div>
 
-<!-- DIREITA -->
+<!-- DIREITA (TOKEN) -->
 <div id="rightPanel" class="glass">
   <div class="title">TROCA SOL → CNT</div>
 
@@ -341,14 +387,13 @@ canvas{
   </div>
 
   <div class="valueLine">
-    Você recebe aprox:<br>
-    <b id="out">14.744.913 CNT</b>
+    Você recebe aprox: <b id="out">14.744.913 CNT</b>
   </div>
 
-  <div class="note">Rede: Solana • Compra abre Pump.fun (assinatura na wallet).</div>
+  <div class="note">Rede: Solana • Compra abre Pump.fun.</div>
 </div>
 
-<!-- TELEMETRIA (MENOR) -->
+<!-- TELEMETRIA (menor) -->
 <div id="telemetry" class="glass">
   <div id="telemetryTitle">TELEMETRIA — OSCILAÇÃO FUNCIONAL (30D)</div>
   <canvas id="wave"></canvas>
@@ -365,7 +410,7 @@ canvas{
 </div>
 
 <script>
-/* ===== Telemetria (menor) ===== */
+/* ===== Telemetria ===== */
 const canvas = document.getElementById("wave");
 const ctx = canvas.getContext("2d");
 
@@ -383,7 +428,7 @@ function draw(){
   const w = canvas.clientWidth;
   const h = canvas.clientHeight;
 
-  ctx.fillStyle = "rgba(0,18,38,.22)";
+  ctx.fillStyle = "rgba(0,18,38,.18)";
   ctx.fillRect(0,0,w,h);
 
   ctx.strokeStyle = "#6fe0ff";
@@ -392,9 +437,9 @@ function draw(){
 
   for(let i=0;i<w;i++){
     const y =
-      (h*0.55)
-      + Math.sin((i+tt)/48)*(h*0.22)
-      + Math.sin((i+tt)/17)*(h*0.08);
+      (h*0.58)
+      + Math.sin((i+tt)/38)*(h*0.22)
+      + Math.sin((i+tt)/13)*(h*0.08);
 
     if(i===0) ctx.moveTo(i,y);
     else ctx.lineTo(i,y);
@@ -406,12 +451,10 @@ function draw(){
 }
 draw();
 
-/* ===== Conversão DEMO =====
-   (quando você tiver API real, trocamos esse rate pelo preço real) */
+/* ===== Conversão DEMO ===== */
 const rate = 147449130; // 1 SOL -> CNT (demo)
 const solInput = document.getElementById("sol");
 const out = document.getElementById("out");
-
 function update(){
   const sol = parseFloat(solInput.value) || 0;
   out.textContent = (sol * rate).toLocaleString("pt-BR") + " CNT";
@@ -427,14 +470,14 @@ function buy(){
   window.open("https://pump.fun/coin/GCVyjNaCbXkwGUuktyNxSXad4ozmTp2fzQr2jieSpump","_blank");
 }
 
-/* ===== Sub-índices clicáveis (significado) ===== */
+/* ===== Modal Sub-índices ===== */
 const meanings = {
-  IBE: "Índice Bioelétrico: leitura do pulso/atividade elétrica do sistema vivo (sinal fisiológico ambiental).",
-  IAB: "Índice Abiótico: condições físicas (clima, solo, energia, estabilidade ambiental) que sustentam o sistema.",
-  IBI: "Índice Biótico: presença/atividade biológica (dinâmica de vida, padrão funcional da biosfera).",
-  HID: "Índice Hídrico: dinâmica de água (umidade, disponibilidade, estabilidade hidrológica).",
-  ENT: "Entropia: indicador de dispersão/desordem do sistema (pode ajustar o índice final).",
-  PAN: "Pressão Antrópica: influência humana/uso do território (pode ajustar o índice final)."
+  IBE: "Índice Bioelétrico: pulso/atividade elétrica do sistema vivo (fisiologia ambiental).",
+  IAB: "Índice Abiótico: condições físicas (clima, solo, energia) que sustentam o sistema.",
+  IBI: "Índice Biótico: dinâmica da vida (atividade biológica e padrão funcional).",
+  HID: "Índice Hídrico: estabilidade e dinâmica da água no território.",
+  ENT: "Entropia: fator de ajuste relacionado à dispersão/desordem do sistema.",
+  PAN: "Pressão Antrópica: fator de ajuste relacionado ao uso humano do território."
 };
 
 const modal = document.getElementById("modal");
@@ -453,11 +496,8 @@ function closeModal(){
   overlay.style.display = "none";
   modal.style.display = "none";
 }
-
 document.querySelectorAll(".kv").forEach(el=>{
-  el.addEventListener("click", ()=>{
-    openModal(el.dataset.k);
-  });
+  el.addEventListener("click", ()=> openModal(el.dataset.k));
 });
 overlay.addEventListener("click", closeModal);
 closeBtn.addEventListener("click", closeModal);
