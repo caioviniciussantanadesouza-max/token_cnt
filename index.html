@@ -135,6 +135,7 @@ html,body{
   border-radius:14px;
   max-width:560px;
   min-width:360px;
+  z-index: 11;
 }
 #header .t1{
   font-weight:900;
@@ -263,19 +264,20 @@ input:focus{
 .valueLine b{ font-size:18px; color:#e9fdff; }
 .note{ margin-top:6px; font-size:11px; color:var(--muted); opacity:.95; }
 
-/* ===== TELEMETRIA — agora junto ao painel TOKEN (lado esquerdo) ===== */
+/* ===== TELEMETRIA — junto ao TOKEN (à esquerda), SEM invadir o header ===== */
 #telemetry{
   position:fixed;
-  top: 16px;
-  right: calc(16px + 340px + 12px); /* 16 margem + 340 largura do token + gap */
+  top: 92px; /* desce pra não encostar no header central */
+  right: calc(16px + 340px + 12px); /* margem + largura token + gap */
 
-  width: 360px;
+  width: 260px; /* estreito pra não invadir o centro */
   height: 78px;
 
   padding:10px 14px;
   border-radius:18px;
 
   transform:none;
+  z-index: 12;
 }
 #telemetryTitle{
   font-size:11px;
@@ -317,7 +319,11 @@ canvas{
 @media (max-width: 1100px){
   #leftPanel{ width:340px; }
   #rightPanel{ width:320px; height:165px; }
-  #telemetry{ width:320px; right: calc(16px + 320px + 12px); }
+  #telemetry{
+    width: 240px;
+    right: calc(16px + 320px + 12px);
+    top: 92px;
+  }
   #bg{ transform: translateY(18px) scale(.88); }
 }
 @media (max-width: 900px){
@@ -404,7 +410,7 @@ canvas{
   <div class="note">Rede: Solana • Compra abre Pump.fun.</div>
 </div>
 
-<!-- TELEMETRIA (agora junto ao TOKEN, na esquerda) -->
+<!-- TELEMETRIA (junto ao TOKEN, na esquerda) -->
 <div id="telemetry" class="glass">
   <div id="telemetryTitle">TELEMETRIA — OSCILAÇÃO FUNCIONAL (30D)</div>
   <canvas id="wave"></canvas>
