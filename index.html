@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>CNT — Reserva Ambiental Tokenizada</title>
+<title>CNT — Índice Nacional Bioecológico (MapBiomas)</title>
 
 <style>
 :root{
@@ -15,112 +15,306 @@
   --accent:#7fe3ff;
   --shadow: 0 0 22px rgba(110,210,255,.12), 0 0 70px rgba(0,200,255,.06);
 }
-html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:"Segoe UI",Arial,sans-serif;overflow:hidden;}
+
+html,body{
+  margin:0;height:100%;
+  background:var(--bg);color:var(--text);
+  font-family:"Segoe UI", Arial, sans-serif;
+  overflow:hidden;
+}
+
 #bgBlack{position:fixed;inset:0;background:#000;z-index:0;}
-#vignette{position:fixed;inset:0;pointer-events:none;z-index:1;background:radial-gradient(circle at 50% 45%,rgba(0,0,0,0) 0%,rgba(0,0,0,.15) 45%,rgba(0,0,0,.55) 75%,rgba(0,0,0,.78) 100%);}
+#vignette{
+  position:fixed; inset:0; pointer-events:none; z-index:1;
+  background: radial-gradient(circle at 50% 45%,
+    rgba(0,0,0,0) 0%,
+    rgba(0,0,0,.15) 45%,
+    rgba(0,0,0,.55) 75%,
+    rgba(0,0,0,.78) 100%);
+}
 
-.glass{background:var(--panel);backdrop-filter:blur(14px);border:1px solid var(--stroke);border-radius:18px;box-shadow:var(--shadow);}
+.glass{
+  background: var(--panel);
+  backdrop-filter: blur(14px);
+  border:1px solid var(--stroke);
+  border-radius:18px;
+  box-shadow: var(--shadow);
+}
 
-/* header */
+/* ===== HEADER ===== */
 #header{
-  position:fixed;top:0;left:0;right:0;height:76px;border-radius:0 0 18px 18px;
-  z-index:20;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:10px 16px;
+  position:fixed; top:0; left:0; right:0; height:82px;
+  border-radius:0 0 18px 18px;
+  z-index:20;
+  display:flex; flex-direction:column; justify-content:center; align-items:center;
+  padding:10px 16px;
 }
-#header .t1{font-weight:900;letter-spacing:.8px;font-size:20px;line-height:1.1;}
-#header .t2{margin-top:4px;font-size:12px;color:var(--muted);opacity:.95;text-align:center;max-width:980px;}
-.badges{margin-top:6px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
-.badge{font-size:11px;padding:5px 10px;border-radius:999px;border:1px solid rgba(120,220,255,.22);background:rgba(0,0,0,.18);color:#dffaff;opacity:.95;}
+#header .t1{ font-weight:900; letter-spacing:.8px; font-size:20px; line-height:1.1; }
+#header .t2{
+  margin-top:4px; font-size:12px; color:var(--muted); opacity:.95;
+  text-align:center; max-width:980px;
+}
+.badges{ margin-top:6px; display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+.badge{
+  font-size:11px; padding:5px 10px; border-radius:999px;
+  border:1px solid rgba(120,220,255,.22);
+  background: rgba(0,0,0,.18);
+  color:#dffaff; opacity:.95;
+}
 
-/* legend */
+/* ===== MAPA / FRAME ===== */
 #mapLegend{
-  position:fixed;left:50%;top:92px;transform:translateX(-50%);z-index:12;
-  padding:10px 12px;border-radius:14px;max-width:min(860px,62vw);text-align:center;
+  position:fixed; left:50%; top:100px; transform:translateX(-50%);
+  z-index:12; padding:10px 12px; border-radius:14px;
+  max-width:min(920px, 66vw); text-align:center;
 }
-#mapLegend .l1{font-size:12px;color:#dffaff;font-weight:800;letter-spacing:.4px;}
-#mapLegend .l2{margin-top:4px;font-size:11px;color:var(--muted);opacity:.95;}
+#mapLegend .l1{ font-size:12px; color:#dffaff; font-weight:800; letter-spacing:.4px; }
+#mapLegend .l2{ margin-top:4px; font-size:11px; color:var(--muted); opacity:.95; }
 
-/* map frame */
 #mapFrame{
-  position:fixed;left:50%;top:54%;transform:translate(-50%,-50%);
-  width:min(1100px,66vw);height:min(760px,78vh);border-radius:22px;z-index:2;
-  background:rgba(0,0,0,.88);border:1px solid rgba(120,220,255,.18);
-  box-shadow:0 0 60px rgba(0,0,0,.75),0 0 90px rgba(0,200,255,.12);
+  position:fixed; left:50%; top:56%;
+  transform:translate(-50%,-50%);
+  width:min(1100px, 66vw);
+  height:min(760px, 78vh);
+  border-radius:22px;
+  z-index:2;
+  background: rgba(0,0,0,.88);
+  border:1px solid rgba(120,220,255,.18);
+  box-shadow: 0 0 60px rgba(0,0,0,.75), 0 0 90px rgba(0,200,255,.12);
   overflow:hidden;
 }
 #mapFrame::before{
-  content:"";position:absolute;inset:0;pointer-events:none;mix-blend-mode:screen;opacity:.55;
+  content:"";
+  position:absolute; inset:0;
   background:
     radial-gradient(circle at 50% 45%, rgba(120,220,255,.10), transparent 55%),
     radial-gradient(circle at 20% 30%, rgba(120,220,255,.06), transparent 55%),
     radial-gradient(circle at 80% 55%, rgba(120,220,255,.05), transparent 60%);
+  opacity:.55;
+  pointer-events:none;
+  mix-blend-mode:screen;
 }
 #bgMap{
-  position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center;
-  transform:translateY(-8px) scale(.97);
-  filter:brightness(.95) contrast(1.22) saturate(1.28);
-  animation:mapPulse 9s ease-in-out infinite;opacity:.99;
+  position:absolute; inset:0;
+  width:100%; height:100%;
+  object-fit:contain;
+  object-position:center;
+  transform: translateY(-6px) scale(.98);
+  filter: brightness(.95) contrast(1.22) saturate(1.28);
+  animation: mapPulse 9s ease-in-out infinite;
+  opacity:.99;
 }
-@keyframes mapPulse{0%{filter:brightness(.82) contrast(1.12) saturate(1.10)}50%{filter:brightness(1.07) contrast(1.33) saturate(1.32)}100%{filter:brightness(.82) contrast(1.12) saturate(1.10)}}
+@keyframes mapPulse{
+  0%{ filter:brightness(.82) contrast(1.12) saturate(1.10); }
+  50%{ filter:brightness(1.07) contrast(1.33) saturate(1.32); }
+  100%{ filter:brightness(.82) contrast(1.12) saturate(1.10); }
+}
 #scanlines{
-  position:absolute;inset:0;pointer-events:none;opacity:.18;mix-blend-mode:overlay;animation:scan 3.2s linear infinite;
-  background:repeating-linear-gradient(to bottom,rgba(120,220,255,.06) 0px,rgba(120,220,255,.06) 1px,transparent 2px,transparent 7px);
+  position:absolute; inset:0;
+  pointer-events:none;
+  opacity:.18;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(120,220,255,.06) 0px,
+    rgba(120,220,255,.06) 1px,
+    transparent 2px,
+    transparent 7px
+  );
+  mix-blend-mode: overlay;
+  animation: scan 3.2s linear infinite;
 }
-@keyframes scan{0%{transform:translateY(-20px)}100%{transform:translateY(20px)}}
+@keyframes scan{
+  0%{ transform:translateY(-20px); }
+  100%{ transform:translateY(20px); }
+}
 #dust{
-  position:absolute;inset:-30%;pointer-events:none;opacity:.55;filter:blur(2px);animation:drift 18s linear infinite;
+  position:absolute; inset:-30%;
+  pointer-events:none;
+  opacity:.55;
   background:
     radial-gradient(circle at 25% 25%, rgba(120,220,255,.10), transparent 40%),
     radial-gradient(circle at 70% 20%, rgba(120,220,255,.08), transparent 45%),
     radial-gradient(circle at 45% 80%, rgba(120,220,255,.06), transparent 50%);
+  filter: blur(2px);
+  animation: drift 18s linear infinite;
 }
-@keyframes drift{0%{transform:translate3d(0,0,0)}100%{transform:translate3d(-3%,2%,0)}}
+@keyframes drift{
+  0%{ transform:translate3d(0,0,0); }
+  100%{ transform:translate3d(-3%,2%,0); }
+}
 
-/* left panel */
-#leftPanel{position:fixed;left:20px;top:96px;width:330px;padding:14px;border-radius:22px;z-index:10;opacity:.95;}
-.kicker{font-size:12px;color:var(--muted);opacity:.95;}
-.big{margin-top:10px;font-size:74px;font-weight:250;line-height:1;}
-.unit{font-size:12px;color:var(--muted);margin-top:4px;}
-.ratingRow{margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
-.classPill{font-size:11px;padding:6px 10px;border-radius:999px;border:1px solid rgba(120,220,255,.18);background:rgba(0,0,0,.16);color:#e8fdff;}
-.divider{height:1px;background:linear-gradient(90deg,transparent,rgba(110,210,255,.25),transparent);margin:12px 0;}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;margin-top:10px;}
-.kv{display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:9px 10px;border:1px solid rgba(110,210,255,.16);border-radius:12px;background:rgba(0,0,0,.16);cursor:pointer;user-select:none;}
-.kv:hover{border-color:rgba(110,210,255,.35);box-shadow:0 0 14px rgba(110,210,255,.18);}
-.kv b{font-weight:900;letter-spacing:.4px;color:#e9fdff;}
-.kv span{color:#d0fbff;font-weight:800;}
-.note{margin-top:10px;font-size:11px;color:var(--muted);opacity:.95;line-height:1.25;}
+/* ===== LEFT PANEL (Brasil) ===== */
+#leftPanel{
+  position:fixed;
+  left:20px;
+  top:104px;
+  width:330px;
+  padding:14px;
+  border-radius:22px;
+  z-index:10;
+  opacity:.95;
+}
+.kicker{ font-size:12px; color:var(--muted); opacity:.95; }
+.big{ margin-top:10px; font-size:68px; font-weight:260; line-height:1; }
+.unit{ font-size:12px; color:var(--muted); margin-top:4px; }
 
-/* right */
-#rightWrap{position:fixed;right:20px;top:96px;width:330px;z-index:10;display:flex;flex-direction:column;gap:14px;}
-#buyPanel{padding:14px;border-radius:18px;}
-.title{font-weight:900;letter-spacing:.6px;margin-bottom:8px;}
-.subtitle{font-size:12px;color:var(--muted);opacity:.95;margin-bottom:10px;}
-label{display:block;font-size:12px;color:var(--muted);margin:10px 0 6px;}
-.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
-input{width:170px;padding:10px 10px;border-radius:12px;border:1px solid rgba(110,210,255,.38);background:rgba(0,0,0,.22);color:#e9fbff;outline:none;}
-input:focus{border-color:rgba(110,210,255,.65);box-shadow:0 0 16px rgba(110,210,255,.18);}
-.btn{background:linear-gradient(180deg,rgba(110,210,255,.18),rgba(0,0,0,.18));border:1px solid rgba(110,210,255,.45);color:#eafcff;border-radius:14px;padding:10px 14px;cursor:pointer;font-weight:800;}
-.btn:hover{box-shadow:0 0 18px rgba(110,210,255,.30);}
-.btn.secondary{opacity:.95;}
-.valueLine{margin-top:10px;font-size:12px;color:#bdf4ff;}
-.valueLine b{font-size:18px;color:#e9fdff;}
-.smallline{margin-top:6px;font-size:11px;color:var(--muted);opacity:.95;}
+.row3{
+  display:grid;
+  grid-template-columns: 1fr;
+  gap:8px;
+  margin-top:10px;
+}
+.pill{
+  font-size:11px;
+  padding:8px 10px;
+  border-radius:14px;
+  border:1px solid rgba(120,220,255,.18);
+  background: rgba(0,0,0,.16);
+  color:#e8fdff;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.pill b{ color:#e9fdff; }
 
-#telemetry{padding:10px 14px;border-radius:18px;}
-#telemetryTitle{font-size:11px;letter-spacing:.8px;color:#d4fbff;opacity:.95;margin-bottom:6px;}
-#wave{width:100%;height:44px;display:block;filter:drop-shadow(0 0 8px rgba(110,210,255,.55));}
-#telemetryHint{font-size:11px;color:var(--muted);opacity:.90;margin-top:6px;}
+.divider{
+  height:1px;
+  background:linear-gradient(90deg,transparent,rgba(110,210,255,.25),transparent);
+  margin:12px 0;
+}
 
-#modalOverlay{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(2px);display:none;z-index:50;}
-#modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(560px,92vw);padding:16px;border-radius:18px;z-index:60;display:none;}
-#modal h3{margin:0 0 6px;letter-spacing:.6px;}
-#modal .mtext{color:#c9f7ff;font-size:13px;line-height:1.35;}
-#modal .closeRow{display:flex;justify-content:flex-end;margin-top:12px;}
+.grid2{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:8px 10px;
+  margin-top:10px;
+}
+.kv{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-size:12px;
+  padding:9px 10px;
+  border:1px solid rgba(110,210,255,.16);
+  border-radius:12px;
+  background:rgba(0,0,0,.16);
+  cursor:pointer;
+  user-select:none;
+}
+.kv:hover{
+  border-color: rgba(110,210,255,.35);
+  box-shadow: 0 0 14px rgba(110,210,255,.18);
+}
+.kv b{ font-weight:900; letter-spacing:.4px; color:#e9fdff; }
+.kv span{ color:#d0fbff; font-weight:800; }
+.note{
+  margin-top:10px;
+  font-size:11px;
+  color:var(--muted);
+  opacity:.95;
+  line-height:1.25;
+}
 
+/* ===== RIGHT PANEL (mercado + telemetria) ===== */
+#rightWrap{
+  position:fixed;
+  right:20px;
+  top:104px;
+  width:330px;
+  z-index:10;
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+
+#buyPanel{ padding:14px; border-radius:18px; }
+.title{ font-weight:900; letter-spacing:.6px; margin-bottom:8px; }
+.subtitle{ font-size:12px; color:var(--muted); opacity:.95; margin-bottom:10px; }
+
+label{ display:block; font-size:12px; color:var(--muted); margin:10px 0 6px; }
+.row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+input{
+  width:170px;
+  padding:10px 10px;
+  border-radius:12px;
+  border:1px solid rgba(110,210,255,.38);
+  background:rgba(0,0,0,.22);
+  color:#e9fbff;
+  outline:none;
+}
+input:focus{
+  border-color: rgba(110,210,255,.65);
+  box-shadow: 0 0 16px rgba(110,210,255,.18);
+}
+.btn{
+  background:linear-gradient(180deg,rgba(110,210,255,.18),rgba(0,0,0,.18));
+  border:1px solid rgba(110,210,255,.45);
+  color:#eafcff;
+  border-radius:14px;
+  padding:10px 14px;
+  cursor:pointer;
+  font-weight:800;
+}
+.btn:hover{ box-shadow:0 0 18px rgba(110,210,255,.30); }
+.btn.secondary{ opacity:.95; }
+
+.valueLine{ margin-top:10px; font-size:12px; color:#bdf4ff; }
+.valueLine b{ font-size:18px; color:#e9fdff; }
+.smallline{ margin-top:6px; font-size:11px; color:var(--muted); opacity:.95; }
+
+#telemetry{ padding:10px 14px; border-radius:18px; }
+#telemetryTitle{
+  font-size:11px;
+  letter-spacing:.8px;
+  color:#d4fbff;
+  opacity:.95;
+  margin-bottom:6px;
+}
+#wave{
+  width:100%;
+  height:44px;
+  display:block;
+  filter: drop-shadow(0 0 8px rgba(110,210,255,.55));
+}
+#telemetryHint{
+  font-size:11px;
+  color:var(--muted);
+  opacity:.90;
+  margin-top:6px;
+}
+
+/* ===== MODAL ===== */
+#modalOverlay{
+  position:fixed; inset:0;
+  background: rgba(0,0,0,.55);
+  backdrop-filter: blur(2px);
+  display:none;
+  z-index:50;
+}
+#modal{
+  position:fixed;
+  left:50%; top:50%;
+  transform:translate(-50%,-50%);
+  width:min(620px, 92vw);
+  padding:16px;
+  border-radius:18px;
+  z-index:60;
+  display:none;
+}
+#modal h3{ margin:0 0 6px; letter-spacing:.6px; }
+#modal .mtext{ color:#c9f7ff; font-size:13px; line-height:1.35; }
+#modal .closeRow{ display:flex; justify-content:flex-end; margin-top:12px; }
+
+/* ===== RESPONSIVO ===== */
 @media (max-width: 980px){
-  body{overflow:auto;}
-  #leftPanel,#rightWrap,#mapLegend{position:static;transform:none;width:auto;margin:12px;max-width:none;}
-  #mapFrame{position:relative;left:auto;top:auto;transform:none;margin:12px;width:auto;height:55vh;}
+  body{ overflow:auto; }
+  #leftPanel,#rightWrap,#mapLegend{
+    position:static; transform:none; width:auto; margin:12px; max-width:none;
+  }
+  #mapFrame{
+    position:relative; left:auto; top:auto; transform:none;
+    margin:12px; width:auto; height:55vh;
+  }
 }
 </style>
 </head>
@@ -129,50 +323,58 @@ input:focus{border-color:rgba(110,210,255,.65);box-shadow:0 0 16px rgba(110,210,
 <div id="bgBlack"></div>
 <div id="vignette"></div>
 
+<!-- HEADER -->
 <div id="header" class="glass">
-  <div class="t1">CNT — Reserva Ambiental Tokenizada</div>
-  <div class="t2">Ativo ambiental negociável (estilo carbono): lastro em conservação + monitoramento contínuo + registro público de aquisição.</div>
+  <div class="t1">CNT — Índice Nacional Bioecológico</div>
+  <div class="t2">
+    Dados derivados de MapBiomas (biomas brasileiros) • Estado (A), Tendência (B) e Estabilidade (C) • Exibição auditável via JSON.
+  </div>
   <div class="badges">
     <span class="badge" id="b1">Fonte: aguardando</span>
-    <span class="badge" id="b2">Telemetria: 30D</span>
+    <span class="badge" id="b2">Série: A/B/C</span>
     <span class="badge">Ajustes: ENT/PAN</span>
     <span class="badge">Rede: Solana</span>
   </div>
 </div>
 
+<!-- LEGENDA MAPA -->
 <div id="mapLegend" class="glass">
-  <div class="l1">Mapa de Integridade Ecológica — leitura contínua do território</div>
-  <div class="l2">Cores quentes = pressão/instabilidade • Cores frias = estabilidade/continuidade funcional</div>
+  <div class="l1">Monitor Nacional — Integridade Ecológica por Biomas</div>
+  <div class="l2">A (estado atual) • B (tendência 5 anos) • C (estabilidade 10 anos) — MapBiomas</div>
 </div>
 
-<div id="mapFrame">
+<!-- MAPA -->
+<div id="mapFrame" aria-label="Monitor de território">
   <img id="bgMap" src="./mapa_br.png" alt="Mapa CNT Brasil">
   <div id="scanlines"></div>
   <div id="dust"></div>
 </div>
 
+<!-- ESQUERDA: CNT Brasil A/B/C + sub-índices agregados -->
 <div id="leftPanel" class="glass">
   <div class="kicker">
-    <strong>CNT (Solana)</strong>: participação digital em uma reserva ambiental monitorada.
-    A aquisição financia conservação e registra a ordem pública de monitoramento/aquisição.
+    <strong>CNT Brasil</strong>: agregação ponderada dos 6 biomas (MapBiomas). <br>
+    A = estado atual • B = tendência (5y) • C = estabilidade (10y).
   </div>
 
-  <div class="big"><span id="cnt">—</span><span style="font-size:26px;opacity:.9">/100</span></div>
-  <div class="unit" id="unit">ECO RATING • Integridade ecológica (escala 0–100)</div>
+  <div class="big">
+    <span id="cntA">—</span><span style="font-size:22px;opacity:.9">/100</span>
+  </div>
+  <div class="unit">A — Estado Nacional (score atual)</div>
 
-  <div class="ratingRow">
-    <span class="classPill" id="grade">Grau: —</span>
-    <span class="classPill" id="classPill">Classe: —</span>
-    <span class="classPill" id="confPill">Confiança: —</span>
-    <span class="classPill" id="statusPill">Status: —</span>
+  <div class="row3">
+    <div class="pill"><span><b>B</b> — Tendência (pontos/ano)</span><span id="cntB">—</span></div>
+    <div class="pill"><span><b>C</b> — Estabilidade (σ 10y)</span><span id="cntC">—</span></div>
+    <div class="pill"><span><b>Grau</b> (rating)</span><span id="grade">—</span></div>
   </div>
 
   <div class="divider"></div>
-  <div class="kicker">Sub-índices (clique para ver)</div>
+
+  <div class="kicker">Sub-índices agregados (clique para ver)</div>
 
   <div class="grid2">
-    <div class="kv" data-k="IBE"><b>IBE</b><span id="ibe">—</span></div>
-    <div class="kv" data-k="IAB"><b>IAB</b><span id="iab">—</span></div>
+    <div class="kv" data-k="IBE"><b>IBE</b><span id="ibe">N/D</span></div>
+    <div class="kv" data-k="IAB"><b>IAB</b><span id="iab">N/D</span></div>
     <div class="kv" data-k="IBI"><b>IBI</b><span id="ibi">—</span></div>
     <div class="kv" data-k="HID"><b>HID</b><span id="hid">—</span></div>
     <div class="kv" data-k="ENT"><b>ENT</b><span id="ent">—</span></div>
@@ -180,15 +382,18 @@ input:focus{border-color:rgba(110,210,255,.65);box-shadow:0 0 16px rgba(110,210,
   </div>
 
   <div class="note">
-    Nota técnica: ENT (entropia) e PAN (pressão antrópica) atuam como fatores de ajuste
-    (penalidades/pressões) e modulam o ECO RATING junto aos demais índices.
+    Nota técnica: ENT (entropia/fragmentação) e PAN (pressão antrópica) são fatores de ajuste.
+    IBE/IAB ficam N/D até integrar telemetria (sensores) e dados abióticos (clima/solo).
   </div>
 </div>
 
+<!-- DIREITA -->
 <div id="rightWrap">
   <div id="buyPanel" class="glass">
-    <div class="title">PARTICIPAR DA RESERVA (CNT)</div>
-    <div class="subtitle">Você adquire frações de integridade ecológica monitorada. A estabilidade no tempo influencia a confiabilidade do ativo.</div>
+    <div class="title">PARTICIPAR DO OBSERVATÓRIO (CNT)</div>
+    <div class="subtitle">
+      Interface de mercado (DEMO). O valor real deve ser calculado a partir das regras do projeto.
+    </div>
 
     <label for="sol">Contribuição em SOL</label>
     <div class="row">
@@ -197,24 +402,25 @@ input:focus{border-color:rgba(110,210,255,.65);box-shadow:0 0 16px rgba(110,210,
       <button class="btn" onclick="buy()">Participar</button>
     </div>
 
-    <div class="valueLine">
-      Emissão estimada: <b id="out">— CNT</b>
-    </div>
+    <div class="valueLine">Emissão estimada: <b id="out">— CNT</b></div>
     <div class="smallline">Rede: Solana • Pump.fun • (interface)</div>
   </div>
 
   <div id="telemetry" class="glass">
-    <div id="telemetryTitle">CURVA DE ESTABILIDADE ECOLÓGICA (30D)</div>
+    <div id="telemetryTitle">TELEMETRIA (JSON) — Série exibida</div>
     <canvas id="wave"></canvas>
     <div id="telemetryHint">Sem histórico carregado.</div>
   </div>
 </div>
 
+<!-- MODAL -->
 <div id="modalOverlay"></div>
 <div id="modal" class="glass">
   <h3 id="mTitle">IBE</h3>
   <div class="mtext" id="mText"></div>
-  <div class="closeRow"><button class="btn secondary" id="closeBtn">Fechar</button></div>
+  <div class="closeRow">
+    <button class="btn secondary" id="closeBtn">Fechar</button>
+  </div>
 </div>
 
 <script>
@@ -222,10 +428,14 @@ input:focus{border-color:rgba(110,210,255,.65);box-shadow:0 0 16px rgba(110,210,
 (function(){
   const bg = document.getElementById("bgMap");
   const base = "./mapa_br.png";
+  if(!bg) return;
   bg.src = base + "?v=" + Date.now();
+  bg.addEventListener("error", () => {
+    alert("ERRO: não achei ./mapa_br.png. Coloque o arquivo na MESMA pasta do index.html e com o nome EXATO.");
+  });
 })();
 
-/* ===== Conversão DEMO (você pode trocar por preço real depois) ===== */
+/* ===== Conversão DEMO (substitua depois) ===== */
 const rate = 147449130; // 1 SOL -> CNT (demo)
 const solInput = document.getElementById("sol");
 const out = document.getElementById("out");
@@ -243,6 +453,7 @@ function buy(){ window.open("https://pump.fun/coin/GCVyjNaCbXkwGUuktyNxSXad4ozmT
 /* ===== Telemetria Canvas ===== */
 const canvas = document.getElementById("wave");
 const ctx = canvas.getContext("2d");
+
 function resize(){
   const dpr = Math.max(1, window.devicePixelRatio || 1);
   canvas.width = Math.floor(canvas.clientWidth * dpr);
@@ -261,7 +472,6 @@ function drawSeries(){
   ctx.fillRect(0,0,w,h);
 
   if(!series || series.length < 2){
-    // fallback visual discreto
     ctx.strokeStyle = "rgba(127,227,255,.25)";
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -272,7 +482,6 @@ function drawSeries(){
     return;
   }
 
-  // normaliza para caber no canvas
   const min = Math.min(...series);
   const max = Math.max(...series);
   const span = Math.max(1e-9, (max - min));
@@ -286,7 +495,7 @@ function drawSeries(){
     const frac = idx - a;
     const v = series[a]*(1-frac) + series[b]*frac;
 
-    // leve “vida” sem inventar valor (só efeito visual pequeno)
+    // micro-efeito visual (não muda o dado, só o traço)
     const v2 = v + Math.sin((i+phase)/60)*0.15;
 
     const y = h - ((v2 - min)/span) * (h*0.72) - (h*0.14);
@@ -307,37 +516,27 @@ function drawSeries(){
 }
 drawSeries();
 
-/* ===== Rating real calculado (ENT/PAN como ajuste) =====
-   Base: média de IBE/IAB/IBI/HID
-   Penalidade: ENT e PAN reduzem o score se altos (pressões).
-   -> Isso só é "verdadeiro" se os índices fornecidos forem reais.
-*/
+/* ===== Rating helpers ===== */
 function clamp(n,min,max){ return Math.max(min, Math.min(max,n)); }
-
-function calcScore(indices){
-  const base = (indices.IBE + indices.IAB + indices.IBI + indices.HID) / 4;
-
-  // penalidades (0..1)
-  const entP = clamp(indices.ENT/100, 0, 1);
-  const panP = clamp(indices.PAN/100, 0, 1);
-
-  // decisão: ENT e PAN entram como “pressão” => reduz score
-  const penalty = (entP*0.12) + (panP*0.18);   // pesos (ajuste do modelo)
-  const score = clamp(base * (1 - penalty), 0, 100);
-
-  return Math.round(score*10)/10;
-}
-
 function gradeFromScore(s){
-  if(s >= 90) return {g:"AA", c:"Classe: Excelente"};
-  if(s >= 80) return {g:"A",  c:"Classe: Alta"};
-  if(s >= 70) return {g:"B",  c:"Classe: Moderada+"};
-  if(s >= 60) return {g:"C",  c:"Classe: Moderada"};
-  if(s >= 50) return {g:"D",  c:"Classe: Vulnerável"};
-  return {g:"E", c:"Classe: Crítica"};
+  if(s >= 90) return "AA";
+  if(s >= 80) return "A";
+  if(s >= 70) return "B";
+  if(s >= 60) return "C";
+  if(s >= 50) return "D";
+  return "E";
 }
 
-/* ===== Carregar dados reais do JSON ===== */
+/* ===== Carregar dados reais do JSON =====
+   Estrutura esperada (exemplo):
+   {
+     "source": "MapBiomas",
+     "year_end": 2023,
+     "cnt": { "A": 68.0, "B": 0.8, "C": 4.2 },
+     "indices": { "IBI": 55.1, "HID": 12.3, "ENT": 41.2, "PAN": 37.7 },
+     "telemetry_30d": [ ... ]  // opcional
+   }
+*/
 async function carregarDadosReais(){
   try{
     const res = await fetch("./dados_cnt.json?v=" + Date.now(), { cache:"no-store" });
@@ -345,46 +544,55 @@ async function carregarDadosReais(){
     const data = await res.json();
 
     // badges
-    document.getElementById("b1").textContent = "Fonte: dados_cnt.json";
+    document.getElementById("b1").textContent = "Fonte: " + (data.source || "dados_cnt.json");
+    document.getElementById("b2").textContent = "Ano base: " + (data.year_end ?? "—") + " • A/B/C";
 
-    // status
-    document.getElementById("confPill").textContent = "Confiança: " + (data.confidence || "—");
-    document.getElementById("statusPill").textContent = "Status: " + (data.status || "—");
+    // CNT A/B/C
+    const A = Number(data?.cnt?.A);
+    const B = Number(data?.cnt?.B);
+    const C = Number(data?.cnt?.C);
 
-    // indices
+    if(Number.isFinite(A)) document.getElementById("cntA").textContent = A.toFixed(1);
+    else document.getElementById("cntA").textContent = "—";
+
+    document.getElementById("cntB").textContent = Number.isFinite(B) ? B.toFixed(2) : "—";
+    document.getElementById("cntC").textContent = Number.isFinite(C) ? C.toFixed(2) : "—";
+    document.getElementById("grade").textContent = Number.isFinite(A) ? gradeFromScore(A) : "—";
+
+    // indices agregados (IBI/HID/ENT/PAN)
     const idx = data.indices || {};
-    const keys = ["IBE","IAB","IBI","HID","ENT","PAN"];
-    for(const k of keys){
-      const el = document.getElementById(k.toLowerCase());
-      el.textContent = (typeof idx[k] === "number") ? idx[k] : "—";
-    }
+    const map = { IBI:"ibi", HID:"hid", ENT:"ent", PAN:"pan" };
+    Object.keys(map).forEach(k=>{
+      const v = Number(idx[k]);
+      document.getElementById(map[k]).textContent = Number.isFinite(v) ? v.toFixed(1) : "—";
+    });
 
-    // score calculado (não inventa: deriva dos índices)
-    const okAll = ["IBE","IAB","IBI","HID","ENT","PAN"].every(k => typeof idx[k] === "number");
-    if(okAll){
-      const score = calcScore(idx);
-      const r = gradeFromScore(score);
-      document.getElementById("cnt").textContent = score.toFixed(1);
-      document.getElementById("grade").textContent = "Grau: " + r.g;
-      document.getElementById("classPill").textContent = r.c;
-    }else{
-      document.getElementById("cnt").textContent = "—";
-      document.getElementById("grade").textContent = "Grau: —";
-      document.getElementById("classPill").textContent = "Classe: —";
-    }
-
-    // telemetria real
-    if(Array.isArray(data.telemetry_30d) && data.telemetry_30d.length >= 10){
+    // Telemetria: aceita 30D OU série 10y (MapBiomas) se você mandar no JSON
+    if(Array.isArray(data.telemetry_30d) && data.telemetry_30d.length >= 2){
       series = data.telemetry_30d.map(n => Number(n)).filter(n => Number.isFinite(n));
+      document.getElementById("telemetryTitle").textContent = "TELEMETRIA (JSON) — Série 30D";
+      document.getElementById("telemetryHint").textContent =
+        "Histórico carregado: " + series.length + " pontos • Última leitura: " + (series.at(-1));
+    }else if(Array.isArray(data.series_10y) && data.series_10y.length >= 2){
+      series = data.series_10y.map(n => Number(n)).filter(n => Number.isFinite(n));
+      document.getElementById("telemetryTitle").textContent = "TELEMETRIA (MapBiomas) — Série 10 anos";
       document.getElementById("telemetryHint").textContent =
         "Histórico carregado: " + series.length + " pontos • Última leitura: " + (series.at(-1));
     }else{
       series = null;
+      document.getElementById("telemetryTitle").textContent = "TELEMETRIA (JSON) — Série exibida";
       document.getElementById("telemetryHint").textContent = "Sem histórico 30D no JSON.";
     }
 
   }catch(e){
     document.getElementById("b1").textContent = "Fonte: sem dados";
+    document.getElementById("b2").textContent = "Ano base: — • A/B/C";
+    document.getElementById("cntA").textContent = "—";
+    document.getElementById("cntB").textContent = "—";
+    document.getElementById("cntC").textContent = "—";
+    document.getElementById("grade").textContent = "—";
+    ["ibi","hid","ent","pan"].forEach(id=>document.getElementById(id).textContent="—");
+
     document.getElementById("telemetryHint").textContent =
       "Não carregou dados_cnt.json (coloque o arquivo na mesma pasta do index).";
     console.warn("Falha ao carregar dados reais:", e);
@@ -394,13 +602,14 @@ carregarDadosReais();
 
 /* ===== Modal ===== */
 const meanings = {
-  IBE: "Índice Bioelétrico: metabolismo do sistema (pulso funcional/ecológico).",
-  IAB: "Índice Abiótico: suporte físico (clima, solo, energia) que sustenta o sistema.",
-  IBI: "Índice Biótico: organização da vida (atividade biológica e padrão funcional).",
-  HID: "Índice Hídrico: estabilidade e dinâmica da água no território.",
-  ENT: "Entropia: perda de ordem/eficiência do sistema (penalidade/ajuste).",
-  PAN: "Pressão Antrópica: intensidade do uso humano e impacto (penalidade/ajuste)."
+  IBE: "Índice Bioelétrico: metabolismo do sistema (pulso funcional/ecológico). (N/D sem sensores)",
+  IAB: "Índice Abiótico: clima/solo/energia. (N/D sem integração ERA5/SoilGrids)",
+  IBI: "Índice Biótico (proxy MapBiomas): vegetação nativa e organização ecológica, penalizada por ENT/PAN.",
+  HID: "Índice Hídrico (proxy MapBiomas): fração de água/áreas úmidas conforme classes definidas.",
+  ENT: "Entropia (proxy MapBiomas): diversidade/fragmentação de classes (Shannon normalizada).",
+  PAN: "Pressão Antrópica (MapBiomas): fração antrópica (agro/urbano/mineração etc.) na área/bioma."
 };
+
 const modal = document.getElementById("modal");
 const overlay = document.getElementById("modalOverlay");
 const mTitle = document.getElementById("mTitle");
@@ -426,3 +635,4 @@ closeBtn.addEventListener("click", closeModal);
 
 </body>
 </html>
+```0
