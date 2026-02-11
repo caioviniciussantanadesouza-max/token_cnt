@@ -3,189 +3,249 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>CNT — Índice Nacional Bioecológico (MapBiomas)</title>
+<title>CNT — Reserva Ambiental Tokenizada</title>
 
 <style>
 :root{
-  --bg:#000;
-  --panel: rgba(6,14,18,.58);
-  --stroke: rgba(120,220,255,.20);
+  /* FUNDO PRETO (igual o fundo do mapa) */
+  --bg: #05080a;
+
+  /* HUD */
+  --hud: rgba(110,210,255,.95);
+  --hud2: rgba(110,210,255,.45);
+  --stroke: rgba(110,210,255,.18);
+  --glass: rgba(2,10,16,.44);
+  --glass2: rgba(2,10,16,.26);
+
   --text: #d7fbff;
-  --muted:#86dcff;
-  --accent:#7fe3ff;
-  --shadow: 0 0 22px rgba(110,210,255,.12), 0 0 70px rgba(0,200,255,.06);
+  --muted:#9fe9ff;
+
+  --shadow: 0 0 22px rgba(110,210,255,.12), 0 0 90px rgba(0,200,255,.06);
+  --inner: inset 0 0 28px rgba(0,0,0,.42);
 }
 
+*{ box-sizing:border-box; }
 html,body{
-  margin:0;height:100%;
-  background:var(--bg);color:var(--text);
-  font-family:"Segoe UI", Arial, sans-serif;
+  margin:0; height:100%;
+  background:var(--bg);
+  color:var(--text);
+  font-family: "Segoe UI", system-ui, Arial, sans-serif;
   overflow:hidden;
 }
 
-#bgBlack{position:fixed;inset:0;background:#000;z-index:0;}
-#vignette{
-  position:fixed; inset:0; pointer-events:none; z-index:1;
-  background: radial-gradient(circle at 50% 45%,
-    rgba(0,0,0,0) 0%,
-    rgba(0,0,0,.15) 45%,
-    rgba(0,0,0,.55) 75%,
-    rgba(0,0,0,.78) 100%);
+/* ====== STAGE / MAPA ====== */
+#stage{
+  position:fixed; inset:0;
+  background:radial-gradient(circle at 40% 35%, rgba(60,140,170,.18), transparent 55%),
+             radial-gradient(circle at 75% 65%, rgba(30,110,140,.12), transparent 55%),
+             var(--bg);
+  z-index:0;
 }
 
-.glass{
-  background: var(--panel);
-  backdrop-filter: blur(14px);
-  border:1px solid var(--stroke);
-  border-radius:18px;
-  box-shadow: var(--shadow);
-}
-
-/* ===== HEADER ===== */
-#header{
-  position:fixed; top:0; left:0; right:0; height:82px;
-  border-radius:0 0 18px 18px;
-  z-index:20;
-  display:flex; flex-direction:column; justify-content:center; align-items:center;
-  padding:10px 16px;
-}
-#header .t1{ font-weight:900; letter-spacing:.8px; font-size:20px; line-height:1.1; }
-#header .t2{
-  margin-top:4px; font-size:12px; color:var(--muted); opacity:.95;
-  text-align:center; max-width:980px;
-}
-.badges{ margin-top:6px; display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
-.badge{
-  font-size:11px; padding:5px 10px; border-radius:999px;
-  border:1px solid rgba(120,220,255,.22);
-  background: rgba(0,0,0,.18);
-  color:#dffaff; opacity:.95;
-}
-
-/* ===== MAPA / FRAME ===== */
-#mapLegend{
-  position:fixed; left:50%; top:100px; transform:translateX(-50%);
-  z-index:12; padding:10px 12px; border-radius:14px;
-  max-width:min(920px, 66vw); text-align:center;
-}
-#mapLegend .l1{ font-size:12px; color:#dffaff; font-weight:800; letter-spacing:.4px; }
-#mapLegend .l2{ margin-top:4px; font-size:11px; color:var(--muted); opacity:.95; }
-
-#mapFrame{
-  position:fixed; left:50%; top:56%;
-  transform:translate(-50%,-50%);
-  width:min(1100px, 66vw);
-  height:min(760px, 78vh);
-  border-radius:22px;
-  z-index:2;
-  background: rgba(0,0,0,.88);
-  border:1px solid rgba(120,220,255,.18);
-  box-shadow: 0 0 60px rgba(0,0,0,.75), 0 0 90px rgba(0,200,255,.12);
+/* caixa do mapa ao centro */
+#mapWrap{
+  position:absolute;
+  left:50%; top:88px;
+  transform:translateX(-50%);
+  width:min(860px, 62vw);
+  height:calc(100vh - 168px);
+  border-radius:26px;
   overflow:hidden;
+  background:rgba(0,0,0,.62);
+  box-shadow: var(--shadow), var(--inner);
+  border:1px solid rgba(110,210,255,.12);
 }
-#mapFrame::before{
-  content:"";
-  position:absolute; inset:0;
-  background:
-    radial-gradient(circle at 50% 45%, rgba(120,220,255,.10), transparent 55%),
-    radial-gradient(circle at 20% 30%, rgba(120,220,255,.06), transparent 55%),
-    radial-gradient(circle at 80% 55%, rgba(120,220,255,.05), transparent 60%);
-  opacity:.55;
-  pointer-events:none;
-  mix-blend-mode:screen;
-}
+
+/* imagem */
 #bgMap{
   position:absolute; inset:0;
   width:100%; height:100%;
   object-fit:contain;
   object-position:center;
-  transform: translateY(-6px) scale(.98);
-  filter: brightness(.95) contrast(1.22) saturate(1.28);
-  animation: mapPulse 9s ease-in-out infinite;
-  opacity:.99;
+  transform:translateY(6px) scale(.98);
+  filter:brightness(.95) contrast(1.18) saturate(1.25);
+  animation: mapBreath 8s ease-in-out infinite;
 }
-@keyframes mapPulse{
-  0%{ filter:brightness(.82) contrast(1.12) saturate(1.10); }
-  50%{ filter:brightness(1.07) contrast(1.33) saturate(1.32); }
-  100%{ filter:brightness(.82) contrast(1.12) saturate(1.10); }
+
+@keyframes mapBreath{
+  0%{ filter:brightness(.88) contrast(1.12) saturate(1.12); }
+  50%{ filter:brightness(1.10) contrast(1.30) saturate(1.38); }
+  100%{ filter:brightness(.88) contrast(1.12) saturate(1.12); }
 }
+
+/* glow */
+#mapGlow{
+  position:absolute; inset:-10%;
+  pointer-events:none;
+  mix-blend-mode:screen;
+  background:
+    radial-gradient(circle at 30% 45%, rgba(120,220,255,.22), transparent 55%),
+    radial-gradient(circle at 70% 40%, rgba(120,220,255,.12), transparent 60%),
+    radial-gradient(circle at 60% 75%, rgba(120,220,255,.10), transparent 60%);
+  filter:blur(16px);
+  opacity:.30;
+  animation: glowPulse 6s ease-in-out infinite;
+}
+@keyframes glowPulse{
+  0%{ opacity:.20; transform:scale(1); }
+  50%{ opacity:.42; transform:scale(1.03); }
+  100%{ opacity:.20; transform:scale(1); }
+}
+
+/* scanlines */
 #scanlines{
   position:absolute; inset:0;
   pointer-events:none;
   opacity:.18;
-  background: repeating-linear-gradient(
-    to bottom,
-    rgba(120,220,255,.06) 0px,
-    rgba(120,220,255,.06) 1px,
-    transparent 2px,
-    transparent 7px
-  );
-  mix-blend-mode: overlay;
-  animation: scan 3.2s linear infinite;
+  background:repeating-linear-gradient(
+      to bottom,
+      rgba(120,220,255,.06) 0px,
+      rgba(120,220,255,.06) 1px,
+      transparent 2px,
+      transparent 7px
+    );
+  mix-blend-mode:overlay;
+  animation: scan 3.0s linear infinite;
 }
 @keyframes scan{
-  0%{ transform:translateY(-20px); }
-  100%{ transform:translateY(20px); }
-}
-#dust{
-  position:absolute; inset:-30%;
-  pointer-events:none;
-  opacity:.55;
-  background:
-    radial-gradient(circle at 25% 25%, rgba(120,220,255,.10), transparent 40%),
-    radial-gradient(circle at 70% 20%, rgba(120,220,255,.08), transparent 45%),
-    radial-gradient(circle at 45% 80%, rgba(120,220,255,.06), transparent 50%);
-  filter: blur(2px);
-  animation: drift 18s linear infinite;
-}
-@keyframes drift{
-  0%{ transform:translate3d(0,0,0); }
-  100%{ transform:translate3d(-3%,2%,0); }
+  0%{ transform:translateY(-18px); }
+  100%{ transform:translateY(18px); }
 }
 
-/* ===== LEFT PANEL (Brasil) ===== */
-#leftPanel{
-  position:fixed;
-  left:20px;
-  top:104px;
-  width:330px;
-  padding:14px;
+/* Hologram points canvas */
+#holo{
+  position:absolute; inset:0;
+  width:100%; height:100%;
+  pointer-events:none;
+  mix-blend-mode:screen;
+  opacity:.95;
+  filter: drop-shadow(0 0 10px rgba(110,210,255,.28));
+}
+
+/* ===== GLASS ===== */
+.glass{
+  background: linear-gradient(180deg, var(--glass), var(--glass2));
+  backdrop-filter: blur(14px);
+  border:1px solid var(--stroke);
+  box-shadow: var(--shadow);
   border-radius:22px;
-  z-index:10;
+}
+
+/* ===== HEADER ===== */
+#top{
+  position:fixed;
+  left:50%; top:14px;
+  transform:translateX(-50%);
+  width:min(1100px, 92vw);
+  padding:14px 16px;
+  z-index:20;
+}
+
+#topRow{
+  display:flex;
+  align-items:flex-end;
+  gap:12px;
+  justify-content:center;
+  flex-wrap:wrap;
+}
+
+#brand{
+  text-align:center;
+  line-height:1;
+}
+#brand .h1{
+  font-weight:950;
+  letter-spacing:.9px;
+  font-size:22px;
+}
+#brand .h2{
+  margin-top:6px;
+  font-size:12px;
+  color:var(--muted);
   opacity:.95;
 }
-.kicker{ font-size:12px; color:var(--muted); opacity:.95; }
-.big{ margin-top:10px; font-size:68px; font-weight:260; line-height:1; }
-.unit{ font-size:12px; color:var(--muted); margin-top:4px; }
 
-.row3{
-  display:grid;
-  grid-template-columns: 1fr;
-  gap:8px;
-  margin-top:10px;
+.badges{
+  display:flex; gap:8px;
+  flex-wrap:wrap;
+  justify-content:center;
 }
-.pill{
+.badge{
   font-size:11px;
-  padding:8px 10px;
-  border-radius:14px;
-  border:1px solid rgba(120,220,255,.18);
-  background: rgba(0,0,0,.16);
-  color:#e8fdff;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
+  padding:7px 10px;
+  border-radius:999px;
+  border:1px solid rgba(110,210,255,.18);
+  background:rgba(0,0,0,.18);
+  color:#c7f7ff;
+  opacity:.98;
 }
-.pill b{ color:#e9fdff; }
 
+/* ===== LEFT PANEL ===== */
+#leftPanel{
+  position:fixed;
+  left:14px; top:92px;
+  width:380px;
+  padding:16px;
+  z-index:15;
+}
+
+.small{ font-size:12px; color:var(--muted); opacity:.95; }
 .divider{
   height:1px;
   background:linear-gradient(90deg,transparent,rgba(110,210,255,.25),transparent);
   margin:12px 0;
 }
 
+.bigScore{
+  display:flex;
+  align-items:flex-end;
+  gap:8px;
+  margin-top:10px;
+}
+.bigScore .num{
+  font-size:82px;
+  font-weight:250;
+  line-height:1;
+  color:#e7fdff;
+}
+.bigScore .unit{
+  font-size:14px;
+  color:rgba(220,255,255,.75);
+  padding-bottom:10px;
+}
+
+.kline{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  margin-top:8px;
+  font-size:12px;
+  color:#cfefff;
+}
+.kline b{ color:#eafcff; }
+
+.abclines{
+  margin-top:10px;
+  display:grid;
+  gap:8px;
+}
+.barRow{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  padding:10px 10px;
+  border:1px solid rgba(110,210,255,.14);
+  border-radius:14px;
+  background:rgba(0,0,0,.16);
+  font-size:12px;
+}
+.barRow .lab{ color:#cfefff; }
+.barRow .val{ font-weight:900; color:#eafcff; }
+
 .grid2{
   display:grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns:1fr 1fr;
   gap:8px 10px;
   margin-top:10px;
 }
@@ -194,93 +254,130 @@ html,body{
   justify-content:space-between;
   align-items:center;
   font-size:12px;
-  padding:9px 10px;
-  border:1px solid rgba(110,210,255,.16);
-  border-radius:12px;
+  padding:10px 10px;
+  border:1px solid rgba(110,210,255,.14);
+  border-radius:14px;
   background:rgba(0,0,0,.16);
   cursor:pointer;
   user-select:none;
 }
 .kv:hover{
-  border-color: rgba(110,210,255,.35);
-  box-shadow: 0 0 14px rgba(110,210,255,.18);
+  border-color: rgba(110,210,255,.32);
+  box-shadow: 0 0 16px rgba(110,210,255,.18);
 }
-.kv b{ font-weight:900; letter-spacing:.4px; color:#e9fdff; }
-.kv span{ color:#d0fbff; font-weight:800; }
+.kv b{ font-weight:950; letter-spacing:.4px; }
+.kv span{ font-weight:900; color:#e9fdff; }
+
 .note{
   margin-top:10px;
   font-size:11px;
   color:var(--muted);
   opacity:.95;
-  line-height:1.25;
+  line-height:1.3;
 }
 
-/* ===== RIGHT PANEL (mercado + telemetria) ===== */
-#rightWrap{
+/* ===== RIGHT PANEL ===== */
+#rightCol{
   position:fixed;
-  right:20px;
-  top:104px;
-  width:330px;
-  z-index:10;
+  right:14px; top:92px;
+  width:380px;
+  z-index:15;
   display:flex;
   flex-direction:column;
-  gap:14px;
+  gap:12px;
 }
 
-#buyPanel{ padding:14px; border-radius:18px; }
-.title{ font-weight:900; letter-spacing:.6px; margin-bottom:8px; }
-.subtitle{ font-size:12px; color:var(--muted); opacity:.95; margin-bottom:10px; }
-
+#buyPanel{
+  padding:16px;
+}
+.title{
+  font-weight:950;
+  letter-spacing:.8px;
+  font-size:14px;
+  color:#eafcff;
+  margin-bottom:10px;
+}
+.buyDesc{
+  font-size:12px;
+  color:var(--muted);
+  line-height:1.35;
+  opacity:.95;
+  margin-bottom:10px;
+}
 label{ display:block; font-size:12px; color:var(--muted); margin:10px 0 6px; }
 .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+
 input{
-  width:170px;
-  padding:10px 10px;
-  border-radius:12px;
-  border:1px solid rgba(110,210,255,.38);
-  background:rgba(0,0,0,.22);
-  color:#e9fbff;
+  width:180px;
+  padding:11px 11px;
+  border-radius:14px;
+  border:1px solid rgba(110,210,255,.32);
+  background:rgba(0,0,0,.18);
+  color:#eafcff;
   outline:none;
 }
 input:focus{
   border-color: rgba(110,210,255,.65);
   box-shadow: 0 0 16px rgba(110,210,255,.18);
 }
+
 .btn{
-  background:linear-gradient(180deg,rgba(110,210,255,.18),rgba(0,0,0,.18));
-  border:1px solid rgba(110,210,255,.45);
+  background:linear-gradient(180deg,rgba(110,210,255,.18),rgba(0,0,0,.14));
+  border:1px solid rgba(110,210,255,.40);
   color:#eafcff;
   border-radius:14px;
-  padding:10px 14px;
+  padding:11px 14px;
   cursor:pointer;
-  font-weight:800;
+  font-weight:900;
 }
-.btn:hover{ box-shadow:0 0 18px rgba(110,210,255,.30); }
-.btn.secondary{ opacity:.95; }
+.btn:hover{ box-shadow:0 0 18px rgba(110,210,255,.28); }
 
-.valueLine{ margin-top:10px; font-size:12px; color:#bdf4ff; }
-.valueLine b{ font-size:18px; color:#e9fdff; }
-.smallline{ margin-top:6px; font-size:11px; color:var(--muted); opacity:.95; }
+.valueLine{
+  margin-top:10px;
+  font-size:12px;
+  color:#cfefff;
+}
+.valueLine b{
+  font-size:18px;
+  color:#eafcff;
+}
+.subnote{
+  margin-top:6px;
+  font-size:11px;
+  color:var(--muted);
+  opacity:.95;
+}
 
-#telemetry{ padding:10px 14px; border-radius:18px; }
+/* ===== TELEMETRIA ===== */
+#telemetry{
+  padding:12px 14px;
+}
+#telemetryTop{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  margin-bottom:8px;
+}
 #telemetryTitle{
   font-size:11px;
-  letter-spacing:.8px;
-  color:#d4fbff;
+  letter-spacing:.9px;
+  color:#d7fbff;
   opacity:.95;
-  margin-bottom:6px;
-}
-#wave{
-  width:100%;
-  height:44px;
-  display:block;
-  filter: drop-shadow(0 0 8px rgba(110,210,255,.55));
 }
 #telemetryHint{
   font-size:11px;
-  color:var(--muted);
-  opacity:.90;
-  margin-top:6px;
+  color:rgba(200,250,255,.75);
+  opacity:.95;
+}
+#wave{
+  width:100%;
+  height:72px;
+  display:block;
+  border-radius:14px;
+  background:rgba(0,0,0,.25);
+  border:1px solid rgba(110,210,255,.14);
+  filter: drop-shadow(0 0 10px rgba(110,210,255,.35));
 }
 
 /* ===== MODAL ===== */
@@ -289,16 +386,16 @@ input:focus{
   background: rgba(0,0,0,.55);
   backdrop-filter: blur(2px);
   display:none;
-  z-index:50;
+  z-index:60;
 }
 #modal{
   position:fixed;
   left:50%; top:50%;
   transform:translate(-50%,-50%);
-  width:min(620px, 92vw);
+  width:min(540px, 92vw);
   padding:16px;
   border-radius:18px;
-  z-index:60;
+  z-index:70;
   display:none;
 }
 #modal h3{ margin:0 0 6px; letter-spacing:.6px; }
@@ -306,315 +403,420 @@ input:focus{
 #modal .closeRow{ display:flex; justify-content:flex-end; margin-top:12px; }
 
 /* ===== RESPONSIVO ===== */
+@media (max-width: 1180px){
+  #leftPanel{ width:350px; }
+  #rightCol{ width:350px; }
+  #mapWrap{ width:min(780px, 56vw); }
+}
 @media (max-width: 980px){
   body{ overflow:auto; }
-  #leftPanel,#rightWrap,#mapLegend{
-    position:static; transform:none; width:auto; margin:12px; max-width:none;
+  #leftPanel, #rightCol{
+    position:relative;
+    left:auto; right:auto; top:auto;
+    width:min(92vw, 720px);
+    margin:12px auto 0;
   }
-  #mapFrame{
-    position:relative; left:auto; top:auto; transform:none;
-    margin:12px; width:auto; height:55vh;
+  #mapWrap{
+    position:relative;
+    left:auto; top:auto;
+    transform:none;
+    width:min(92vw, 720px);
+    height:420px;
+    margin:12px auto;
   }
+  #stage{ position:relative; min-height:100vh; }
+  #top{ position:relative; left:auto; transform:none; margin:12px auto; }
 }
 </style>
 </head>
 
 <body>
-<div id="bgBlack"></div>
-<div id="vignette"></div>
 
-<!-- HEADER -->
-<div id="header" class="glass">
-  <div class="t1">CNT — Índice Nacional Bioecológico</div>
-  <div class="t2">
-    Dados derivados de MapBiomas (biomas brasileiros) • Estado (A), Tendência (B) e Estabilidade (C) • Exibição auditável via JSON.
-  </div>
-  <div class="badges">
-    <span class="badge" id="b1">Fonte: aguardando</span>
-    <span class="badge" id="b2">Série: A/B/C</span>
-    <span class="badge">Ajustes: ENT/PAN</span>
-    <span class="badge">Rede: Solana</span>
-  </div>
-</div>
-
-<!-- LEGENDA MAPA -->
-<div id="mapLegend" class="glass">
-  <div class="l1">Monitor Nacional — Integridade Ecológica por Biomas</div>
-  <div class="l2">A (estado atual) • B (tendência 5 anos) • C (estabilidade 10 anos) — MapBiomas</div>
-</div>
-
-<!-- MAPA -->
-<div id="mapFrame" aria-label="Monitor de território">
-  <img id="bgMap" src="./mapa_br.png" alt="Mapa CNT Brasil">
-  <div id="scanlines"></div>
-  <div id="dust"></div>
-</div>
-
-<!-- ESQUERDA: CNT Brasil A/B/C + sub-índices agregados -->
-<div id="leftPanel" class="glass">
-  <div class="kicker">
-    <strong>CNT Brasil</strong>: agregação ponderada dos 6 biomas (MapBiomas). <br>
-    A = estado atual • B = tendência (5y) • C = estabilidade (10y).
+<div id="stage">
+  <div id="top" class="glass">
+    <div id="topRow">
+      <div id="brand">
+        <div class="h1">CNT — Reserva Ambiental Tokenizada</div>
+        <div class="h2">Ativo híbrido: conservação + monitoramento + registro público (auditável via JSON)</div>
+      </div>
+      <div class="badges" aria-label="badges">
+        <span class="badge" id="b1">Fonte: GeoJSON (real)</span>
+        <span class="badge" id="b2">Ano base: <span id="yearEnd">—</span></span>
+        <span class="badge">A/B/C + ENT/PAN</span>
+        <span class="badge">Rede: Solana</span>
+        <span class="badge">Registro público</span>
+      </div>
+    </div>
   </div>
 
-  <div class="big">
-    <span id="cntA">—</span><span style="font-size:22px;opacity:.9">/100</span>
-  </div>
-  <div class="unit">A — Estado Nacional (score atual)</div>
-
-  <div class="row3">
-    <div class="pill"><span><b>B</b> — Tendência (pontos/ano)</span><span id="cntB">—</span></div>
-    <div class="pill"><span><b>C</b> — Estabilidade (σ 10y)</span><span id="cntC">—</span></div>
-    <div class="pill"><span><b>Grau</b> (rating)</span><span id="grade">—</span></div>
-  </div>
-
-  <div class="divider"></div>
-
-  <div class="kicker">Sub-índices agregados (clique para ver)</div>
-
-  <div class="grid2">
-    <div class="kv" data-k="IBE"><b>IBE</b><span id="ibe">N/D</span></div>
-    <div class="kv" data-k="IAB"><b>IAB</b><span id="iab">N/D</span></div>
-    <div class="kv" data-k="IBI"><b>IBI</b><span id="ibi">—</span></div>
-    <div class="kv" data-k="HID"><b>HID</b><span id="hid">—</span></div>
-    <div class="kv" data-k="ENT"><b>ENT</b><span id="ent">—</span></div>
-    <div class="kv" data-k="PAN"><b>PAN</b><span id="pan">—</span></div>
-  </div>
-
-  <div class="note">
-    Nota técnica: ENT (entropia/fragmentação) e PAN (pressão antrópica) são fatores de ajuste.
-    IBE/IAB ficam N/D até integrar telemetria (sensores) e dados abióticos (clima/solo).
-  </div>
-</div>
-
-<!-- DIREITA -->
-<div id="rightWrap">
-  <div id="buyPanel" class="glass">
-    <div class="title">PARTICIPAR DO OBSERVATÓRIO (CNT)</div>
-    <div class="subtitle">
-      Interface de mercado (DEMO). O valor real deve ser calculado a partir das regras do projeto.
+  <div id="leftPanel" class="glass">
+    <div class="small">
+      <b>CNT (Solana)</b>: participação digital numa reserva ambiental monitorada.
+      Compra financia conservação + mantém auditoria pública + telemetria.
     </div>
 
-    <label for="sol">Contribuição em SOL</label>
-    <div class="row">
-      <input id="sol" type="number" step="0.01" min="0" value="0.10" />
-      <button class="btn secondary" onclick="connect()">Conectar Wallet</button>
-      <button class="btn" onclick="buy()">Participar</button>
+    <div class="bigScore">
+      <div class="num" id="cntA">—</div>
+      <div class="unit">/100</div>
     </div>
 
-    <div class="valueLine">Emissão estimada: <b id="out">— CNT</b></div>
-    <div class="smallline">Rede: Solana • Pump.fun • (interface)</div>
+    <div class="kline">
+      <span>ECO RATING (A — Estado)</span>
+      <b id="rating">—</b>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="abclines">
+      <div class="barRow"><span class="lab">A — Estado (score atual)</span><span class="val" id="Aabs">—</span></div>
+      <div class="barRow"><span class="lab">B — Tendência (pontos/ano)</span><span class="val" id="Babs">—</span></div>
+      <div class="barRow"><span class="lab">C — Estabilidade (σ 10y)</span><span class="val" id="Cabs">—</span></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="small" style="font-weight:950; letter-spacing:.5px;">Sub-índices agregados (clique para ver)</div>
+
+    <div class="grid2">
+      <div class="kv" data-k="IBI"><b>IBI</b><span id="ibi">—</span></div>
+      <div class="kv" data-k="IAB"><b>IAB</b><span id="iab">—</span></div>
+      <div class="kv" data-k="HID"><b>HID</b><span id="hid">—</span></div>
+      <div class="kv" data-k="PAN"><b>PAN</b><span id="pan">—</span></div>
+      <div class="kv" data-k="ENT"><b>ENT</b><span id="ent">—</span></div>
+      <div class="kv" data-k="REL"><b>REL</b><span id="relA">—</span></div>
+    </div>
+
+    <div class="note">
+      Nota técnica: <b>ENT</b> (entropia/volatilidade) e <b>PAN</b> (pressão antrópica) atuam como fatores de ajuste
+      (risco/penalidade). O CNT é híbrido: <b>conservação</b> + <b>monitoramento</b> + <b>registro público</b>.
+    </div>
   </div>
 
-  <div id="telemetry" class="glass">
-    <div id="telemetryTitle">TELEMETRIA (JSON) — Série exibida</div>
-    <canvas id="wave"></canvas>
-    <div id="telemetryHint">Sem histórico carregado.</div>
+  <div id="mapWrap" aria-label="mapa">
+    <img id="bgMap" src="mapa_br.png" alt="Mapa Brasil (holográfico)"/>
+    <canvas id="holo"></canvas>
+    <div id="mapGlow"></div>
+    <div id="scanlines"></div>
+  </div>
+
+  <div id="rightCol">
+    <div id="buyPanel" class="glass">
+      <div class="title">ADQUIRIR CNT (RESERVA AMBIENTAL)</div>
+      <div class="buyDesc">
+        O CNT representa frações de integridade ecológica monitorada + validação temporal (telemetria) +
+        registro público de aquisição/monitoramento.
+      </div>
+
+      <label for="sol">Contribuição em SOL</label>
+      <div class="row">
+        <input id="sol" type="number" step="0.01" min="0" value="0.10" />
+        <button class="btn" onclick="connect()">Conectar Wallet</button>
+        <button class="btn" onclick="buy()">Participar</button>
+      </div>
+
+      <div class="valueLine">
+        Emissão estimada: <b id="out">— CNT</b>
+      </div>
+      <div class="subnote">Rede: Solana • Pump.fun (interface) • lastro = dados públicos + auditoria via JSON.</div>
+    </div>
+
+    <div id="telemetry" class="glass">
+      <div id="telemetryTop">
+        <div id="telemetryTitle">TELEMETRIA (JSON) — Série 10 anos</div>
+        <div id="telemetryHint">Carregando…</div>
+      </div>
+      <canvas id="wave"></canvas>
+    </div>
   </div>
 </div>
 
 <!-- MODAL -->
 <div id="modalOverlay"></div>
 <div id="modal" class="glass">
-  <h3 id="mTitle">IBE</h3>
+  <h3 id="mTitle">IBI</h3>
   <div class="mtext" id="mText"></div>
   <div class="closeRow">
-    <button class="btn secondary" id="closeBtn">Fechar</button>
+    <button class="btn" id="closeBtn">Fechar</button>
   </div>
 </div>
 
 <script>
-/* ===== FIX IMAGEM (GitHub Pages) ===== */
-(function(){
-  const bg = document.getElementById("bgMap");
-  const base = "./mapa_br.png";
-  if(!bg) return;
-  bg.src = base + "?v=" + Date.now();
-  bg.addEventListener("error", () => {
-    alert("ERRO: não achei ./mapa_br.png. Coloque o arquivo na MESMA pasta do index.html e com o nome EXATO.");
-  });
-})();
+/* ===== CONFIG ===== */
+const GEOJSON_FILE = "CNT_SERIE_10Y_.geojson";   // coloque este arquivo na mesma pasta do index
+const RATE_SOL_TO_CNT = 147449130;              // demo (troque depois pelo real)
 
-/* ===== Conversão DEMO (substitua depois) ===== */
-const rate = 147449130; // 1 SOL -> CNT (demo)
-const solInput = document.getElementById("sol");
-const out = document.getElementById("out");
-function updateOut(){
-  const sol = parseFloat(solInput.value) || 0;
-  out.textContent = (sol * rate).toLocaleString("pt-BR") + " CNT";
-}
-solInput.addEventListener("input", updateOut);
-updateOut();
+/* ===== Helpers ===== */
+const $ = (id)=>document.getElementById(id);
+const fmt1 = (v)=> (Number.isFinite(v) ? v.toFixed(1) : "N/D");
+const fmt2 = (v)=> (Number.isFinite(v) ? v.toFixed(2) : "N/D");
+const clamp = (v,min,max)=>Math.max(min,Math.min(max,v));
 
-/* ===== Botões ===== */
-function connect(){ alert("Conexão Phantom/Solana entra aqui depois (ainda é DEMO)."); }
-function buy(){ window.open("https://pump.fun/coin/GCVyjNaCbXkwGUuktyNxSXad4ozmTp2fzQr2jieSpump","_blank"); }
-
-/* ===== Telemetria Canvas ===== */
-const canvas = document.getElementById("wave");
-const ctx = canvas.getContext("2d");
-
-function resize(){
-  const dpr = Math.max(1, window.devicePixelRatio || 1);
-  canvas.width = Math.floor(canvas.clientWidth * dpr);
-  canvas.height = Math.floor(canvas.clientHeight * dpr);
-  ctx.setTransform(dpr,0,0,dpr,0,0);
-}
-window.addEventListener("resize", resize);
-resize();
-
-let series = null;
-let phase = 0;
-
-function drawSeries(){
-  const w = canvas.clientWidth, h = canvas.clientHeight;
-  ctx.fillStyle = "rgba(0,0,0,.55)";
-  ctx.fillRect(0,0,w,h);
-
-  if(!series || series.length < 2){
-    ctx.strokeStyle = "rgba(127,227,255,.25)";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(0, h*0.6);
-    ctx.lineTo(w, h*0.6);
-    ctx.stroke();
-    requestAnimationFrame(drawSeries);
-    return;
-  }
-
-  const min = Math.min(...series);
-  const max = Math.max(...series);
-  const span = Math.max(1e-9, (max - min));
-
-  ctx.beginPath();
-  for(let i=0;i<w;i++){
-    const t = i/(w-1);
-    const idx = t*(series.length-1);
-    const a = Math.floor(idx);
-    const b = Math.min(series.length-1, a+1);
-    const frac = idx - a;
-    const v = series[a]*(1-frac) + series[b]*frac;
-
-    // micro-efeito visual (não muda o dado, só o traço)
-    const v2 = v + Math.sin((i+phase)/60)*0.15;
-
-    const y = h - ((v2 - min)/span) * (h*0.72) - (h*0.14);
-
-    if(i===0) ctx.moveTo(i,y);
-    else ctx.lineTo(i,y);
-  }
-  ctx.strokeStyle = "#7fe3ff";
-  ctx.lineWidth = 2;
-  ctx.stroke();
-
-  ctx.strokeStyle = "rgba(127,227,255,.22)";
-  ctx.lineWidth = 6;
-  ctx.stroke();
-
-  phase += 1.6;
-  requestAnimationFrame(drawSeries);
-}
-drawSeries();
-
-/* ===== Rating helpers ===== */
-function clamp(n,min,max){ return Math.max(min, Math.min(max,n)); }
-function gradeFromScore(s){
-  if(s >= 90) return "AA";
-  if(s >= 80) return "A";
-  if(s >= 70) return "B";
-  if(s >= 60) return "C";
-  if(s >= 50) return "D";
-  return "E";
+function gradeFromA(a){
+  if(!Number.isFinite(a)) return "—";
+  if(a >= 85) return "AAA";
+  if(a >= 75) return "AA";
+  if(a >= 65) return "A";
+  if(a >= 55) return "BBB";
+  if(a >= 45) return "BB";
+  if(a >= 35) return "B";
+  if(a >= 25) return "C";
+  return "D";
 }
 
-/* ===== Carregar dados reais do JSON =====
-   Estrutura esperada (exemplo):
-   {
-     "source": "MapBiomas",
-     "year_end": 2023,
-     "cnt": { "A": 68.0, "B": 0.8, "C": 4.2 },
-     "indices": { "IBI": 55.1, "HID": 12.3, "ENT": 41.2, "PAN": 37.7 },
-     "telemetry_30d": [ ... ]  // opcional
-   }
-*/
+/* ===== Carregar dados reais (GeoJSON) ===== */
+let seriesAbs = null;
+
 async function carregarDadosReais(){
   try{
-    const res = await fetch("./dados_cnt.json?v=" + Date.now(), { cache:"no-store" });
+    const res = await fetch(GEOJSON_FILE, { cache: "no-store" });
     if(!res.ok) throw new Error("HTTP " + res.status);
-    const data = await res.json();
+    const gj = await res.json();
 
-    // badges
-    document.getElementById("b1").textContent = "Fonte: " + (data.source || "dados_cnt.json");
-    document.getElementById("b2").textContent = "Ano base: " + (data.year_end ?? "—") + " • A/B/C";
+    const feat = (gj && gj.features && gj.features[0]) ? gj.features[0] : null;
+    if(!feat || !feat.properties) throw new Error("GeoJSON sem properties");
 
-    // CNT A/B/C
-    const A = Number(data?.cnt?.A);
-    const B = Number(data?.cnt?.B);
-    const C = Number(data?.cnt?.C);
+    const p = feat.properties;
 
-    if(Number.isFinite(A)) document.getElementById("cntA").textContent = A.toFixed(1);
-    else document.getElementById("cntA").textContent = "—";
+    const yearEnd = Number(p.year_end ?? p.YEAR_END ?? p.yearEnd);
+    $("yearEnd").textContent = Number.isFinite(yearEnd) ? yearEnd : "—";
 
-    document.getElementById("cntB").textContent = Number.isFinite(B) ? B.toFixed(2) : "—";
-    document.getElementById("cntC").textContent = Number.isFinite(C) ? C.toFixed(2) : "—";
-    document.getElementById("grade").textContent = Number.isFinite(A) ? gradeFromScore(A) : "—";
+    // preferir ABS (real)
+    const A = Number(p.cnt_abs_A ?? p.cnt_A ?? p.A ?? p.cntA);
+    const B = Number(p.cnt_abs_B ?? p.cnt_B ?? p.B ?? p.cntB);
+    const C = Number(p.cnt_abs_C ?? p.cnt_C ?? p.C ?? p.cntC);
 
-    // indices agregados (IBI/HID/ENT/PAN)
-    const idx = data.indices || {};
-    const map = { IBI:"ibi", HID:"hid", ENT:"ent", PAN:"pan" };
-    Object.keys(map).forEach(k=>{
-      const v = Number(idx[k]);
-      document.getElementById(map[k]).textContent = Number.isFinite(v) ? v.toFixed(1) : "—";
-    });
+    const relA = Number(p.cnt_rel_A ?? p.cnt_relA ?? p.rel_A);
+    const IBI = Number(p.IBI);
+    const IAB = Number(p.IAB);
+    const HID = Number(p.HID);
+    const PAN = Number(p.PAN);
+    const ENT = Number(p.ENT);
 
-    // Telemetria: aceita 30D OU série 10y (MapBiomas) se você mandar no JSON
-    if(Array.isArray(data.telemetry_30d) && data.telemetry_30d.length >= 2){
-      series = data.telemetry_30d.map(n => Number(n)).filter(n => Number.isFinite(n));
-      document.getElementById("telemetryTitle").textContent = "TELEMETRIA (JSON) — Série 30D";
-      document.getElementById("telemetryHint").textContent =
-        "Histórico carregado: " + series.length + " pontos • Última leitura: " + (series.at(-1));
-    }else if(Array.isArray(data.series_10y) && data.series_10y.length >= 2){
-      series = data.series_10y.map(n => Number(n)).filter(n => Number.isFinite(n));
-      document.getElementById("telemetryTitle").textContent = "TELEMETRIA (MapBiomas) — Série 10 anos";
-      document.getElementById("telemetryHint").textContent =
-        "Histórico carregado: " + series.length + " pontos • Última leitura: " + (series.at(-1));
+    $("cntA").textContent = fmt1(A);
+    $("Aabs").textContent = fmt2(A);
+    $("Babs").textContent = (Number.isFinite(B) ? (B>=0?"+":"") + fmt2(B) : "N/D");
+    $("Cabs").textContent = fmt2(C);
+
+    $("rating").textContent = gradeFromA(A);
+
+    $("ibi").textContent = fmt1(IBI);
+    $("iab").textContent = Number.isFinite(IAB) ? fmt1(IAB) : "N/D";
+    $("hid").textContent = fmt1(HID);
+    $("pan").textContent = fmt1(PAN);
+    $("ent").textContent = fmt1(ENT);
+    $("relA").textContent = Number.isFinite(relA) ? (fmt1(relA) + "/100") : "N/D";
+
+    $("b1").textContent = "Fonte: " + String(p.source ?? "GeoJSON (real)");
+
+    // série (ABS)
+    const arr = p.series_10y_abs ?? p.series_10y ?? p.series_abs ?? null;
+    if(Array.isArray(arr)){
+      seriesAbs = arr.map(n => Number(n)).filter(n => Number.isFinite(n));
+      $("telemetryHint").textContent =
+        "Histórico carregado: " + seriesAbs.length + " pontos • Última leitura: " + (seriesAbs.at(-1)?.toFixed(2));
     }else{
-      series = null;
-      document.getElementById("telemetryTitle").textContent = "TELEMETRIA (JSON) — Série exibida";
-      document.getElementById("telemetryHint").textContent = "Sem histórico 30D no JSON.";
+      seriesAbs = null;
+      $("telemetryHint").textContent = "Sem série 10y no GeoJSON.";
     }
 
   }catch(e){
-    document.getElementById("b1").textContent = "Fonte: sem dados";
-    document.getElementById("b2").textContent = "Ano base: — • A/B/C";
-    document.getElementById("cntA").textContent = "—";
-    document.getElementById("cntB").textContent = "—";
-    document.getElementById("cntC").textContent = "—";
-    document.getElementById("grade").textContent = "—";
-    ["ibi","hid","ent","pan"].forEach(id=>document.getElementById(id).textContent="—");
-
-    document.getElementById("telemetryHint").textContent =
-      "Não carregou dados_cnt.json (coloque o arquivo na mesma pasta do index).";
+    $("b1").textContent = "Fonte: sem dados";
+    $("telemetryHint").textContent =
+      "Não carregou " + GEOJSON_FILE + " (coloque na mesma pasta do index).";
     console.warn("Falha ao carregar dados reais:", e);
   }
 }
 carregarDadosReais();
 
+/* ===== Telemetria (Canvas) ===== */
+const wave = $("wave");
+const wctx = wave.getContext("2d");
+
+function resizeWave(){
+  const dpr = Math.max(1, window.devicePixelRatio || 1);
+  wave.width = Math.floor(wave.clientWidth * dpr);
+  wave.height = Math.floor(wave.clientHeight * dpr);
+  wctx.setTransform(dpr,0,0,dpr,0,0);
+}
+window.addEventListener("resize", resizeWave);
+resizeWave();
+
+let t = 0;
+function drawWave(){
+  const W = wave.clientWidth;
+  const H = wave.clientHeight;
+
+  wctx.clearRect(0,0,W,H);
+  wctx.fillStyle = "rgba(0,0,0,.18)";
+  wctx.fillRect(0,0,W,H);
+
+  // grade suave
+  wctx.strokeStyle = "rgba(110,210,255,.10)";
+  wctx.lineWidth = 1;
+  for(let y=12;y<H;y+=18){
+    wctx.beginPath();
+    wctx.moveTo(0,y);
+    wctx.lineTo(W,y);
+    wctx.stroke();
+  }
+
+  // linha
+  wctx.strokeStyle = "rgba(120,230,255,.95)";
+  wctx.lineWidth = 2;
+  wctx.beginPath();
+
+  const s = (seriesAbs && seriesAbs.length >= 2) ? seriesAbs : null;
+  if(!s){
+    // demo suave
+    for(let x=0;x<W;x++){
+      const y = (H*0.55)
+        + Math.sin((x+t)/48)*(H*0.18)
+        + Math.sin((x+t)/17)*(H*0.06);
+      if(x===0) wctx.moveTo(x,y); else wctx.lineTo(x,y);
+    }
+  }else{
+    const min = Math.min(...s);
+    const max = Math.max(...s);
+    const span = (max-min) || 1;
+
+    for(let x=0;x<W;x++){
+      const idx = Math.floor((x/(W-1)) * (s.length-1));
+      const v = (s[idx]-min)/span;          // 0..1
+      const base = (H*0.80) - v*(H*0.60);   // invert
+      const y = base + Math.sin((x+t)/46)*(H*0.02); // micro-oscilação holográfica
+      if(x===0) wctx.moveTo(x,y); else wctx.lineTo(x,y);
+    }
+  }
+  wctx.stroke();
+
+  // glow
+  wctx.globalCompositeOperation = "lighter";
+  wctx.strokeStyle = "rgba(110,210,255,.35)";
+  wctx.lineWidth = 6;
+  wctx.stroke();
+  wctx.globalCompositeOperation = "source-over";
+
+  t += 1.6;
+  requestAnimationFrame(drawWave);
+}
+drawWave();
+
+/* ===== Holographic points (sobre o mapa) ===== */
+const holo = $("holo");
+const hctx = holo.getContext("2d");
+let pts = [];
+let holoT = 0;
+
+function resizeHolo(){
+  const dpr = Math.max(1, window.devicePixelRatio || 1);
+  holo.width = Math.floor(holo.clientWidth * dpr);
+  holo.height = Math.floor(holo.clientHeight * dpr);
+  hctx.setTransform(dpr,0,0,dpr,0,0);
+
+  // re-seed pontos (densidade estável)
+  const W = holo.clientWidth, H = holo.clientHeight;
+  const N = Math.floor((W*H) / 14000); // densidade
+  pts = new Array(N).fill(0).map(()=>({
+    x: Math.random()*W,
+    y: Math.random()*H,
+    r: 0.8 + Math.random()*1.8,
+    s: 0.6 + Math.random()*1.2,
+    ph: Math.random()*Math.PI*2,
+    k: Math.random()
+  }));
+}
+window.addEventListener("resize", resizeHolo);
+resizeHolo();
+
+function drawHolo(){
+  const W = holo.clientWidth, H = holo.clientHeight;
+  hctx.clearRect(0,0,W,H);
+
+  // intensidade baseada em A (estado)
+  const A = parseFloat($("cntA").textContent);
+  const energy = Number.isFinite(A) ? clamp(A/100, 0.15, 1) : 0.55;
+
+  // “camada de neblina” holográfica
+  hctx.globalAlpha = 0.10 * energy;
+  hctx.fillStyle = "rgba(80,200,255,1)";
+  hctx.fillRect(0,0,W,H);
+
+  hctx.globalAlpha = 1;
+
+  for(const p of pts){
+    const pulse = (0.35 + 0.65*Math.sin(holoT*p.s + p.ph))*energy;
+    const rr = p.r + pulse*2.2;
+    const a = 0.10 + pulse*0.26;
+
+    // cor dinâmica “bio”
+    // (verde/azul => saudável; amarelo/vermelho aparece como “alerta” quando PAN/ENT sobem)
+    const PAN = parseFloat($("pan").textContent);
+    const ENT = parseFloat($("ent").textContent);
+    const risk = (Number.isFinite(PAN)?PAN:40)*0.55 + (Number.isFinite(ENT)?ENT:30)*0.45;
+    const riskN = clamp(risk/100, 0, 1);
+
+    // mix: healthy -> cyan/green, risk -> yellow/red
+    const r = Math.floor(80 + 160*riskN);
+    const g = Math.floor(220 - 80*riskN);
+    const b = Math.floor(255 - 140*riskN);
+
+    hctx.beginPath();
+    hctx.fillStyle = `rgba(${r},${g},${b},${a})`;
+    hctx.arc(p.x, p.y, rr, 0, Math.PI*2);
+    hctx.fill();
+  }
+
+  // streak leve
+  hctx.globalCompositeOperation = "lighter";
+  hctx.globalAlpha = 0.10 * energy;
+  hctx.strokeStyle = "rgba(120,220,255,1)";
+  hctx.lineWidth = 1;
+  hctx.beginPath();
+  const y = (H*0.42) + Math.sin(holoT/28)*(H*0.06);
+  hctx.moveTo(0, y);
+  hctx.lineTo(W, y);
+  hctx.stroke();
+  hctx.globalCompositeOperation = "source-over";
+  hctx.globalAlpha = 1;
+
+  holoT += 0.06;
+  requestAnimationFrame(drawHolo);
+}
+drawHolo();
+
+/* ===== Conversão DEMO ===== */
+const solInput = $("sol");
+const out = $("out");
+function update(){
+  const sol = parseFloat(solInput.value) || 0;
+  out.textContent = (sol * RATE_SOL_TO_CNT).toLocaleString("pt-BR") + " CNT";
+}
+solInput.addEventListener("input", update);
+update();
+
+/* ===== Botões ===== */
+function connect(){
+  alert("Conexão Phantom/Solana entra aqui depois (ainda é interface).");
+}
+function buy(){
+  window.open("https://pump.fun/coin/GCVyjNaCbXkwGUuktyNxSXad4ozmTp2fzQr2jieSpump","_blank");
+}
+
 /* ===== Modal ===== */
 const meanings = {
-  IBE: "Índice Bioelétrico: metabolismo do sistema (pulso funcional/ecológico). (N/D sem sensores)",
-  IAB: "Índice Abiótico: clima/solo/energia. (N/D sem integração ERA5/SoilGrids)",
-  IBI: "Índice Biótico (proxy MapBiomas): vegetação nativa e organização ecológica, penalizada por ENT/PAN.",
-  HID: "Índice Hídrico (proxy MapBiomas): fração de água/áreas úmidas conforme classes definidas.",
-  ENT: "Entropia (proxy MapBiomas): diversidade/fragmentação de classes (Shannon normalizada).",
-  PAN: "Pressão Antrópica (MapBiomas): fração antrópica (agro/urbano/mineração etc.) na área/bioma."
+  IBI: "Índice Biótico (vida): integridade e vigor do sistema vivo (vegetação/organização biológica).",
+  IAB: "Índice Abiótico (suporte): clima/solo/energia que sustentam a vida (estabilidade físico-ambiental).",
+  HID: "Índice Hídrico: estabilidade e dinâmica da água no território (chuva/água superficial).",
+  PAN: "Pressão Antrópica: intensidade de uso humano/impacto (risco/penalidade).",
+  ENT: "Entropia: volatilidade/perda de ordem funcional do sistema (penalidade/ajuste).",
+  REL: "REL (percentil temporal): posição do estado atual dentro dos últimos 10 anos (0–100)."
 };
 
-const modal = document.getElementById("modal");
-const overlay = document.getElementById("modalOverlay");
-const mTitle = document.getElementById("mTitle");
-const mText  = document.getElementById("mText");
-const closeBtn = document.getElementById("closeBtn");
+const modal = $("modal");
+const overlay = $("modalOverlay");
+const mTitle = $("mTitle");
+const mText  = $("mText");
+const closeBtn = $("closeBtn");
 
 function openModal(key){
   mTitle.textContent = key;
@@ -635,4 +837,3 @@ closeBtn.addEventListener("click", closeModal);
 
 </body>
 </html>
-
