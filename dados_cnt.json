@@ -1,28 +1,18 @@
 {
-  "source": "MapBiomas - DEMO",
+  "source": "MapBiomas",
   "year_end": 2023,
 
   "cnt": {
-    "A": 68.0,
-    "B": 0.74,
-    "C": 4.2
+    "A": 25.87,
+    "B": 0,
+    "C": 0
   },
 
   "indices": {
-    "IBI": 56.3,
-    "HID": 11.8,
-    "ENT": 41.5,
-    "PAN": 37.2
+    "IBI": 29.04,
+    "HID": 1.04,
+    "PAN": 11.25
   },
 
-  "biomes": [
-    {"name":"Amazônia","score":79.4},
-    {"name":"Cerrado","score":61.2},
-    {"name":"Mata Atlântica","score":52.7},
-    {"name":"Caatinga","score":64.3},
-    {"name":"Pantanal","score":74.9},
-    {"name":"Pampa","score":58.6}
-  ],
-
-  "series_10y": [61,62,60,59,60,61,62,63,62,61]
+  "series_10y": [25.87]
 }
