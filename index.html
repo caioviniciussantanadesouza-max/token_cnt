@@ -263,18 +263,19 @@ input:focus{
 .valueLine b{ font-size:18px; color:#e9fdff; }
 .note{ margin-top:6px; font-size:11px; color:var(--muted); opacity:.95; }
 
-/* ===== TELEMETRIA — METADE DA ALTURA ===== */
+/* ===== TELEMETRIA — agora junto ao painel TOKEN (lado esquerdo) ===== */
 #telemetry{
-  left:50%;
-  transform:translateX(-50%);
-  bottom:16px;
-  width:min(860px, 60vw);
+  position:fixed;
+  top: 16px;
+  right: calc(16px + 340px + 12px); /* 16 margem + 340 largura do token + gap */
 
-  /* metade da altura */
+  width: 360px;
   height: 78px;
 
   padding:10px 14px;
   border-radius:18px;
+
+  transform:none;
 }
 #telemetryTitle{
   font-size:11px;
@@ -316,11 +317,19 @@ canvas{
 @media (max-width: 1100px){
   #leftPanel{ width:340px; }
   #rightPanel{ width:320px; height:165px; }
-  #telemetry{ width:min(780px, 56vw); }
+  #telemetry{ width:320px; right: calc(16px + 320px + 12px); }
   #bg{ transform: translateY(18px) scale(.88); }
 }
 @media (max-width: 900px){
-  #telemetry{ width:92vw; }
+  /* Em telas menores volta pro rodapé para não esmagar o mapa */
+  #telemetry{
+    left:50%;
+    right:auto;
+    top:auto;
+    bottom:16px;
+    width:92vw;
+    transform:translateX(-50%);
+  }
   #bg{ transform: translateY(24px) scale(.86); }
 }
 </style>
@@ -330,7 +339,6 @@ canvas{
 
 <!-- MAPA -->
 <div id="stage">
-  <!-- CORRIGIDO: agora aponta pra imagem_cnt.jpg.png + cache-bust -->
   <img id="bg" src="./imagem_cnt.jpg.png" alt="Mapa CNT Amazônia">
   <div id="mapGlow"></div>
   <div id="scanlines"></div>
@@ -372,7 +380,10 @@ canvas{
     <div class="kv" data-k="PAN"><b>PAN</b><span id="pan">78</span></div>
   </div>
 
-  <div class="pill">Dica: ENT e PAN podem atuar como fatores de ajuste.</div>
+  <div class="pill">
+    Dica: ENT (entropia) e PAN (pressão antrópica) entram como fatores de ajuste no cálculo final (pesos/penalidades),
+    junto a outros moduladores do modelo.
+  </div>
 </div>
 
 <!-- DIREITA (TOKEN) -->
@@ -393,7 +404,7 @@ canvas{
   <div class="note">Rede: Solana • Compra abre Pump.fun.</div>
 </div>
 
-<!-- TELEMETRIA (menor) -->
+<!-- TELEMETRIA (agora junto ao TOKEN, na esquerda) -->
 <div id="telemetry" class="glass">
   <div id="telemetryTitle">TELEMETRIA — OSCILAÇÃO FUNCIONAL (30D)</div>
   <canvas id="wave"></canvas>
@@ -419,7 +430,6 @@ canvas{
   const base = "./imagem_cnt.jpg.png";
   if(!bg) return;
 
-  // cache bust
   bg.src = base + "?v=" + Date.now();
 
   bg.addEventListener("load", () => {
@@ -498,8 +508,8 @@ const meanings = {
   IAB: "Índice Abiótico: condições físicas (clima, solo, energia) que sustentam o sistema.",
   IBI: "Índice Biótico: dinâmica da vida (atividade biológica e padrão funcional).",
   HID: "Índice Hídrico: estabilidade e dinâmica da água no território.",
-  ENT: "Entropia: fator de ajuste relacionado à dispersão/desordem do sistema.",
-  PAN: "Pressão Antrópica: fator de ajuste relacionado ao uso humano do território."
+  ENT: "Entropia: fator de ajuste relacionado à dispersão/desordem do sistema (penalidade/ajuste).",
+  PAN: "Pressão Antrópica: fator de ajuste relacionado ao uso humano do território (penalidade/ajuste)."
 };
 
 const modal = document.getElementById("modal");
