@@ -15,321 +15,112 @@
   --accent:#7fe3ff;
   --shadow: 0 0 22px rgba(110,210,255,.12), 0 0 70px rgba(0,200,255,.06);
 }
-
-html,body{
-  margin:0;
-  height:100%;
-  background:var(--bg);
-  color:var(--text);
-  font-family:"Segoe UI", Arial, sans-serif;
-  overflow:hidden;
-}
-
-/* ===== FUNDO PRETO + VINHETA ===== */
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:"Segoe UI",Arial,sans-serif;overflow:hidden;}
 #bgBlack{position:fixed;inset:0;background:#000;z-index:0;}
-#vignette{
-  position:fixed; inset:0; pointer-events:none; z-index:1;
-  background: radial-gradient(circle at 50% 45%,
-    rgba(0,0,0,0) 0%,
-    rgba(0,0,0,.15) 45%,
-    rgba(0,0,0,.55) 75%,
-    rgba(0,0,0,.78) 100%);
-}
+#vignette{position:fixed;inset:0;pointer-events:none;z-index:1;background:radial-gradient(circle at 50% 45%,rgba(0,0,0,0) 0%,rgba(0,0,0,.15) 45%,rgba(0,0,0,.55) 75%,rgba(0,0,0,.78) 100%);}
 
-/* ===== JANELA DO MAPA (monitor) ===== */
+.glass{background:var(--panel);backdrop-filter:blur(14px);border:1px solid var(--stroke);border-radius:18px;box-shadow:var(--shadow);}
+
+/* header */
+#header{
+  position:fixed;top:0;left:0;right:0;height:76px;border-radius:0 0 18px 18px;
+  z-index:20;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:10px 16px;
+}
+#header .t1{font-weight:900;letter-spacing:.8px;font-size:20px;line-height:1.1;}
+#header .t2{margin-top:4px;font-size:12px;color:var(--muted);opacity:.95;text-align:center;max-width:980px;}
+.badges{margin-top:6px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+.badge{font-size:11px;padding:5px 10px;border-radius:999px;border:1px solid rgba(120,220,255,.22);background:rgba(0,0,0,.18);color:#dffaff;opacity:.95;}
+
+/* legend */
+#mapLegend{
+  position:fixed;left:50%;top:92px;transform:translateX(-50%);z-index:12;
+  padding:10px 12px;border-radius:14px;max-width:min(860px,62vw);text-align:center;
+}
+#mapLegend .l1{font-size:12px;color:#dffaff;font-weight:800;letter-spacing:.4px;}
+#mapLegend .l2{margin-top:4px;font-size:11px;color:var(--muted);opacity:.95;}
+
+/* map frame */
 #mapFrame{
-  position:fixed;
-  left:50%;
-  top:54%;
-  transform:translate(-50%,-50%);
-  width:min(1100px, 66vw);
-  height:min(760px, 78vh);
-  border-radius:22px;
-  z-index:2;
-  background: rgba(0,0,0,.88);
-  border:1px solid rgba(120,220,255,.18);
-  box-shadow: 0 0 60px rgba(0,0,0,.75), 0 0 90px rgba(0,200,255,.12);
+  position:fixed;left:50%;top:54%;transform:translate(-50%,-50%);
+  width:min(1100px,66vw);height:min(760px,78vh);border-radius:22px;z-index:2;
+  background:rgba(0,0,0,.88);border:1px solid rgba(120,220,255,.18);
+  box-shadow:0 0 60px rgba(0,0,0,.75),0 0 90px rgba(0,200,255,.12);
   overflow:hidden;
 }
 #mapFrame::before{
-  content:"";
-  position:absolute; inset:0;
+  content:"";position:absolute;inset:0;pointer-events:none;mix-blend-mode:screen;opacity:.55;
   background:
     radial-gradient(circle at 50% 45%, rgba(120,220,255,.10), transparent 55%),
     radial-gradient(circle at 20% 30%, rgba(120,220,255,.06), transparent 55%),
     radial-gradient(circle at 80% 55%, rgba(120,220,255,.05), transparent 60%);
-  opacity:.55;
-  pointer-events:none;
-  mix-blend-mode:screen;
 }
 #bgMap{
-  position:absolute; inset:0;
-  width:100%; height:100%;
-  object-fit:contain;
-  object-position:center;
-  transform: translateY(-8px) scale(.97);
-  filter: brightness(.95) contrast(1.22) saturate(1.28);
-  animation: mapPulse 9s ease-in-out infinite;
-  opacity:.99;
+  position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center;
+  transform:translateY(-8px) scale(.97);
+  filter:brightness(.95) contrast(1.22) saturate(1.28);
+  animation:mapPulse 9s ease-in-out infinite;opacity:.99;
 }
-@keyframes mapPulse{
-  0%   { filter:brightness(.82) contrast(1.12) saturate(1.10); }
-  50%  { filter:brightness(1.07) contrast(1.33) saturate(1.32); }
-  100% { filter:brightness(.82) contrast(1.12) saturate(1.10); }
-}
+@keyframes mapPulse{0%{filter:brightness(.82) contrast(1.12) saturate(1.10)}50%{filter:brightness(1.07) contrast(1.33) saturate(1.32)}100%{filter:brightness(.82) contrast(1.12) saturate(1.10)}}
 #scanlines{
-  position:absolute; inset:0;
-  pointer-events:none;
-  opacity:.18;
-  background: repeating-linear-gradient(
-    to bottom,
-    rgba(120,220,255,.06) 0px,
-    rgba(120,220,255,.06) 1px,
-    transparent 2px,
-    transparent 7px
-  );
-  mix-blend-mode: overlay;
-  animation: scan 3.2s linear infinite;
+  position:absolute;inset:0;pointer-events:none;opacity:.18;mix-blend-mode:overlay;animation:scan 3.2s linear infinite;
+  background:repeating-linear-gradient(to bottom,rgba(120,220,255,.06) 0px,rgba(120,220,255,.06) 1px,transparent 2px,transparent 7px);
 }
-@keyframes scan{ 0%{transform:translateY(-20px)} 100%{transform:translateY(20px)} }
+@keyframes scan{0%{transform:translateY(-20px)}100%{transform:translateY(20px)}}
 #dust{
-  position:absolute; inset:-30%;
-  pointer-events:none;
-  opacity:.55;
+  position:absolute;inset:-30%;pointer-events:none;opacity:.55;filter:blur(2px);animation:drift 18s linear infinite;
   background:
     radial-gradient(circle at 25% 25%, rgba(120,220,255,.10), transparent 40%),
     radial-gradient(circle at 70% 20%, rgba(120,220,255,.08), transparent 45%),
     radial-gradient(circle at 45% 80%, rgba(120,220,255,.06), transparent 50%);
-  filter: blur(2px);
-  animation: drift 18s linear infinite;
 }
-@keyframes drift{ 0%{transform:translate3d(0,0,0)} 100%{transform:translate3d(-3%,2%,0)} }
+@keyframes drift{0%{transform:translate3d(0,0,0)}100%{transform:translate3d(-3%,2%,0)}}
 
-/* ===== GLASS ===== */
-.glass{
-  background: var(--panel);
-  backdrop-filter: blur(14px);
-  border:1px solid var(--stroke);
-  border-radius:18px;
-  box-shadow: var(--shadow);
-}
+/* left panel */
+#leftPanel{position:fixed;left:20px;top:96px;width:330px;padding:14px;border-radius:22px;z-index:10;opacity:.95;}
+.kicker{font-size:12px;color:var(--muted);opacity:.95;}
+.big{margin-top:10px;font-size:74px;font-weight:250;line-height:1;}
+.unit{font-size:12px;color:var(--muted);margin-top:4px;}
+.ratingRow{margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+.classPill{font-size:11px;padding:6px 10px;border-radius:999px;border:1px solid rgba(120,220,255,.18);background:rgba(0,0,0,.16);color:#e8fdff;}
+.divider{height:1px;background:linear-gradient(90deg,transparent,rgba(110,210,255,.25),transparent);margin:12px 0;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;margin-top:10px;}
+.kv{display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:9px 10px;border:1px solid rgba(110,210,255,.16);border-radius:12px;background:rgba(0,0,0,.16);cursor:pointer;user-select:none;}
+.kv:hover{border-color:rgba(110,210,255,.35);box-shadow:0 0 14px rgba(110,210,255,.18);}
+.kv b{font-weight:900;letter-spacing:.4px;color:#e9fdff;}
+.kv span{color:#d0fbff;font-weight:800;}
+.note{margin-top:10px;font-size:11px;color:var(--muted);opacity:.95;line-height:1.25;}
 
-/* ===== HEADER ===== */
-#header{
-  position:fixed;
-  top:0; left:0; right:0;
-  height:76px;
-  border-radius:0 0 18px 18px;
-  z-index:20;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
-  padding:10px 16px;
-}
-#header .t1{ font-weight:900; letter-spacing:.8px; font-size:20px; line-height:1.1; }
-#header .t2{
-  margin-top:4px;
-  font-size:12px;
-  color:var(--muted);
-  opacity:.95;
-  text-align:center;
-  max-width:980px;
-}
-.badges{
-  margin-top:6px;
-  display:flex;
-  gap:8px;
-  flex-wrap:wrap;
-  justify-content:center;
-}
-.badge{
-  font-size:11px;
-  padding:5px 10px;
-  border-radius:999px;
-  border:1px solid rgba(120,220,255,.22);
-  background: rgba(0,0,0,.18);
-  color:#dffaff;
-  opacity:.95;
-}
+/* right */
+#rightWrap{position:fixed;right:20px;top:96px;width:330px;z-index:10;display:flex;flex-direction:column;gap:14px;}
+#buyPanel{padding:14px;border-radius:18px;}
+.title{font-weight:900;letter-spacing:.6px;margin-bottom:8px;}
+.subtitle{font-size:12px;color:var(--muted);opacity:.95;margin-bottom:10px;}
+label{display:block;font-size:12px;color:var(--muted);margin:10px 0 6px;}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+input{width:170px;padding:10px 10px;border-radius:12px;border:1px solid rgba(110,210,255,.38);background:rgba(0,0,0,.22);color:#e9fbff;outline:none;}
+input:focus{border-color:rgba(110,210,255,.65);box-shadow:0 0 16px rgba(110,210,255,.18);}
+.btn{background:linear-gradient(180deg,rgba(110,210,255,.18),rgba(0,0,0,.18));border:1px solid rgba(110,210,255,.45);color:#eafcff;border-radius:14px;padding:10px 14px;cursor:pointer;font-weight:800;}
+.btn:hover{box-shadow:0 0 18px rgba(110,210,255,.30);}
+.btn.secondary{opacity:.95;}
+.valueLine{margin-top:10px;font-size:12px;color:#bdf4ff;}
+.valueLine b{font-size:18px;color:#e9fdff;}
+.smallline{margin-top:6px;font-size:11px;color:var(--muted);opacity:.95;}
 
-/* ===== LEGENDA DO MAPA (prova) ===== */
-#mapLegend{
-  position:fixed;
-  left:50%;
-  top:92px;
-  transform:translateX(-50%);
-  z-index:12;
-  padding:10px 12px;
-  border-radius:14px;
-  max-width:min(860px, 62vw);
-  text-align:center;
-}
-#mapLegend .l1{ font-size:12px; color:#dffaff; font-weight:800; letter-spacing:.4px; }
-#mapLegend .l2{ margin-top:4px; font-size:11px; color:var(--muted); opacity:.95; }
+#telemetry{padding:10px 14px;border-radius:18px;}
+#telemetryTitle{font-size:11px;letter-spacing:.8px;color:#d4fbff;opacity:.95;margin-bottom:6px;}
+#wave{width:100%;height:44px;display:block;filter:drop-shadow(0 0 8px rgba(110,210,255,.55));}
+#telemetryHint{font-size:11px;color:var(--muted);opacity:.90;margin-top:6px;}
 
-/* ===== ESQUERDA (certificação) ===== */
-#leftPanel{
-  position:fixed;
-  left:20px;
-  top:96px;
-  width:330px;
-  padding:14px;
-  border-radius:22px;
-  z-index:10;
-  opacity:.95;
-}
-.kicker{ font-size:12px; color:var(--muted); opacity:.95; }
-.big{ margin-top:10px; font-size:74px; font-weight:250; line-height:1; }
-.unit{ font-size:12px; color:var(--muted); margin-top:4px; }
+#modalOverlay{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(2px);display:none;z-index:50;}
+#modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(560px,92vw);padding:16px;border-radius:18px;z-index:60;display:none;}
+#modal h3{margin:0 0 6px;letter-spacing:.6px;}
+#modal .mtext{color:#c9f7ff;font-size:13px;line-height:1.35;}
+#modal .closeRow{display:flex;justify-content:flex-end;margin-top:12px;}
 
-.ratingRow{
-  margin-top:10px;
-  display:flex;
-  gap:10px;
-  align-items:center;
-  flex-wrap:wrap;
-}
-.classPill{
-  font-size:11px;
-  padding:6px 10px;
-  border-radius:999px;
-  border:1px solid rgba(120,220,255,.18);
-  background: rgba(0,0,0,.16);
-  color:#e8fdff;
-}
-.divider{
-  height:1px;
-  background:linear-gradient(90deg,transparent,rgba(110,210,255,.25),transparent);
-  margin:12px 0;
-}
-.grid2{
-  display:grid;
-  grid-template-columns: 1fr 1fr;
-  gap:8px 10px;
-  margin-top:10px;
-}
-.kv{
-  display:flex; justify-content:space-between; align-items:center;
-  font-size:12px;
-  padding:9px 10px;
-  border:1px solid rgba(110,210,255,.16);
-  border-radius:12px;
-  background:rgba(0,0,0,.16);
-  cursor:pointer;
-  user-select:none;
-}
-.kv:hover{ border-color: rgba(110,210,255,.35); box-shadow: 0 0 14px rgba(110,210,255,.18); }
-.kv b{ font-weight:900; letter-spacing:.4px; color:#e9fdff; }
-.kv span{ color:#d0fbff; font-weight:800; }
-
-.note{
-  margin-top:10px;
-  font-size:11px;
-  color:var(--muted);
-  opacity:.95;
-  line-height:1.25;
-}
-
-/* ===== DIREITA (participação + telemetria como validação) ===== */
-#rightWrap{
-  position:fixed;
-  right:20px;
-  top:96px;
-  width:330px;
-  z-index:10;
-  display:flex;
-  flex-direction:column;
-  gap:14px;
-}
-
-#buyPanel{ padding:14px; border-radius:18px; }
-.title{ font-weight:900; letter-spacing:.6px; margin-bottom:8px; }
-.subtitle{ font-size:12px; color:var(--muted); opacity:.95; margin-bottom:10px; }
-
-label{ display:block; font-size:12px; color:var(--muted); margin:10px 0 6px; }
-.row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-
-input{
-  width:170px;
-  padding:10px 10px;
-  border-radius:12px;
-  border:1px solid rgba(110,210,255,.38);
-  background:rgba(0,0,0,.22);
-  color:#e9fbff;
-  outline:none;
-}
-input:focus{ border-color: rgba(110,210,255,.65); box-shadow: 0 0 16px rgba(110,210,255,.18); }
-
-.btn{
-  background:linear-gradient(180deg,rgba(110,210,255,.18),rgba(0,0,0,.18));
-  border:1px solid rgba(110,210,255,.45);
-  color:#eafcff;
-  border-radius:14px;
-  padding:10px 14px;
-  cursor:pointer;
-  font-weight:800;
-}
-.btn:hover{ box-shadow:0 0 18px rgba(110,210,255,.30); }
-.btn.secondary{ opacity:.95; }
-
-.valueLine{ margin-top:10px; font-size:12px; color:#bdf4ff; }
-.valueLine b{ font-size:18px; color:#e9fdff; }
-.smallline{ margin-top:6px; font-size:11px; color:var(--muted); opacity:.95; }
-
-/* telemetria */
-#telemetry{ padding:10px 14px; border-radius:18px; }
-#telemetryTitle{
-  font-size:11px;
-  letter-spacing:.8px;
-  color:#d4fbff;
-  opacity:.95;
-  margin-bottom:6px;
-}
-#wave{
-  width:100%;
-  height:44px;
-  display:block;
-  filter: drop-shadow(0 0 8px rgba(110,210,255,.55));
-}
-#telemetryHint{
-  font-size:11px;
-  color:var(--muted);
-  opacity:.90;
-  margin-top:6px;
-}
-
-/* modal */
-#modalOverlay{ position:fixed; inset:0; background: rgba(0,0,0,.55); backdrop-filter: blur(2px); display:none; z-index:50; }
-#modal{
-  position:fixed; left:50%; top:50%;
-  transform:translate(-50%,-50%);
-  width:min(560px, 92vw);
-  padding:16px;
-  border-radius:18px;
-  z-index:60;
-  display:none;
-}
-#modal h3{ margin:0 0 6px; letter-spacing:.6px; }
-#modal .mtext{ color:#c9f7ff; font-size:13px; line-height:1.35; }
-#modal .closeRow{ display:flex; justify-content:flex-end; margin-top:12px; }
-
-/* responsivo */
-@media (max-width: 1200px){
-  #leftPanel, #rightWrap{ width:320px; }
-  #mapFrame{ width:min(980px, 60vw); }
-  #mapLegend{ max-width:min(760px, 58vw); }
-}
 @media (max-width: 980px){
-  body{ overflow:auto; }
-  #leftPanel{ position:static; width:auto; margin:12px; }
-  #rightWrap{ position:static; width:auto; margin:12px; }
-  #mapLegend{ position:static; transform:none; margin:12px; max-width:none; }
-  #mapFrame{
-    position:relative; left:auto; top:auto;
-    transform:none; margin:12px;
-    width:auto; height:55vh;
-  }
+  body{overflow:auto;}
+  #leftPanel,#rightWrap,#mapLegend{position:static;transform:none;width:auto;margin:12px;max-width:none;}
+  #mapFrame{position:relative;left:auto;top:auto;transform:none;margin:12px;width:auto;height:55vh;}
 }
 </style>
 </head>
@@ -338,61 +129,54 @@ input:focus{ border-color: rgba(110,210,255,.65); box-shadow: 0 0 16px rgba(110,
 <div id="bgBlack"></div>
 <div id="vignette"></div>
 
-<!-- HEADER -->
 <div id="header" class="glass">
   <div class="t1">CNT — Reserva Ambiental Tokenizada</div>
-  <div class="t2">
-    Ativo ambiental negociável (estilo carbono): lastro em conservação + monitoramento contínuo + registro público de aquisição.
-  </div>
+  <div class="t2">Ativo ambiental negociável (estilo carbono): lastro em conservação + monitoramento contínuo + registro público de aquisição.</div>
   <div class="badges">
-    <span class="badge">Leitura contínua (DEMO)</span>
-    <span class="badge">Telemetria 30D</span>
+    <span class="badge" id="b1">Fonte: aguardando</span>
+    <span class="badge" id="b2">Telemetria: 30D</span>
     <span class="badge">Ajustes: ENT/PAN</span>
     <span class="badge">Rede: Solana</span>
   </div>
 </div>
 
-<!-- LEGENDA DO MAPA (prova) -->
 <div id="mapLegend" class="glass">
   <div class="l1">Mapa de Integridade Ecológica — leitura contínua do território</div>
   <div class="l2">Cores quentes = pressão/instabilidade • Cores frias = estabilidade/continuidade funcional</div>
 </div>
 
-<!-- MAPA -->
-<div id="mapFrame" aria-label="Monitor de território">
+<div id="mapFrame">
   <img id="bgMap" src="./mapa_br.png" alt="Mapa CNT Brasil">
   <div id="scanlines"></div>
   <div id="dust"></div>
 </div>
 
-<!-- ESQUERDA -->
 <div id="leftPanel" class="glass">
   <div class="kicker">
     <strong>CNT (Solana)</strong>: participação digital em uma reserva ambiental monitorada.
     A aquisição financia conservação e registra a ordem pública de monitoramento/aquisição.
   </div>
 
-  <!-- Rating com cara de certificação -->
-  <div class="big"><span id="cnt">68</span><span style="font-size:26px;opacity:.9">/100</span></div>
-  <div class="unit">ECO RATING • Integridade ecológica (escala 0–100)</div>
+  <div class="big"><span id="cnt">—</span><span style="font-size:26px;opacity:.9">/100</span></div>
+  <div class="unit" id="unit">ECO RATING • Integridade ecológica (escala 0–100)</div>
 
   <div class="ratingRow">
-    <span class="classPill" id="grade">Grau: B</span>
-    <span class="classPill" id="classPill">Classe: Moderada</span>
-    <span class="classPill">Confiança: Média</span>
+    <span class="classPill" id="grade">Grau: —</span>
+    <span class="classPill" id="classPill">Classe: —</span>
+    <span class="classPill" id="confPill">Confiança: —</span>
+    <span class="classPill" id="statusPill">Status: —</span>
   </div>
 
   <div class="divider"></div>
-
   <div class="kicker">Sub-índices (clique para ver)</div>
 
   <div class="grid2">
-    <div class="kv" data-k="IBE"><b>IBE</b><span id="ibe">88</span></div>
-    <div class="kv" data-k="IAB"><b>IAB</b><span id="iab">88</span></div>
-    <div class="kv" data-k="IBI"><b>IBI</b><span id="ibi">11</span></div>
-    <div class="kv" data-k="HID"><b>HID</b><span id="hid">83</span></div>
-    <div class="kv" data-k="ENT"><b>ENT</b><span id="ent">88</span></div>
-    <div class="kv" data-k="PAN"><b>PAN</b><span id="pan">78</span></div>
+    <div class="kv" data-k="IBE"><b>IBE</b><span id="ibe">—</span></div>
+    <div class="kv" data-k="IAB"><b>IAB</b><span id="iab">—</span></div>
+    <div class="kv" data-k="IBI"><b>IBI</b><span id="ibi">—</span></div>
+    <div class="kv" data-k="HID"><b>HID</b><span id="hid">—</span></div>
+    <div class="kv" data-k="ENT"><b>ENT</b><span id="ent">—</span></div>
+    <div class="kv" data-k="PAN"><b>PAN</b><span id="pan">—</span></div>
   </div>
 
   <div class="note">
@@ -401,13 +185,10 @@ input:focus{ border-color: rgba(110,210,255,.65); box-shadow: 0 0 16px rgba(110,
   </div>
 </div>
 
-<!-- DIREITA -->
 <div id="rightWrap">
   <div id="buyPanel" class="glass">
     <div class="title">PARTICIPAR DA RESERVA (CNT)</div>
-    <div class="subtitle">
-      Você adquire frações de integridade ecológica monitorada. O nível de estabilidade no tempo influencia a confiabilidade do ativo.
-    </div>
+    <div class="subtitle">Você adquire frações de integridade ecológica monitorada. A estabilidade no tempo influencia a confiabilidade do ativo.</div>
 
     <label for="sol">Contribuição em SOL</label>
     <div class="row">
@@ -417,28 +198,23 @@ input:focus{ border-color: rgba(110,210,255,.65); box-shadow: 0 0 16px rgba(110,
     </div>
 
     <div class="valueLine">
-      Emissão estimada: <b id="out">14.744.913 CNT</b>
+      Emissão estimada: <b id="out">— CNT</b>
     </div>
-    <div class="smallline">Rede: Solana • Pump.fun • (DEMO de interface)</div>
+    <div class="smallline">Rede: Solana • Pump.fun • (interface)</div>
   </div>
 
   <div id="telemetry" class="glass">
     <div id="telemetryTitle">CURVA DE ESTABILIDADE ECOLÓGICA (30D)</div>
     <canvas id="wave"></canvas>
-    <div id="telemetryHint">
-      Leituras estáveis aumentam confiabilidade • Oscilações indicam pressão/risco no sistema.
-    </div>
+    <div id="telemetryHint">Sem histórico carregado.</div>
   </div>
 </div>
 
-<!-- MODAL -->
 <div id="modalOverlay"></div>
 <div id="modal" class="glass">
   <h3 id="mTitle">IBE</h3>
   <div class="mtext" id="mText"></div>
-  <div class="closeRow">
-    <button class="btn secondary" id="closeBtn">Fechar</button>
-  </div>
+  <div class="closeRow"><button class="btn secondary" id="closeBtn">Fechar</button></div>
 </div>
 
 <script>
@@ -446,39 +222,27 @@ input:focus{ border-color: rgba(110,210,255,.65); box-shadow: 0 0 16px rgba(110,
 (function(){
   const bg = document.getElementById("bgMap");
   const base = "./mapa_br.png";
-  if(!bg) return;
   bg.src = base + "?v=" + Date.now();
-  bg.addEventListener("error", () => {
-    alert("ERRO: não achei ./mapa_br.png. Coloque o arquivo na MESMA pasta do index.html e com o nome EXATO.");
-  });
 })();
 
-/* ===== Rating (decisão) ===== */
-(function(){
-  const score = 68; // aqui você pode plugar cálculo real depois
-  const gradeEl = document.getElementById("grade");
-  const classEl = document.getElementById("classPill");
-  const cntEl = document.getElementById("cnt");
+/* ===== Conversão DEMO (você pode trocar por preço real depois) ===== */
+const rate = 147449130; // 1 SOL -> CNT (demo)
+const solInput = document.getElementById("sol");
+const out = document.getElementById("out");
+function updateOut(){
+  const sol = parseFloat(solInput.value) || 0;
+  out.textContent = (sol * rate).toLocaleString("pt-BR") + " CNT";
+}
+solInput.addEventListener("input", updateOut);
+updateOut();
 
-  cntEl.textContent = score;
+/* ===== Botões ===== */
+function connect(){ alert("Conexão Phantom/Solana entra aqui depois (ainda é DEMO)."); }
+function buy(){ window.open("https://pump.fun/coin/GCVyjNaCbXkwGUuktyNxSXad4ozmTp2fzQr2jieSpump","_blank"); }
 
-  function grade(s){
-    if(s >= 90) return {g:"AA", c:"Classe: Excelente"};
-    if(s >= 80) return {g:"A",  c:"Classe: Alta"};
-    if(s >= 70) return {g:"B",  c:"Classe: Moderada+"};
-    if(s >= 60) return {g:"C",  c:"Classe: Moderada"};
-    if(s >= 50) return {g:"D",  c:"Classe: Vulnerável"};
-    return {g:"E", c:"Classe: Crítica"};
-  }
-  const r = grade(score);
-  gradeEl.textContent = "Grau: " + r.g;
-  classEl.textContent = r.c;
-})();
-
-/* ===== Telemetria ===== */
+/* ===== Telemetria Canvas ===== */
 const canvas = document.getElementById("wave");
 const ctx = canvas.getContext("2d");
-
 function resize(){
   const dpr = Math.max(1, window.devicePixelRatio || 1);
   canvas.width = Math.floor(canvas.clientWidth * dpr);
@@ -488,56 +252,145 @@ function resize(){
 window.addEventListener("resize", resize);
 resize();
 
-let tt=0;
-function draw(){
-  const w = canvas.clientWidth;
-  const h = canvas.clientHeight;
+let series = null;
+let phase = 0;
 
+function drawSeries(){
+  const w = canvas.clientWidth, h = canvas.clientHeight;
   ctx.fillStyle = "rgba(0,0,0,.55)";
   ctx.fillRect(0,0,w,h);
 
-  ctx.strokeStyle = "#7fe3ff";
-  ctx.lineWidth = 2;
-  ctx.beginPath();
+  if(!series || series.length < 2){
+    // fallback visual discreto
+    ctx.strokeStyle = "rgba(127,227,255,.25)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, h*0.6);
+    ctx.lineTo(w, h*0.6);
+    ctx.stroke();
+    requestAnimationFrame(drawSeries);
+    return;
+  }
 
+  // normaliza para caber no canvas
+  const min = Math.min(...series);
+  const max = Math.max(...series);
+  const span = Math.max(1e-9, (max - min));
+
+  ctx.beginPath();
   for(let i=0;i<w;i++){
-    const y =
-      (h*0.58)
-      + Math.sin((i+tt)/38)*(h*0.22)
-      + Math.sin((i+tt)/13)*(h*0.08);
+    const t = i/(w-1);
+    const idx = t*(series.length-1);
+    const a = Math.floor(idx);
+    const b = Math.min(series.length-1, a+1);
+    const frac = idx - a;
+    const v = series[a]*(1-frac) + series[b]*frac;
+
+    // leve “vida” sem inventar valor (só efeito visual pequeno)
+    const v2 = v + Math.sin((i+phase)/60)*0.15;
+
+    const y = h - ((v2 - min)/span) * (h*0.72) - (h*0.14);
 
     if(i===0) ctx.moveTo(i,y);
     else ctx.lineTo(i,y);
   }
+  ctx.strokeStyle = "#7fe3ff";
+  ctx.lineWidth = 2;
   ctx.stroke();
 
-  ctx.strokeStyle = "rgba(127,227,255,.25)";
+  ctx.strokeStyle = "rgba(127,227,255,.22)";
   ctx.lineWidth = 6;
   ctx.stroke();
 
-  tt += 2;
-  requestAnimationFrame(draw);
+  phase += 1.6;
+  requestAnimationFrame(drawSeries);
 }
-draw();
+drawSeries();
 
-/* ===== Conversão DEMO ===== */
-const rate = 147449130; // 1 SOL -> CNT (demo)
-const solInput = document.getElementById("sol");
-const out = document.getElementById("out");
-function update(){
-  const sol = parseFloat(solInput.value) || 0;
-  out.textContent = (sol * rate).toLocaleString("pt-BR") + " CNT";
-}
-solInput.addEventListener("input", update);
-update();
+/* ===== Rating real calculado (ENT/PAN como ajuste) =====
+   Base: média de IBE/IAB/IBI/HID
+   Penalidade: ENT e PAN reduzem o score se altos (pressões).
+   -> Isso só é "verdadeiro" se os índices fornecidos forem reais.
+*/
+function clamp(n,min,max){ return Math.max(min, Math.min(max,n)); }
 
-/* ===== Botões ===== */
-function connect(){
-  alert("Conexão Phantom/Solana entra aqui depois (ainda é DEMO).");
+function calcScore(indices){
+  const base = (indices.IBE + indices.IAB + indices.IBI + indices.HID) / 4;
+
+  // penalidades (0..1)
+  const entP = clamp(indices.ENT/100, 0, 1);
+  const panP = clamp(indices.PAN/100, 0, 1);
+
+  // decisão: ENT e PAN entram como “pressão” => reduz score
+  const penalty = (entP*0.12) + (panP*0.18);   // pesos (ajuste do modelo)
+  const score = clamp(base * (1 - penalty), 0, 100);
+
+  return Math.round(score*10)/10;
 }
-function buy(){
-  window.open("https://pump.fun/coin/GCVyjNaCbXkwGUuktyNxSXad4ozmTp2fzQr2jieSpump","_blank");
+
+function gradeFromScore(s){
+  if(s >= 90) return {g:"AA", c:"Classe: Excelente"};
+  if(s >= 80) return {g:"A",  c:"Classe: Alta"};
+  if(s >= 70) return {g:"B",  c:"Classe: Moderada+"};
+  if(s >= 60) return {g:"C",  c:"Classe: Moderada"};
+  if(s >= 50) return {g:"D",  c:"Classe: Vulnerável"};
+  return {g:"E", c:"Classe: Crítica"};
 }
+
+/* ===== Carregar dados reais do JSON ===== */
+async function carregarDadosReais(){
+  try{
+    const res = await fetch("./dados_cnt.json?v=" + Date.now(), { cache:"no-store" });
+    if(!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+
+    // badges
+    document.getElementById("b1").textContent = "Fonte: dados_cnt.json";
+
+    // status
+    document.getElementById("confPill").textContent = "Confiança: " + (data.confidence || "—");
+    document.getElementById("statusPill").textContent = "Status: " + (data.status || "—");
+
+    // indices
+    const idx = data.indices || {};
+    const keys = ["IBE","IAB","IBI","HID","ENT","PAN"];
+    for(const k of keys){
+      const el = document.getElementById(k.toLowerCase());
+      el.textContent = (typeof idx[k] === "number") ? idx[k] : "—";
+    }
+
+    // score calculado (não inventa: deriva dos índices)
+    const okAll = ["IBE","IAB","IBI","HID","ENT","PAN"].every(k => typeof idx[k] === "number");
+    if(okAll){
+      const score = calcScore(idx);
+      const r = gradeFromScore(score);
+      document.getElementById("cnt").textContent = score.toFixed(1);
+      document.getElementById("grade").textContent = "Grau: " + r.g;
+      document.getElementById("classPill").textContent = r.c;
+    }else{
+      document.getElementById("cnt").textContent = "—";
+      document.getElementById("grade").textContent = "Grau: —";
+      document.getElementById("classPill").textContent = "Classe: —";
+    }
+
+    // telemetria real
+    if(Array.isArray(data.telemetry_30d) && data.telemetry_30d.length >= 10){
+      series = data.telemetry_30d.map(n => Number(n)).filter(n => Number.isFinite(n));
+      document.getElementById("telemetryHint").textContent =
+        "Histórico carregado: " + series.length + " pontos • Última leitura: " + (series.at(-1));
+    }else{
+      series = null;
+      document.getElementById("telemetryHint").textContent = "Sem histórico 30D no JSON.";
+    }
+
+  }catch(e){
+    document.getElementById("b1").textContent = "Fonte: sem dados";
+    document.getElementById("telemetryHint").textContent =
+      "Não carregou dados_cnt.json (coloque o arquivo na mesma pasta do index).";
+    console.warn("Falha ao carregar dados reais:", e);
+  }
+}
+carregarDadosReais();
 
 /* ===== Modal ===== */
 const meanings = {
@@ -548,7 +401,6 @@ const meanings = {
   ENT: "Entropia: perda de ordem/eficiência do sistema (penalidade/ajuste).",
   PAN: "Pressão Antrópica: intensidade do uso humano e impacto (penalidade/ajuste)."
 };
-
 const modal = document.getElementById("modal");
 const overlay = document.getElementById("modalOverlay");
 const mTitle = document.getElementById("mTitle");
