@@ -7,7 +7,7 @@
 
 <style>
 :root{
-  --bg:#000;                 /* FUNDO TOTAL PRETO */
+  --bg:#000;
   --panel: rgba(6,14,18,.58);
   --stroke: rgba(120,220,255,.20);
   --text: #d7fbff;
@@ -26,26 +26,17 @@ html,body{
 }
 
 /* ===== FUNDO PRETO + VINHETA ===== */
-#bgBlack{
-  position:fixed;
-  inset:0;
-  background:#000;
-  z-index:0;
-}
+#bgBlack{position:fixed;inset:0;background:#000;z-index:0;}
 #vignette{
-  position:fixed;
-  inset:0;
-  pointer-events:none;
-  z-index:1;
-  background:
-    radial-gradient(circle at 50% 45%,
-      rgba(0,0,0,0) 0%,
-      rgba(0,0,0,.15) 45%,
-      rgba(0,0,0,.55) 75%,
-      rgba(0,0,0,.78) 100%);
+  position:fixed; inset:0; pointer-events:none; z-index:1;
+  background: radial-gradient(circle at 50% 45%,
+    rgba(0,0,0,0) 0%,
+    rgba(0,0,0,.15) 45%,
+    rgba(0,0,0,.55) 75%,
+    rgba(0,0,0,.78) 100%);
 }
 
-/* ===== JANELA DO MAPA (monitor preto) ===== */
+/* ===== JANELA DO MAPA (monitor) ===== */
 #mapFrame{
   position:fixed;
   left:50%;
@@ -55,14 +46,11 @@ html,body{
   height:min(760px, 78vh);
   border-radius:22px;
   z-index:2;
-
   background: rgba(0,0,0,.88);
   border:1px solid rgba(120,220,255,.18);
   box-shadow: 0 0 60px rgba(0,0,0,.75), 0 0 90px rgba(0,200,255,.12);
   overflow:hidden;
 }
-
-/* glow suave dentro do frame */
 #mapFrame::before{
   content:"";
   position:absolute; inset:0;
@@ -74,8 +62,6 @@ html,body{
   pointer-events:none;
   mix-blend-mode:screen;
 }
-
-/* MAPA */
 #bgMap{
   position:absolute; inset:0;
   width:100%; height:100%;
@@ -84,36 +70,28 @@ html,body{
   transform: translateY(-8px) scale(.97);
   filter: brightness(.95) contrast(1.22) saturate(1.28);
   animation: mapPulse 9s ease-in-out infinite;
-  opacity: .99;
+  opacity:.99;
 }
 @keyframes mapPulse{
   0%   { filter:brightness(.82) contrast(1.12) saturate(1.10); }
   50%  { filter:brightness(1.07) contrast(1.33) saturate(1.32); }
   100% { filter:brightness(.82) contrast(1.12) saturate(1.10); }
 }
-
-/* scanlines dentro do frame */
 #scanlines{
   position:absolute; inset:0;
   pointer-events:none;
   opacity:.18;
-  background:
-    repeating-linear-gradient(
-      to bottom,
-      rgba(120,220,255,.06) 0px,
-      rgba(120,220,255,.06) 1px,
-      transparent 2px,
-      transparent 7px
-    );
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(120,220,255,.06) 0px,
+    rgba(120,220,255,.06) 1px,
+    transparent 2px,
+    transparent 7px
+  );
   mix-blend-mode: overlay;
   animation: scan 3.2s linear infinite;
 }
-@keyframes scan{
-  0%{ transform:translateY(-20px); }
-  100%{ transform:translateY(20px); }
-}
-
-/* poeira/partículas dentro do frame */
+@keyframes scan{ 0%{transform:translateY(-20px)} 100%{transform:translateY(20px)} }
 #dust{
   position:absolute; inset:-30%;
   pointer-events:none;
@@ -125,12 +103,9 @@ html,body{
   filter: blur(2px);
   animation: drift 18s linear infinite;
 }
-@keyframes drift{
-  0%{ transform:translate3d(0,0,0); }
-  100%{ transform:translate3d(-3%,2%,0); }
-}
+@keyframes drift{ 0%{transform:translate3d(0,0,0)} 100%{transform:translate3d(-3%,2%,0)} }
 
-/* ===== GLASS PANELS ===== */
+/* ===== GLASS ===== */
 .glass{
   background: var(--panel);
   backdrop-filter: blur(14px);
@@ -139,28 +114,20 @@ html,body{
   box-shadow: var(--shadow);
 }
 
-/* ===== HEADER (barra superior) ===== */
+/* ===== HEADER ===== */
 #header{
   position:fixed;
-  top:0;
-  left:0;
-  right:0;
-  height:70px;
+  top:0; left:0; right:0;
+  height:76px;
   border-radius:0 0 18px 18px;
   z-index:20;
-
   display:flex;
   flex-direction:column;
   justify-content:center;
   align-items:center;
   padding:10px 16px;
 }
-#header .t1{
-  font-weight:900;
-  letter-spacing:.8px;
-  font-size:20px;
-  line-height:1.1;
-}
+#header .t1{ font-weight:900; letter-spacing:.8px; font-size:20px; line-height:1.1; }
 #header .t2{
   margin-top:4px;
   font-size:12px;
@@ -186,34 +153,37 @@ html,body{
   opacity:.95;
 }
 
-/* ===== PAINEL ESQUERDO (certificação) ===== */
+/* ===== LEGENDA DO MAPA (prova) ===== */
+#mapLegend{
+  position:fixed;
+  left:50%;
+  top:92px;
+  transform:translateX(-50%);
+  z-index:12;
+  padding:10px 12px;
+  border-radius:14px;
+  max-width:min(860px, 62vw);
+  text-align:center;
+}
+#mapLegend .l1{ font-size:12px; color:#dffaff; font-weight:800; letter-spacing:.4px; }
+#mapLegend .l2{ margin-top:4px; font-size:11px; color:var(--muted); opacity:.95; }
+
+/* ===== ESQUERDA (certificação) ===== */
 #leftPanel{
   position:fixed;
   left:20px;
-  top:90px;
+  top:96px;
   width:330px;
   padding:14px;
   border-radius:22px;
   z-index:10;
-  opacity:.92;
-}
-.kicker{
-  font-size:12px;
-  color:var(--muted);
   opacity:.95;
 }
-.big{
-  margin-top:10px;
-  font-size:74px;
-  font-weight:250;
-  line-height:1;
-}
-.unit{
-  font-size:12px;
-  color:var(--muted);
-  margin-top:4px;
-}
-.classRow{
+.kicker{ font-size:12px; color:var(--muted); opacity:.95; }
+.big{ margin-top:10px; font-size:74px; font-weight:250; line-height:1; }
+.unit{ font-size:12px; color:var(--muted); margin-top:4px; }
+
+.ratingRow{
   margin-top:10px;
   display:flex;
   gap:10px;
@@ -240,9 +210,7 @@ html,body{
   margin-top:10px;
 }
 .kv{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
+  display:flex; justify-content:space-between; align-items:center;
   font-size:12px;
   padding:9px 10px;
   border:1px solid rgba(110,210,255,.16);
@@ -251,15 +219,8 @@ html,body{
   cursor:pointer;
   user-select:none;
 }
-.kv:hover{
-  border-color: rgba(110,210,255,.35);
-  box-shadow: 0 0 14px rgba(110,210,255,.18);
-}
-.kv b{
-  font-weight:900;
-  letter-spacing:.4px;
-  color:#e9fdff;
-}
+.kv:hover{ border-color: rgba(110,210,255,.35); box-shadow: 0 0 14px rgba(110,210,255,.18); }
+.kv b{ font-weight:900; letter-spacing:.4px; color:#e9fdff; }
 .kv span{ color:#d0fbff; font-weight:800; }
 
 .note{
@@ -270,11 +231,11 @@ html,body{
   line-height:1.25;
 }
 
-/* ===== DIREITA (Mercado/Compra + Telemetria) ===== */
+/* ===== DIREITA (participação + telemetria como validação) ===== */
 #rightWrap{
   position:fixed;
   right:20px;
-  top:90px;
+  top:96px;
   width:330px;
   z-index:10;
   display:flex;
@@ -282,21 +243,9 @@ html,body{
   gap:14px;
 }
 
-#buyPanel{
-  padding:14px;
-  border-radius:18px;
-}
-.title{
-  font-weight:900;
-  letter-spacing:.6px;
-  margin-bottom:8px;
-}
-.subtitle{
-  font-size:12px;
-  color:var(--muted);
-  opacity:.95;
-  margin-bottom:10px;
-}
+#buyPanel{ padding:14px; border-radius:18px; }
+.title{ font-weight:900; letter-spacing:.6px; margin-bottom:8px; }
+.subtitle{ font-size:12px; color:var(--muted); opacity:.95; margin-bottom:10px; }
 
 label{ display:block; font-size:12px; color:var(--muted); margin:10px 0 6px; }
 .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
@@ -310,10 +259,7 @@ input{
   color:#e9fbff;
   outline:none;
 }
-input:focus{
-  border-color: rgba(110,210,255,.65);
-  box-shadow: 0 0 16px rgba(110,210,255,.18);
-}
+input:focus{ border-color: rgba(110,210,255,.65); box-shadow: 0 0 16px rgba(110,210,255,.18); }
 
 .btn{
   background:linear-gradient(180deg,rgba(110,210,255,.18),rgba(0,0,0,.18));
@@ -331,10 +277,8 @@ input:focus{
 .valueLine b{ font-size:18px; color:#e9fdff; }
 .smallline{ margin-top:6px; font-size:11px; color:var(--muted); opacity:.95; }
 
-#telemetry{
-  padding:10px 14px;
-  border-radius:18px;
-}
+/* telemetria */
+#telemetry{ padding:10px 14px; border-radius:18px; }
 #telemetryTitle{
   font-size:11px;
   letter-spacing:.8px;
@@ -342,30 +286,23 @@ input:focus{
   opacity:.95;
   margin-bottom:6px;
 }
-#telemetryHint{
-  font-size:11px;
-  color:var(--muted);
-  opacity:.90;
-  margin-top:6px;
-}
 #wave{
   width:100%;
   height:44px;
   display:block;
   filter: drop-shadow(0 0 8px rgba(110,210,255,.55));
 }
-
-/* ===== MODAL ===== */
-#modalOverlay{
-  position:fixed; inset:0;
-  background: rgba(0,0,0,.55);
-  backdrop-filter: blur(2px);
-  display:none;
-  z-index:50;
+#telemetryHint{
+  font-size:11px;
+  color:var(--muted);
+  opacity:.90;
+  margin-top:6px;
 }
+
+/* modal */
+#modalOverlay{ position:fixed; inset:0; background: rgba(0,0,0,.55); backdrop-filter: blur(2px); display:none; z-index:50; }
 #modal{
-  position:fixed;
-  left:50%; top:50%;
+  position:fixed; left:50%; top:50%;
   transform:translate(-50%,-50%);
   width:min(560px, 92vw);
   padding:16px;
@@ -377,29 +314,27 @@ input:focus{
 #modal .mtext{ color:#c9f7ff; font-size:13px; line-height:1.35; }
 #modal .closeRow{ display:flex; justify-content:flex-end; margin-top:12px; }
 
-/* ===== RESPONSIVO ===== */
+/* responsivo */
 @media (max-width: 1200px){
   #leftPanel, #rightWrap{ width:320px; }
   #mapFrame{ width:min(980px, 60vw); }
+  #mapLegend{ max-width:min(760px, 58vw); }
 }
 @media (max-width: 980px){
   body{ overflow:auto; }
   #leftPanel{ position:static; width:auto; margin:12px; }
   #rightWrap{ position:static; width:auto; margin:12px; }
+  #mapLegend{ position:static; transform:none; margin:12px; max-width:none; }
   #mapFrame{
-    position:relative;
-    left:auto; top:auto;
-    transform:none;
-    margin:12px;
-    width:auto;
-    height:55vh;
+    position:relative; left:auto; top:auto;
+    transform:none; margin:12px;
+    width:auto; height:55vh;
   }
 }
 </style>
 </head>
 
 <body>
-
 <div id="bgBlack"></div>
 <div id="vignette"></div>
 
@@ -410,14 +345,20 @@ input:focus{
     Ativo ambiental negociável (estilo carbono): lastro em conservação + monitoramento contínuo + registro público de aquisição.
   </div>
   <div class="badges">
-    <span class="badge">Oracle ecológico (DEMO)</span>
+    <span class="badge">Leitura contínua (DEMO)</span>
     <span class="badge">Telemetria 30D</span>
     <span class="badge">Ajustes: ENT/PAN</span>
     <span class="badge">Rede: Solana</span>
   </div>
 </div>
 
-<!-- MAPA EM FRAME PRETO -->
+<!-- LEGENDA DO MAPA (prova) -->
+<div id="mapLegend" class="glass">
+  <div class="l1">Mapa de Integridade Ecológica — leitura contínua do território</div>
+  <div class="l2">Cores quentes = pressão/instabilidade • Cores frias = estabilidade/continuidade funcional</div>
+</div>
+
+<!-- MAPA -->
 <div id="mapFrame" aria-label="Monitor de território">
   <img id="bgMap" src="./mapa_br.png" alt="Mapa CNT Brasil">
   <div id="scanlines"></div>
@@ -428,21 +369,22 @@ input:focus{
 <div id="leftPanel" class="glass">
   <div class="kicker">
     <strong>CNT (Solana)</strong>: participação digital em uma reserva ambiental monitorada.
-    Compra financia conservação e registra ordem pública de aquisição/monitoramento.
+    A aquisição financia conservação e registra a ordem pública de monitoramento/aquisição.
   </div>
 
-  <div class="big" id="cnt">68.0</div>
-  <div class="unit">ECO RATING (0–100) • Integridade ecológica do território</div>
+  <!-- Rating com cara de certificação -->
+  <div class="big"><span id="cnt">68</span><span style="font-size:26px;opacity:.9">/100</span></div>
+  <div class="unit">ECO RATING • Integridade ecológica (escala 0–100)</div>
 
-  <div class="classRow">
+  <div class="ratingRow">
+    <span class="classPill" id="grade">Grau: B</span>
     <span class="classPill" id="classPill">Classe: Moderada</span>
     <span class="classPill">Confiança: Média</span>
-    <span class="classPill">Status: Funcional</span>
   </div>
 
   <div class="divider"></div>
 
-  <div class="kicker">O rating é calculado por sub-índices:</div>
+  <div class="kicker">Sub-índices (clique para ver)</div>
 
   <div class="grid2">
     <div class="kv" data-k="IBE"><b>IBE</b><span id="ibe">88</span></div>
@@ -455,36 +397,36 @@ input:focus{
 
   <div class="note">
     Nota técnica: ENT (entropia) e PAN (pressão antrópica) atuam como fatores de ajuste
-    (penalidades/pressões) e modulam o CNT final junto aos demais índices.
+    (penalidades/pressões) e modulam o ECO RATING junto aos demais índices.
   </div>
 </div>
 
 <!-- DIREITA -->
 <div id="rightWrap">
   <div id="buyPanel" class="glass">
-    <div class="title">ADQUIRIR CNT (RESERVA AMBIENTAL)</div>
+    <div class="title">PARTICIPAR DA RESERVA (CNT)</div>
     <div class="subtitle">
-      O CNT representa frações de integridade ecológica monitorada. A telemetria valida a estabilidade ao longo do tempo.
+      Você adquire frações de integridade ecológica monitorada. O nível de estabilidade no tempo influencia a confiabilidade do ativo.
     </div>
 
-    <label for="sol">Valor em SOL</label>
+    <label for="sol">Contribuição em SOL</label>
     <div class="row">
       <input id="sol" type="number" step="0.01" min="0" value="0.10" />
       <button class="btn secondary" onclick="connect()">Conectar Wallet</button>
-      <button class="btn" onclick="buy()">Comprar</button>
+      <button class="btn" onclick="buy()">Participar</button>
     </div>
 
     <div class="valueLine">
-      Você recebe aprox: <b id="out">14.744.913 CNT</b>
+      Emissão estimada: <b id="out">14.744.913 CNT</b>
     </div>
-    <div class="smallline">Rede: Solana • Compra abre Pump.fun • (DEMO de interface)</div>
+    <div class="smallline">Rede: Solana • Pump.fun • (DEMO de interface)</div>
   </div>
 
   <div id="telemetry" class="glass">
-    <div id="telemetryTitle">TELEMETRIA — VALIDADE TEMPORAL (30D)</div>
+    <div id="telemetryTitle">CURVA DE ESTABILIDADE ECOLÓGICA (30D)</div>
     <canvas id="wave"></canvas>
     <div id="telemetryHint">
-      Interpretação: estabilidade alta = ativo mais confiável • instabilidade = risco/pressão no sistema.
+      Leituras estáveis aumentam confiabilidade • Oscilações indicam pressão/risco no sistema.
     </div>
   </div>
 </div>
@@ -505,14 +447,32 @@ input:focus{
   const bg = document.getElementById("bgMap");
   const base = "./mapa_br.png";
   if(!bg) return;
-
   bg.src = base + "?v=" + Date.now();
-
-  bg.addEventListener("load", () => console.log("OK: mapa carregou:", bg.src));
   bg.addEventListener("error", () => {
-    console.error("ERRO: não encontrei:", base);
     alert("ERRO: não achei ./mapa_br.png. Coloque o arquivo na MESMA pasta do index.html e com o nome EXATO.");
   });
+})();
+
+/* ===== Rating (decisão) ===== */
+(function(){
+  const score = 68; // aqui você pode plugar cálculo real depois
+  const gradeEl = document.getElementById("grade");
+  const classEl = document.getElementById("classPill");
+  const cntEl = document.getElementById("cnt");
+
+  cntEl.textContent = score;
+
+  function grade(s){
+    if(s >= 90) return {g:"AA", c:"Classe: Excelente"};
+    if(s >= 80) return {g:"A",  c:"Classe: Alta"};
+    if(s >= 70) return {g:"B",  c:"Classe: Moderada+"};
+    if(s >= 60) return {g:"C",  c:"Classe: Moderada"};
+    if(s >= 50) return {g:"D",  c:"Classe: Vulnerável"};
+    return {g:"E", c:"Classe: Crítica"};
+  }
+  const r = grade(score);
+  gradeEl.textContent = "Grau: " + r.g;
+  classEl.textContent = r.c;
 })();
 
 /* ===== Telemetria ===== */
@@ -571,7 +531,7 @@ function update(){
 solInput.addEventListener("input", update);
 update();
 
-/* ===== Botões (placeholder) ===== */
+/* ===== Botões ===== */
 function connect(){
   alert("Conexão Phantom/Solana entra aqui depois (ainda é DEMO).");
 }
@@ -579,7 +539,7 @@ function buy(){
   window.open("https://pump.fun/coin/GCVyjNaCbXkwGUuktyNxSXad4ozmTp2fzQr2jieSpump","_blank");
 }
 
-/* ===== Modal Sub-índices ===== */
+/* ===== Modal ===== */
 const meanings = {
   IBE: "Índice Bioelétrico: metabolismo do sistema (pulso funcional/ecológico).",
   IAB: "Índice Abiótico: suporte físico (clima, solo, energia) que sustenta o sistema.",
