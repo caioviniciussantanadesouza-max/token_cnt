@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>CNT — Centro Natural Tecnológico</title>
+<title>CNT — Ativo Ambiental Tokenizado</title>
 
 <style>
 :root{
@@ -39,7 +39,7 @@ html,body{
   object-fit:contain;
   object-position:center;
 
-  /* ajuste fino: dá mais “respiro” e não encosta no header */
+  /* dá respiro e evita “encostar” no header */
   transform: translateY(28px) scale(.86);
 
   opacity:.98;
@@ -123,8 +123,8 @@ html,body{
   transform:translateX(-50%);
   padding:12px 16px;
   border-radius:14px;
-  max-width:560px;
-  min-width:360px;
+  max-width:620px;
+  min-width:380px;
   z-index:11;
 }
 #header .t1{
@@ -210,7 +210,7 @@ strong{ color:#e8fdff; }
   position:fixed;
   right:16px;
   top:16px;
-  width:340px;
+  width:360px;
   z-index:10;
 
   display:flex;
@@ -234,7 +234,7 @@ label{ display:block; font-size:12px; color:var(--muted); margin:10px 0 6px; }
 .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
 
 input{
-  width:150px;
+  width:170px;
   padding:10px 10px;
   border-radius:12px;
   border:1px solid rgba(110,210,255,.38);
@@ -263,12 +263,11 @@ input:focus{
 .valueLine b{ font-size:18px; color:#e9fdff; }
 .note{ margin-top:6px; font-size:11px; color:var(--muted); opacity:.95; }
 
-/* ===== TELEMETRIA (agora SEMPRE visível) ===== */
+/* ===== TELEMETRIA (sempre visível) ===== */
 #telemetry{
   padding:10px 14px;
   border-radius:18px;
 }
-
 #telemetryTitle{
   font-size:11px;
   letter-spacing:.8px;
@@ -276,7 +275,6 @@ input:focus{
   opacity:.95;
   margin-bottom:6px;
 }
-
 #wave{
   width:100%;
   height:44px;
@@ -309,7 +307,7 @@ input:focus{
 /* ===== RESPONSIVO ===== */
 @media (max-width: 1100px){
   #leftPanel{ width:340px; }
-  #rightWrap{ width:320px; }
+  #rightWrap{ width:340px; }
   #bg{ transform: translateY(32px) scale(.84); }
 }
 @media (max-width: 900px){
@@ -335,29 +333,29 @@ input:focus{
 
 <!-- HEADER -->
 <div id="header" class="glass">
-  <div class="t1">CNT</div>
-  <div class="t2">Centro Natural Tecnológico (Monitoring Infrastructure Bioecológica)</div>
+  <div class="t1">CNT — Ativo Ambiental</div>
+  <div class="t2">Crédito ecológico dinâmico: monitoramento + lastro de conservação + registro público</div>
 </div>
 
 <!-- ESQUERDA -->
 <div id="leftPanel" class="glass">
   <div class="small">
-    <strong>Token CNT (Solana)</strong>: ativo do Observatório para financiar conservação e registrar ordens de aquisição/monitoramento.
+    <strong>CNT (Solana)</strong>: reserva ambiental tokenizada para financiar conservação e registrar ordens de aquisição/monitoramento.
   </div>
 
   <div class="big" id="cnt">68.0</div>
-  <div class="small">Confiança: <strong>Média</strong></div>
+  <div class="small">Classificação ambiental: <strong>Moderada</strong></div>
 
   <div class="divider"></div>
 
-  <div class="small">Estado do sistema:</div>
-  <div><strong>Sistema estável</strong></div>
-  <div class="small">Modo operacional: Monitoramento ativo</div>
-  <div class="small">Status: Operacional</div>
+  <div class="small">Status do território:</div>
+  <div><strong>Funcional e estável</strong></div>
+  <div class="small">Modo: Monitoramento ativo</div>
+  <div class="small">Auditoria: Telemetria temporal (30D)</div>
 
   <div class="divider"></div>
 
-  <div style="font-weight:900; letter-spacing:.5px; font-size:13px;">Sub-índices (clique para ver)</div>
+  <div style="font-weight:900; letter-spacing:.5px; font-size:13px;">Índices (clique para ver)</div>
 
   <div class="grid2">
     <div class="kv" data-k="IBE"><b>IBE</b><span id="ibe">88</span></div>
@@ -369,15 +367,14 @@ input:focus{
   </div>
 
   <div class="pill">
-    Dica: ENT (entropia) e PAN (pressão antrópica) entram como fatores de ajuste no cálculo final (pesos/penalidades),
-    junto a outros moduladores do modelo.
+    Nota: ENT e PAN atuam como fatores de ajuste (penalidades/pressões) e modulam o CNT final junto aos demais índices.
   </div>
 </div>
 
-<!-- DIREITA: Token + Telemetria (acoplada de verdade) -->
+<!-- DIREITA: Compra + Telemetria -->
 <div id="rightWrap">
   <div id="rightPanel" class="glass">
-    <div class="title">TROCA SOL → CNT</div>
+    <div class="title">ADQUIRIR CNT (RESERVA AMBIENTAL)</div>
 
     <label for="sol">Valor em SOL</label>
     <div class="row">
@@ -487,12 +484,12 @@ function buy(){
 
 /* ===== Modal Sub-índices ===== */
 const meanings = {
-  IBE: "Índice Bioelétrico: pulso/atividade elétrica do sistema vivo (fisiologia ambiental).",
+  IBE: "Índice Bioelétrico: pulso/atividade elétrica do sistema vivo (metabolismo ecológico).",
   IAB: "Índice Abiótico: condições físicas (clima, solo, energia) que sustentam o sistema.",
-  IBI: "Índice Biótico: dinâmica da vida (atividade biológica e padrão funcional).",
+  IBI: "Índice Biótico: organização da vida (atividade biológica e padrão funcional).",
   HID: "Índice Hídrico: estabilidade e dinâmica da água no território.",
-  ENT: "Entropia: fator de ajuste relacionado à dispersão/desordem do sistema (penalidade/ajuste).",
-  PAN: "Pressão Antrópica: fator de ajuste relacionado ao uso humano do território (penalidade/ajuste)."
+  ENT: "Entropia: perda de ordem/eficiência do sistema (penalidade/ajuste).",
+  PAN: "Pressão Antrópica: intensidade do uso humano e impacto (penalidade/ajuste)."
 };
 
 const modal = document.getElementById("modal");
