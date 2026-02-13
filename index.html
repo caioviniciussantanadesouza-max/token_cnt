@@ -374,14 +374,16 @@ const FILES = {
   prodesPreview: "prodes_mosaic.png"
 };
 
-// BBOX do PRODES preview (extraído do metadata.xml do export)
-const PRODES_BBOX = {
+// BBOX do PRODES preview (tentativa 1: bbox do export). Se não casar, o código faz fallback automático.
+// Importante: muitos exports vêm "recortados" e sem bbox confiável aqui, então o fallback usa o bbox do Brasil (biomas.geojson).
+const PRODES_BBOX_EXPORT = {
   minLon: -73.985535,
   minLat: -33.750706,
   maxLon: -28.839052,
   maxLat: 5.264877,
 };
-
+// será definido no boot: "export" ou "brasil"
+let PRODES_MODE = "export";
 /* =========================
    HELPERS
 ========================= */
@@ -603,9 +605,14 @@ function ensureProdesSampler(){
 }
 
 function sampleProdes(lon, lat){
-  // converte lon/lat -> u,v no bbox do PRODES
-  const u = (lon - PRODES_BBOX.minLon) / (PRODES_BBOX.maxLon - PRODES_BBOX.minLon);
-  const v = (PRODES_BBOX.maxLat - lat) / (PRODES_BBOX.maxLat - PRODES_BBOX.minLat);
+  // converte lon/lat -> u,v usando o modo atual
+  // export: usa o bbox informado no export; brasil: usa o bbox calculado do biomas.geojson (Brasil inteiro)
+  const bb = (PRODES_MODE === "brasil")
+    ? { minLon: bbox[0], minLat: bbox[1], maxLon: bbox[2], maxLat: bbox[3] }
+    : PRODES_BBOX_EXPORT;
+
+  const u = (lon - bb.minLon) / (bb.maxLon - bb.minLon);
+  const v = (bb.maxLat - lat) / (bb.maxLat - bb.minLat);
   if(!(u>=0 && u<=1 && v>=0 && v<=1)) return [0,0,0,0];
 
   const x = Math.max(0, Math.min(state.prodesCanvas.width-1, Math.floor(u * state.prodesCanvas.width)));
@@ -656,7 +663,8 @@ function generateClassPoints(){
     if(!pointInAnyRing([lon,lat], state.rings)) continue;
 
     const [r,g,b,a] = sampleProdes(lon,lat);
-    const col = classifyColor(r,g,b);
+    // se o preview não tem dado nesse pixel (alpha=0), mantém um verde bem leve (não some tudo)
+    const col = (a===0) ? [60,255,180] : classifyColor(r,g,b);
 
     pts.push({
       lon, lat,
@@ -834,6 +842,21 @@ async function boot(){
       img.src = FILES.prodesPreview + "?v=" + Date.now();
     });
     ensureProdesSampler();
+    // calibração rápida: se o bbox do export não "casa" com a imagem, muda para modo brasil (bbox do biomas)
+    // (isso evita ficar sem pontos, como no seu print)
+    PRODES_MODE = "export";
+    let ok=0, tot=180;
+    for(let i=0;i<tot;i++){
+      const lon = bbox[0] + Math.random()*(bbox[2]-bbox[0]);
+      const lat = bbox[1] + Math.random()*(bbox[3]-bbox[1]);
+      if(!pointInAnyRing([lon,lat], state.rings)) { i--; continue; }
+      const a = sampleProdes(lon,lat)[3] || 0;
+      if(a>0) ok++;
+    }
+    if(ok < 10){
+      PRODES_MODE = "brasil";
+    }
+
 
     // HUD CNT
     const props = state.cnt?.features?.[0]?.properties || {};
@@ -868,7 +891,7 @@ async function boot(){
     statusEl.textContent = "Status: gerando pontos reais por classe…";
     generateClassPoints();
 
-    statusEl.textContent = "Status: OK • verde/azul/amarelo/vermelho baseado no preview PRODES (mosaic)";
+    statusEl.textContent = "Status: OK • Pontos: " + (state.pts?.length||0) + " • PRODES_MODE: " + PRODES_MODE + " • preview: " + FILES.prodesPreview;
     state.ready = true;
 
     drawPoints();
