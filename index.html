@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -203,6 +202,17 @@ html,body{
 }
 @keyframes scan{ 0%{ transform:translateY(-22px);} 100%{ transform:translateY(22px);} }
 
+#mapMsg{
+  position:absolute;
+  left:12px; top:12px;
+  padding:8px 10px;
+  border-radius:12px;
+  background: rgba(0,0,0,.25);
+  border: 1px solid rgba(110,210,255,.18);
+  font-size:12px;
+  color:#d8fbff;
+}
+
 /* Right */
 #right{
   display:flex;
@@ -280,7 +290,7 @@ input:focus{
   opacity:.92;
 }
 
-/* MOBILE REAL */
+/* ✅ MOBILE: compra vem ANTES do mapa, e índices vão DEPOIS do mapa */
 @media (max-width: 900px){
   html, body { overflow-x:hidden !important; overflow-y:auto; }
   #app{
@@ -288,21 +298,20 @@ input:focus{
     inset:auto;
     min-height:100vh;
     grid-template-columns: 1fr;
-    grid-template-rows: auto auto minmax(52vh, 60vh) auto;
+    grid-template-rows: auto auto minmax(52vh, 60vh) auto auto;
     gap:12px;
     padding:12px;
   }
   #header{ grid-column:1/2; }
+  #right{ grid-column:1/2; }
+  #buy{ order: 2; }
+  #center{ order: 3; height:56vh; }
   #left{
-    grid-column:1/2;
-    max-height:42vh;
+    order: 4;
+    max-height:48vh;
     overflow:auto;
   }
-  #center{
-    grid-column:1/2;
-    height:56vh;
-  }
-  #right{ grid-column:1/2; }
+  #telemetry{ order: 5; }
 }
 </style>
 </head>
@@ -347,11 +356,12 @@ input:focus{
       <div class="kv"><b>PAN</b><span id="pan">--</span></div>
     </div>
 
-    <div id="status">Status: carregando camadas…</div>
+    <div id="status">Status: iniciando…</div>
   </div>
 
   <div id="center" class="glass">
     <div id="mapWrap">
+      <div id="mapMsg">Carregando mapa…</div>
       <canvas id="cnvBase" class="layer"></canvas>
       <canvas id="cnvOverlay" class="layer"></canvas>
       <canvas id="cnvHydro" class="layer"></canvas>
@@ -386,12 +396,21 @@ input:focus{
 </div>
 
 <script>
-/* =========================
-   BASE PATH (GitHub Pages OK)
-========================= */
-const BASE_PATH = location.hostname.includes("github.io")
-  ? location.pathname.split("/").slice(0,2).join("/")
-  : "";
+/* =========================================================
+   ✅ BASE PATH CORRIGIDO (User Pages e Project Pages)
+   - User Pages: https://za-max.github.io/  -> base=""
+   - Project Pages: https://user.github.io/repo/ -> base="/repo"
+========================================================= */
+(function(){
+  const hostIsGithub = location.hostname.endsWith("github.io");
+  const parts = location.pathname.split("/").filter(Boolean); // sem vazios
+  // Se o primeiro "pedaço" parece arquivo (tem .), então é User Pages na raiz.
+  const first = parts[0] || "";
+  const looksLikeFile = first.includes(".");
+  window.__BASE__ = (hostIsGithub && parts.length >= 1 && !looksLikeFile) ? ("/" + first) : "";
+})();
+
+const BASE_PATH = window.__BASE__ || "";
 const url = (f)=> (BASE_PATH ? (BASE_PATH + "/" + f) : ("./" + f));
 
 /* =========================
@@ -400,33 +419,27 @@ const url = (f)=> (BASE_PATH ? (BASE_PATH + "/" + f) : ("./" + f));
 const PUMP_URL = "https://pump.fun/coin/GCVyjNaCbXkwGUuktyNxSXad4ozmTp2fzQr2jieSpump";
 
 const FILES = {
-  // geometria base (Brasil)
-  br: ["BR_IBGE_simplificado.geojson","BR_IBGE.geojson"],
-  // limites/recortes
+  br: ["BR_IBGE_simplificado.geojson", "BR_IBGE.geojson"],
   uf: ["uf.geojson"],
-  // hidrografia
   macro: ["macro_rh.geojson"],
   micro: ["micro_rh.geojson"],
-  // pontos
   ptsSample: ["vege_pts_sample.geojson"],
   ptsFull: ["vege_pts.geojson"],
-  // legenda de pontos
   ptsLegend: ["layers_points.json"],
-  // raster base
   baseImg: ["mapa_base.png"],
   prodesImg: ["prodes_mosaic.png"],
-  // índice CNT
   cnt: ["CNT_FULL_10Y.geojson"]
 };
 
-const ECO_SCALE_MULT = 4;     // ECO/100 = cnt_A * 4
-const rate = 147449130;       // demo SOL -> CNT
+const ECO_SCALE_MULT = 4;
+const rate = 147449130;
 
 /* =========================
    HELPERS
 ========================= */
 const statusEl = document.getElementById("status");
 const chipPts = document.getElementById("chipPts");
+const mapMsg = document.getElementById("mapMsg");
 
 function fmt(n, d=2){
   if(n === null || n === undefined || !Number.isFinite(Number(n))) return "--";
@@ -441,12 +454,12 @@ async function fetchJSON(u){
   return res.json();
 }
 async function fetchFirst(list){
-  const errs=[];
+  let lastErr = null;
   for(const f of list){
     try{ return {json: await fetchJSON(url(f)), file:f}; }
-    catch(e){ errs.push(String(e.message||e)); }
+    catch(e){ lastErr = e; }
   }
-  throw new Error(errs.join(" | "));
+  throw lastErr || new Error("Falha ao carregar arquivos.");
 }
 async function fetchImage(file){
   const img = new Image();
@@ -464,7 +477,6 @@ function isGeomOK(g){ return g && (g.type==="Polygon" || g.type==="MultiPolygon"
 function extractGeomsFromAny(obj){
   const out = [];
   if(!obj) return out;
-
   if(obj.type==="FeatureCollection" && Array.isArray(obj.features)){
     for(const f of obj.features){
       const g = f?.geometry;
@@ -476,11 +488,7 @@ function extractGeomsFromAny(obj){
   } else if(obj.type==="Feature"){
     const g = obj.geometry;
     if(isGeomOK(g)) out.push(g);
-    if(g?.type==="GeometryCollection" && Array.isArray(g.geometries)){
-      for(const gg of g.geometries) if(isGeomOK(gg)) out.push(gg);
-    }
   } else if(isGeomOK(obj)) out.push(obj);
-
   return out;
 }
 function mergeToMultiPolygon(geoms){
@@ -596,23 +604,9 @@ const state = {
   micro:null,
   ptsLegend:null,
   pts:[],
-  cntProps:null,
   series:[]
 };
 
-function clearAll(){
-  const W = cnvBase.getBoundingClientRect().width;
-  const H = cnvBase.getBoundingClientRect().height;
-  ctxBase.clearRect(0,0,W,H);
-  ctxOv.clearRect(0,0,W,H);
-  ctxH.clearRect(0,0,W,H);
-  ctxB.clearRect(0,0,W,H);
-  ctxP.clearRect(0,0,W,H);
-}
-
-/* =========================
-   DRAW HELPERS
-========================= */
 function makePathFromMultiPolygon(ctx, mp){
   ctx.beginPath();
   for(const poly of mp.coordinates){
@@ -625,22 +619,20 @@ function makePathFromMultiPolygon(ctx, mp){
   }
 }
 
-function drawRasterBase(){
+/* =========================
+   DRAW
+========================= */
+function drawRasterBaseUnclipped(){
   const W = cnvBase.getBoundingClientRect().width;
   const H = cnvBase.getBoundingClientRect().height;
   ctxBase.clearRect(0,0,W,H);
-
-  // fundo preto
   ctxBase.fillStyle = "rgba(0,0,0,1)";
   ctxBase.fillRect(0,0,W,H);
 
-  // desenha imagem base cobrindo a área do canvas (estilo HUD)
   if(state.baseImg){
     ctxBase.save();
-    ctxBase.globalAlpha = 0.88;
+    ctxBase.globalAlpha = 0.92;
     ctxBase.imageSmoothingEnabled = true;
-
-    // cover
     const img = state.baseImg;
     const scale = Math.max(W/img.width, H/img.height);
     const dw = img.width*scale;
@@ -650,8 +642,14 @@ function drawRasterBase(){
     ctxBase.drawImage(img, dx, dy, dw, dh);
     ctxBase.restore();
   }
+}
+function drawRasterBaseClipped(){
+  drawRasterBaseUnclipped();
+  if(!state.brGeom) return;
 
-  // recorta para dentro do Brasil (não vazar)
+  const W = cnvBase.getBoundingClientRect().width;
+  const H = cnvBase.getBoundingClientRect().height;
+
   ctxBase.save();
   makePathFromMultiPolygon(ctxBase, state.brGeom);
   ctxBase.globalCompositeOperation = "destination-in";
@@ -659,13 +657,11 @@ function drawRasterBase(){
   ctxBase.fill("evenodd");
   ctxBase.restore();
 }
-
 function drawProdesOverlay(){
   const W = cnvOverlay.getBoundingClientRect().width;
   const H = cnvOverlay.getBoundingClientRect().height;
   ctxOv.clearRect(0,0,W,H);
-
-  if(!state.prodesImg) return;
+  if(!state.prodesImg || !state.brGeom) return;
 
   ctxOv.save();
   ctxOv.globalAlpha = 0.26;
@@ -680,24 +676,21 @@ function drawProdesOverlay(){
   const dy = (H - dh)/2;
   ctxOv.drawImage(img, dx, dy, dw, dh);
 
-  // recorta dentro do Brasil
   makePathFromMultiPolygon(ctxOv, state.brGeom);
   ctxOv.globalCompositeOperation = "destination-in";
   ctxOv.fillStyle = "#fff";
   ctxOv.fill("evenodd");
-
   ctxOv.restore();
 }
-
 function drawBorders(){
   const W = cnvBorders.getBoundingClientRect().width;
   const H = cnvBorders.getBoundingClientRect().height;
   ctxB.clearRect(0,0,W,H);
+  if(!state.brGeom) return;
 
   ctxB.save();
   ctxB.lineJoin="round"; ctxB.lineCap="round";
 
-  // borda Brasil neon
   const strokeOnce = (w, col, blur, shadowCol)=>{
     ctxB.lineWidth = w;
     ctxB.strokeStyle = col;
@@ -710,18 +703,19 @@ function drawBorders(){
   strokeOnce(3.2, "rgba(120,220,255,0.85)", 10, "rgba(120,220,255,.65)");
 
   // UF
-  if(state.uf){
+  if(state.uf?.features){
     ctxB.shadowBlur = 0;
     ctxB.lineWidth = 1.1;
     ctxB.strokeStyle = "rgba(140,240,255,0.42)";
     ctxB.beginPath();
-    for(const f of state.uf.features || []){
+    for(const f of state.uf.features){
       const g = f.geometry;
       if(!g) continue;
       const geoms = extractGeomsFromAny({type:"Feature", geometry:g});
       for(const gg of geoms){
-        const mp = (gg.type==="Polygon") ? {type:"MultiPolygon",coordinates:[gg.coordinates]} :
-                  (gg.type==="MultiPolygon" ? gg : null);
+        const mp = (gg.type==="Polygon")
+          ? {type:"MultiPolygon",coordinates:[gg.coordinates]}
+          : (gg.type==="MultiPolygon" ? gg : null);
         if(!mp) continue;
         makePathFromMultiPolygon(ctxB, mp);
       }
@@ -731,11 +725,11 @@ function drawBorders(){
 
   ctxB.restore();
 }
-
 function drawHydro(){
   const W = cnvHydro.getBoundingClientRect().width;
   const H = cnvHydro.getBoundingClientRect().height;
   ctxH.clearRect(0,0,W,H);
+  if(!state.brGeom) return;
 
   function strokeLineCollection(fc, alpha, w){
     if(!fc?.features) return;
@@ -744,420 +738,4 @@ function drawHydro(){
     ctxH.strokeStyle = `rgba(0,170,255,${alpha})`;
     ctxH.shadowColor = "rgba(0,170,255,0.7)";
     ctxH.shadowBlur = 10;
-    ctxH.lineWidth = w;
-
-    ctxH.beginPath();
-    for(const f of fc.features){
-      const g = f.geometry;
-      if(!g) continue;
-
-      const drawLine = (coords)=>{
-        for(let i=0;i<coords.length;i++){
-          const [x,y]=state.proj(coords[i][0], coords[i][1]);
-          if(i===0) ctxH.moveTo(x,y); else ctxH.lineTo(x,y);
-        }
-      };
-
-      if(g.type==="LineString"){
-        drawLine(g.coordinates);
-      }else if(g.type==="MultiLineString"){
-        for(const ln of g.coordinates) drawLine(ln);
-      }
-    }
-    ctxH.stroke();
-    ctxH.restore();
-  }
-
-  // micro mais fino, macro mais brilhante
-  strokeLineCollection(state.micro, 0.26, 0.9);
-  strokeLineCollection(state.macro, 0.36, 1.6);
-
-  // recorta no Brasil
-  ctxH.save();
-  makePathFromMultiPolygon(ctxH, state.brGeom);
-  ctxH.globalCompositeOperation = "destination-in";
-  ctxH.fillStyle = "#fff";
-  ctxH.fill("evenodd");
-  ctxH.restore();
-}
-
-/* =========================
-   POINTS REAL (verde/amarelo/vermelho/azul)
-========================= */
-function parseLegendToMap(legendJson){
-  // tenta entender qualquer formato de layers_points.json
-  // objetivo: retornar {key -> {r,g,b, name}}
-  const map = new Map();
-
-  const add = (k, color, name)=>{
-    if(!k) return;
-    const c = String(color||"").replace("#","");
-    let r=0,g=255,b=180;
-    if(c.length===6){
-      r=parseInt(c.slice(0,2),16);
-      g=parseInt(c.slice(2,4),16);
-      b=parseInt(c.slice(4,6),16);
-    }
-    map.set(String(k), {r,g,b, name:name||String(k)});
-  };
-
-  if(Array.isArray(legendJson)){
-    for(const it of legendJson){
-      add(it.id ?? it.value ?? it.key ?? it.code, it.color ?? it.hex ?? it.col, it.name ?? it.label);
-    }
-  } else if(legendJson && typeof legendJson==="object"){
-    const arr = legendJson.layers || legendJson.items || legendJson.legend || legendJson.values;
-    if(Array.isArray(arr)){
-      for(const it of arr){
-        add(it.id ?? it.value ?? it.key ?? it.code, it.color ?? it.hex ?? it.col, it.name ?? it.label);
-      }
-    } else {
-      // caso seja dict {key:{color,name}}
-      for(const [k,v] of Object.entries(legendJson)){
-        if(v && typeof v==="object") add(k, v.color||v.hex, v.name||v.label);
-      }
-    }
-  }
-
-  // fallback padrão (se o json não tiver)
-  if(map.size===0){
-    map.set("agua", {r:0,g:170,b:255,name:"Água"});
-    map.set("water",{r:0,g:170,b:255,name:"Água"});
-    map.set("vegetacao",{r:60,g:255,b:140,name:"Vegetação"});
-    map.set("veg",{r:60,g:255,b:140,name:"Vegetação"});
-    map.set("transicao",{r:255,g:220,b:60,name:"Transição"});
-    map.set("transition",{r:255,g:220,b:60,name:"Transição"});
-    map.set("desmatamento",{r:255,g:80,b:60,name:"Desmatamento"});
-    map.set("deforestation",{r:255,g:80,b:60,name:"Desmatamento"});
-  }
-  return map;
-}
-
-function detectClassKey(props){
-  // tenta achar onde está a classe do ponto
-  // exemplos comuns: class, classe, tipo, layer, label, id, code, value
-  const keys = ["class","classe","tipo","layer","label","id","code","value","cat","categoria","name"];
-  for(const k of keys){
-    if(props && props[k] !== undefined && props[k] !== null) return k;
-  }
-  // tentativa por contains
-  if(props){
-    for(const k of Object.keys(props)){
-      const lk = k.toLowerCase();
-      if(lk.includes("class") || lk.includes("classe") || lk.includes("tipo") || lk.includes("layer")) return k;
-    }
-  }
-  return null;
-}
-
-function buildPointObjects(geojson){
-  const out = [];
-  const feats = geojson?.features || [];
-  for(const f of feats){
-    const g = f.geometry;
-    if(!g) continue;
-    if(g.type==="Point"){
-      const [lon,lat] = g.coordinates;
-      out.push({lon,lat, props:f.properties||{}});
-    } else if(g.type==="MultiPoint"){
-      for(const c of g.coordinates){
-        out.push({lon:c[0], lat:c[1], props:f.properties||{}});
-      }
-    }
-  }
-  return out;
-}
-
-function drawPoints(points, legendMap){
-  const W = cnvPoints.getBoundingClientRect().width;
-  const H = cnvPoints.getBoundingClientRect().height;
-  ctxP.clearRect(0,0,W,H);
-
-  const classKeyGuess = points[0]?.props ? detectClassKey(points[0].props) : null;
-
-  // pontilhado fino
-  const baseR = 1.05;         // tamanho mínimo do ponto
-  const glowR = 3.4;          // halo
-  const jitter = 0.35;
-
-  let t = 0;
-  const tick = ()=>{
-    const W = cnvPoints.getBoundingClientRect().width;
-    const H = cnvPoints.getBoundingClientRect().height;
-    ctxP.clearRect(0,0,W,H);
-
-    // leve densidade
-    for(const p of points){
-      const lon = p.lon, lat = p.lat;
-      if(!pointInAnyOuterRing([lon,lat], state.outerRings)) continue;
-
-      const [x0,y0] = state.proj(lon,lat);
-
-      const props = p.props || {};
-      const rawKey = classKeyGuess ? props[classKeyGuess] : (props.class ?? props.classe ?? props.tipo ?? props.layer);
-      const key = (rawKey===undefined || rawKey===null) ? "" : String(rawKey);
-
-      let col = legendMap.get(key);
-
-      // heurística por texto (caso legend não bata)
-      if(!col){
-        const k = key.toLowerCase();
-        if(k.includes("agua") || k.includes("water") || k==="91") col = {r:0,g:170,b:255,name:"Água"};
-        else if(k.includes("desmat") || k.includes("defor") || k==="64") col = {r:255,g:90,b:60,name:"Desmatamento"};
-        else if(k.includes("trans") || k.includes("past") || k.includes("agro") || k.includes("lavour") || k==="20") col = {r:255,g:220,b:60,name:"Transição"};
-        else col = {r:60,g:255,b:140,name:"Vegetação"};
-      }
-
-      const pulse = 0.55 + 0.45*Math.sin((t*0.03) + (lon*0.7 + lat*0.9));
-      const a = 0.10 + 0.28*pulse;
-
-      const jx = Math.sin((t*0.02) + lon) * jitter;
-      const jy = Math.cos((t*0.017) + lat) * jitter;
-
-      // halo
-      ctxP.beginPath();
-      ctxP.fillStyle = `rgba(${col.r},${col.g},${col.b},${a*0.55})`;
-      ctxP.arc(x0 + jx, y0 + jy, glowR, 0, Math.PI*2);
-      ctxP.fill();
-
-      // núcleo
-      ctxP.beginPath();
-      ctxP.fillStyle = `rgba(${col.r},${col.g},${col.b},${a+0.15})`;
-      ctxP.arc(x0 + jx, y0 + jy, baseR, 0, Math.PI*2);
-      ctxP.fill();
-    }
-
-    t++;
-    requestAnimationFrame(tick);
-  };
-
-  tick();
-}
-
-/* =========================
-   REDRAW
-========================= */
-function redrawAll(){
-  const W = cnvBase.getBoundingClientRect().width;
-  const H = cnvBase.getBoundingClientRect().height;
-  state.proj = projectFactory(state.bbox, W, H, 0.06);
-
-  drawRasterBase();
-  drawProdesOverlay();
-  drawHydro();
-  drawBorders();
-
-  // se já temos pontos, redesenha (sem trocar animação)
-}
-
-/* =========================
-   TELEMETRY
-========================= */
-const wave = document.getElementById("wave");
-const wctx = wave.getContext("2d");
-let tWave=0;
-function resizeWave(){
-  const dpr = Math.max(1, window.devicePixelRatio || 1);
-  wave.width = Math.floor(wave.clientWidth * dpr);
-  wave.height = Math.floor(wave.clientHeight * dpr);
-  wctx.setTransform(dpr,0,0,dpr,0,0);
-}
-function startWave(){
-  const draw = ()=>{
-    const W = wave.clientWidth, H = wave.clientHeight;
-    wctx.clearRect(0,0,W,H);
-    wctx.fillStyle = "rgba(0,0,0,.25)";
-    wctx.fillRect(0,0,W,H);
-
-    wctx.strokeStyle = "rgba(110,210,255,.10)";
-    wctx.lineWidth = 1;
-    for(let y=12; y<H; y+=18){
-      wctx.beginPath(); wctx.moveTo(0,y); wctx.lineTo(W,y); wctx.stroke();
-    }
-
-    const s = (state.series && state.series.length >= 2) ? state.series : null;
-    const min = s ? Math.min(...s) : 0;
-    const max = s ? Math.max(...s) : 1;
-
-    function yAt(i){
-      if(s){
-        const idx = (i / (W-1)) * (s.length-1);
-        const a = Math.floor(idx);
-        const b = Math.min(s.length-1, a+1);
-        const f = idx - a;
-        const v = s[a]*(1-f) + s[b]*f;
-        const norm = (max-min) < 1e-9 ? 0.5 : (v - min) / (max - min);
-        let y = (H*0.18) + (1-norm) * (H*0.68);
-        y += Math.sin((i + tWave)/28) * (H*0.02);
-        return y;
-      }
-      return (H*0.52)
-        + Math.sin((i+tWave)/38)*(H*0.20)
-        + Math.sin((i+tWave)/13)*(H*0.07);
-    }
-
-    wctx.lineWidth = 2;
-    wctx.strokeStyle = "rgba(110,210,255,.35)";
-    wctx.beginPath();
-    for(let i=0;i<W;i++){
-      const y = yAt(i);
-      if(i===0) wctx.moveTo(i,y); else wctx.lineTo(i,y);
-    }
-    wctx.stroke();
-
-    wctx.strokeStyle = "rgba(110,210,255,.90)";
-    wctx.beginPath();
-    for(let i=0;i<W;i++){
-      const y = yAt(i);
-      if(i===0) wctx.moveTo(i,y); else wctx.lineTo(i,y);
-    }
-    wctx.stroke();
-
-    tWave += 2;
-    requestAnimationFrame(draw);
-  };
-  draw();
-}
-
-/* =========================
-   BUY
-========================= */
-const solInput = document.getElementById("sol");
-const out = document.getElementById("out");
-function updateOut(){
-  const sol = parseFloat(String(solInput.value).replace(",", ".")) || 0;
-  out.textContent = (sol * rate).toLocaleString("pt-BR") + " CNT";
-}
-solInput.addEventListener("input", updateOut);
-updateOut();
-
-document.getElementById("btnBuy").addEventListener("click", ()=>{
-  window.open(PUMP_URL, "_blank", "noopener,noreferrer");
-});
-
-/* =========================
-   BOOT
-========================= */
-async function boot(){
-  try{
-    statusEl.textContent = "Status: carregando Brasil (IBGE)…";
-
-    // Brasil base
-    const brRes = await fetchFirst(FILES.br);
-    const geoms = extractGeomsFromAny(brRes.json);
-    if(!geoms.length) throw new Error("Brasil: GeoJSON sem Polygon/MultiPolygon.");
-    state.brGeom = mergeToMultiPolygon(geoms);
-    state.bbox = bboxFromCoords(state.brGeom.coordinates);
-    state.outerRings = buildOuterRingsFromMultiPolygon(state.brGeom);
-
-    // imagens (base + prodes)
-    statusEl.textContent = "Status: carregando raster (mapa_base/prodes)…";
-    try{ state.baseImg = await fetchImage(FILES.baseImg[0]); }catch(e){ state.baseImg=null; }
-    try{ state.prodesImg = await fetchImage(FILES.prodesImg[0]); }catch(e){ state.prodesImg=null; }
-
-    // camadas vetoriais
-    statusEl.textContent = "Status: carregando UF + hidrografia…";
-    try{ state.uf = (await fetchFirst(FILES.uf)).json; }catch(e){ state.uf=null; }
-    try{ state.macro = (await fetchFirst(FILES.macro)).json; }catch(e){ state.macro=null; }
-    try{ state.micro = (await fetchFirst(FILES.micro)).json; }catch(e){ state.micro=null; }
-
-    // CNT painel
-    statusEl.textContent = "Status: carregando CNT (índices)…";
-    try{
-      const cntRes = await fetchFirst(FILES.cnt);
-      const props = cntRes.json?.features?.[0]?.properties;
-      if(props){
-        state.cntProps = props;
-
-        const rawA = Number(props.cnt_A);
-        const A100 = Number.isFinite(rawA) ? clamp(rawA * ECO_SCALE_MULT, 0, 100) : NaN;
-
-        document.getElementById("raw").textContent = fmt(rawA,2);
-        document.getElementById("eco").textContent = fmt1(A100);
-        document.getElementById("A").textContent   = fmt(A100,2);
-
-        const b = Number(props.cnt_B);
-        document.getElementById("B").textContent = Number.isFinite(b) ? ((b>=0?"+":"") + fmt(b,2)) : "--";
-        document.getElementById("C").textContent = fmt(props.cnt_C,2);
-        document.getElementById("R").textContent = props.grade || "--";
-
-        document.getElementById("ibe").textContent = Number.isFinite(Number(props.FUNC)) ? fmt(props.FUNC,1) : "--";
-        document.getElementById("ibi").textContent = Number.isFinite(Number(props.IBI))  ? fmt(props.IBI,1)  : "--";
-        document.getElementById("hid").textContent = Number.isFinite(Number(props.HID))  ? fmt(props.HID,2)  : "--";
-        document.getElementById("ent").textContent = Number.isFinite(Number(props.ENT))  ? fmt(props.ENT,1)  : "--";
-        document.getElementById("pan").textContent = Number.isFinite(Number(props.PAN))  ? fmt(props.PAN,1)  : "--";
-        if(props.IAB !== null && props.IAB !== undefined && Number.isFinite(Number(props.IAB))){
-          document.getElementById("iab").textContent = fmt(props.IAB,1);
-        } else {
-          document.getElementById("iab").textContent = "N/D";
-        }
-
-        state.series = Array.isArray(props.series_10y) ? props.series_10y.map(Number).filter(Number.isFinite) : [];
-        document.getElementById("telemetryHint").textContent = state.series.length
-          ? ("Histórico: " + state.series.length + " • Último (RAW): " + fmt(rawA,2))
-          : "Sem série 10y no GeoJSON.";
-      }
-    }catch(e){
-      // deixa vazio
-      document.getElementById("telemetryHint").textContent = "CNT não carregou (ok).";
-    }
-
-    // legenda de pontos
-    statusEl.textContent = "Status: carregando legenda de pontos…";
-    let legendMap;
-    try{
-      const leg = await fetchFirst(FILES.ptsLegend);
-      legendMap = parseLegendToMap(leg.json);
-      state.ptsLegend = legendMap;
-    }catch(e){
-      legendMap = parseLegendToMap(null);
-      state.ptsLegend = legendMap;
-    }
-
-    // resize + desenha base
-    resizeAll();
-    redrawAll();
-    startWave();
-
-    // pontos (sample rápido)
-    statusEl.textContent = "Status: carregando pontos (sample)…";
-    chipPts.textContent = "Pontos reais (sample → full)";
-
-    const ptsSample = await fetchFirst(FILES.ptsSample);
-    const pts1 = buildPointObjects(ptsSample.json);
-    state.pts = pts1;
-
-    // anima pontos sample
-    drawPoints(state.pts, state.ptsLegend);
-
-    statusEl.textContent = "Status: OK • sample carregado • tentando full…";
-
-    // tenta FULL em background (sem travar mobile)
-    fetchJSON(url(FILES.ptsFull[0]))
-      .then(fullJson=>{
-        const pts2 = buildPointObjects(fullJson);
-        if(pts2 && pts2.length){
-          state.pts = pts2;
-          chipPts.textContent = "Pontos reais (FULL)";
-          statusEl.textContent = "Status: OK • FULL carregado";
-          // troca para full (mesma função, reinicia anima)
-          drawPoints(state.pts, state.ptsLegend);
-        }
-      })
-      .catch(()=>{
-        chipPts.textContent = "Pontos reais (SAMPLE)";
-        statusEl.textContent = "Status: OK • full não carregou (normal no celular).";
-      });
-
-  }catch(err){
-    console.error(err);
-    statusEl.textContent = "Status: ERRO • " + (err?.message || err);
-    document.getElementById("telemetryHint").textContent = "Erro: camadas não carregaram. Veja o console (F12).";
-    clearAll();
-  }
-}
-
-boot();
-</script>
-</body>
-</html>
+    ctxH.lineWidth = w
