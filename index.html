@@ -1,12 +1,8 @@
-<!DOCTYPE html>
-
-<html lang="pt-BR">
+<!DOCTYPE html><html lang="pt-BR">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>CNT — Centro Natural TEC Amazônia</title>
-
-<style>
+<title>CNT — Centro Natural TEC Amazônia</title><style>
 :root{
   --bg0:#000;
   --bg1:#050b10;
@@ -27,7 +23,7 @@ html,body{
 #app{
   position:fixed; inset:0;
   display:grid;
-  grid-template-columns: 300px 1fr 360px;
+  grid-template-columns: 320px 1fr 360px; /* left um pouco maior */
   grid-template-rows: 120px minmax(0,1fr);
   gap:14px;
   padding:14px;
@@ -82,14 +78,22 @@ html,body{
   opacity:.95;
 }
 
-/* Left */
+/* Left — agora com scroll interno (não corta) */
 #left{
   padding:12px;
   display:flex;
   flex-direction:column;
   gap:8px;
   min-height:0;
-  overflow:hidden;
+  overflow:auto;              /* <<< FIX */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(110,210,255,.35) transparent;
+}
+#left::-webkit-scrollbar{ width: 10px; }
+#left::-webkit-scrollbar-thumb{
+  background: rgba(110,210,255,.18);
+  border:1px solid rgba(110,210,255,.25);
+  border-radius:999px;
 }
 .big{
   font-size:56px;
@@ -98,11 +102,7 @@ html,body{
   color:#e9fdff;
   margin:0;
 }
-.small{
-  font-size:12px;
-  color:var(--muted);
-  opacity:.95;
-}
+.small{ font-size:12px; color:var(--muted); opacity:.95; }
 .hr{
   height:1px;
   background:linear-gradient(90deg,transparent,rgba(110,210,255,.30),transparent);
@@ -149,23 +149,15 @@ html,body{
 }
 
 /* Center */
-#center{
-  position:relative;
-  overflow:hidden;
-  border-radius:26px;
-  min-height:0;
-}
+#center{ position:relative; overflow:hidden; border-radius:26px; min-height:0; }
 #mapWrap{
   position:absolute; inset:0;
-  display:flex;
-  align-items:center;
-  justify-content:center;
+  display:flex; align-items:center; justify-content:center;
   background: radial-gradient(900px 600px at 50% 40%, rgba(20,60,80,.35), rgba(0,0,0,1) 70%);
 }
 .layer{
   position:absolute; inset:0;
-  width:100%;
-  height:100%;
+  width:100%; height:100%;
   pointer-events:none;
 }
 #mapGlow{
@@ -180,65 +172,33 @@ html,body{
     radial-gradient(circle at 35% 70%, rgba(120,220,255,.10), transparent 60%);
   animation: glowPulse 6s ease-in-out infinite;
 }
-@keyframes glowPulse{
-  0%{ opacity:.16; transform:scale(1); }
-  50%{ opacity:.30; transform:scale(1.02); }
-  100%{ opacity:.16; transform:scale(1); }
-}
+@keyframes glowPulse{ 0%{ opacity:.16; transform:scale(1);} 50%{ opacity:.30; transform:scale(1.02);} 100%{ opacity:.16; transform:scale(1);} }
 #scanlines{
   position:absolute; inset:0;
   pointer-events:none;
   opacity:.14;
-  background:
-    repeating-linear-gradient(
-      to bottom,
-      rgba(120,220,255,.06) 0px,
-      rgba(120,220,255,.06) 1px,
-      transparent 2px,
-      transparent 7px
-    );
+  background: repeating-linear-gradient(to bottom, rgba(120,220,255,.06) 0px, rgba(120,220,255,.06) 1px, transparent 2px, transparent 7px);
   mix-blend-mode: overlay;
   animation: scan 3.2s linear infinite;
 }
 @keyframes scan{ 0%{ transform:translateY(-22px);} 100%{ transform:translateY(22px);} }
 
 /* Right */
-#right{
-  display:flex;
-  flex-direction:column;
-  gap:14px;
-  min-height:0;
-}
+#right{ display:flex; flex-direction:column; gap:14px; min-height:0; }
 #buy, #telemetry{ padding:14px; }
-#buy h2{
-  margin:0;
-  font-size:18px;
-  font-weight:900;
-  letter-spacing:.4px;
-  color:#e9fdff;
-}
-#buy .mut{
-  margin:8px 0 10px;
-  font-size:12px;
-  color:var(--muted);
-  opacity:.95;
-  line-height:1.35;
-}
+#buy h2{ margin:0; font-size:18px; font-weight:900; letter-spacing:.4px; color:#e9fdff; }
+#buy .mut{ margin:8px 0 10px; font-size:12px; color:var(--muted); opacity:.95; line-height:1.35; }
 label{ display:block; font-size:12px; color:var(--muted); margin:10px 0 6px; }
 .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
 input{
-  width:170px;
-  padding:10px 12px;
+  width:170px; padding:10px 12px;
   border-radius:14px;
   border:1px solid rgba(110,210,255,.35);
   background:rgba(0,0,0,.18);
   color:#e9fbff;
   outline:none;
 }
-input:focus{
-  border-color: rgba(110,210,255,.70);
-  box-shadow: 0 0 16px rgba(110,210,255,.18);
-}
+input:focus{ border-color: rgba(110,210,255,.70); box-shadow: 0 0 16px rgba(110,210,255,.18); }
 .btn{
   background:linear-gradient(180deg,rgba(110,210,255,.20),rgba(0,0,0,.16));
   border:1px solid rgba(110,210,255,.45);
@@ -251,44 +211,24 @@ input:focus{
   min-width:160px;
 }
 .btn:hover{ box-shadow:0 0 18px rgba(110,210,255,.30); }
-
 .valueLine{ margin-top:10px; font-size:12px; color:#bdf4ff; }
 .valueLine b{ font-size:19px; color:#e9fdff; }
 .smallnote{ margin-top:6px; font-size:11px; color:var(--muted); opacity:.95; }
-
-#telemetryTitle{
-  font-size:12px;
-  letter-spacing:.8px;
-  color:#d4fbff;
-  opacity:.95;
-  margin-bottom:8px;
-  font-weight:900;
-}
+#telemetryTitle{ font-size:12px; letter-spacing:.8px; color:#d4fbff; opacity:.95; margin-bottom:8px; font-weight:900; }
 #wave{
-  width:100%;
-  height:74px;
-  display:block;
+  width:100%; height:74px; display:block;
   background: rgba(0,0,0,.22);
   border:1px solid rgba(110,210,255,.14);
   border-radius:14px;
 }
-#telemetryHint{
-  margin-top:8px;
-  font-size:11px;
-  color:var(--muted);
-  opacity:.92;
-}
+#telemetryHint{ margin-top:8px; font-size:11px; color:var(--muted); opacity:.92; }
 
 @media (max-width: 1100px){
   body{ overflow:auto; }
   #app{ position:relative; grid-template-columns: 1fr; grid-template-rows: auto auto auto auto; }
   #center{ height:48vh; }
 }
-</style>
-
-</head>
-
-<body>
+</style></head><body>
 <div id="app">
   <div id="header" class="glass">
     <h1>CNT — Centro Natural TEC Amazônia</h1>
@@ -299,13 +239,8 @@ input:focus{
       <div class="chip">Pontos reais (sample → full)</div>
       <div class="chip">Compra: Pump.fun</div>
     </div>
-  </div>
-
-  <div id="left" class="glass">
-    <div class="small"><b>CNT</b> (índice único Brasil)</div>
-
-```
-<div class="big"><span id="eco">--</span><span style="font-size:16px; opacity:.9;">/100</span></div>
+  </div>  <div id="left" class="glass">
+    <div class="small"><b>CNT</b> (índice único Brasil)</div><div class="big"><span id="eco">--</span><span style="font-size:16px; opacity:.9;">/100</span></div>
 <div class="small">RAW auditável: <b id="raw">--</b></div>
 
 <div class="hr"></div>
@@ -330,11 +265,8 @@ input:focus{
 </div>
 
 <div id="status">Status: iniciando…</div>
-```
 
-  </div>
-
-  <div id="center" class="glass">
+  </div>  <div id="center" class="glass">
     <div id="mapWrap">
       <canvas id="cnvBase" class="layer"></canvas>
       <canvas id="cnvBorder" class="layer"></canvas>
@@ -343,15 +275,10 @@ input:focus{
       <div id="mapGlow"></div>
       <div id="scanlines"></div>
     </div>
-  </div>
-
-  <div id="right">
+  </div>  <div id="right">
     <div id="buy" class="glass">
       <h2>COMPRAR CNT</h2>
-      <p class="mut">Abre o token no Pump.fun.</p>
-
-```
-  <label for="sol">Contribuição</label>
+      <p class="mut">Abre o token no Pump.fun.</p>  <label for="sol">Contribuição</label>
   <div class="row">
     <input id="sol" type="number" step="0.01" min="0" value="0.10" />
     <button class="btn" id="btnBuy">Comprar no Pump</button>
@@ -366,12 +293,9 @@ input:focus{
   <canvas id="wave"></canvas>
   <div id="telemetryHint">Carregando…</div>
 </div>
-```
 
   </div>
-</div>
-
-<script>
+</div><script>
 /* =========================
    CONFIG
 ========================= */
@@ -387,7 +311,10 @@ const FILES = {
   micro: "micro_rh.geojson",
   cnt: "CNT_FULL_10Y.geojson",
   pts_sample: "vege_pts_sample.geojson",
-  pts_full: "vege_pts.geojson"
+  pts_full: "vege_pts.geojson",
+  // base raster (coloque em /public/)
+  base_png: "mapa_base.png",
+  base_jpg: "mapa_base.jpg"
 };
 
 /* =========================
@@ -404,18 +331,22 @@ function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
 async function loadJSON(name){
   const url = "./" + name + "?v=" + Date.now();
   const res = await fetch(url, { cache:"no-store" });
-  if(!res.ok) throw new Error(`${name} HTTP ${res.status} (${url})`);
+  if(!res.ok) throw new Error(`${name} HTTP ${res.status}`);
   const txt = await res.text();
   try{ return JSON.parse(txt); }
   catch(e){ throw new Error(`${name}: JSON inválido / truncado`); }
 }
-
 async function loadEither(a,b){
   try{ return await loadJSON(a); }
-  catch(e1){
-    try{ return await loadJSON(b); }
-    catch(e2){ throw e1; }
-  }
+  catch(_e){ return await loadJSON(b); }
+}
+function loadImage(url){
+  return new Promise((resolve,reject)=>{
+    const img = new Image();
+    img.onload = ()=>resolve(img);
+    img.onerror = ()=>reject(new Error("img fail: "+url));
+    img.src = url + "?v=" + Date.now();
+  });
 }
 
 function walkCoords(arr, cb){
@@ -437,7 +368,6 @@ function calcBBox(fc){
   return [minx, miny, maxx, maxy];
 }
 
-/* proj */
 let bbox = null;
 function proj(lon,lat,w,h){
   const [minx,miny,maxx,maxy] = bbox;
@@ -500,16 +430,16 @@ const state = {
   ptsFC:null,
   ptsXY:[],
   grid:null,
-  // tuning visual (mais parecido com referência)
-  gridSize:22,
-  R:22,
-  target:11,
+  baseImg:null,        // <<< mapa_base.png/jpg
+  gridSize:18,         // mais fino = mais detalhe
+  R:16,                // raio de densidade
+  target:6.5,          // menor = mais amarelo/vermelho (como referência)
   t:0,
   animStarted:false
 };
 
 /* =========================
-   DRAW SHAPES
+   DRAW HELPERS
 ========================= */
 function fillPolygons(ctx, fc, fillStyle, alpha){
   const W = cnvBase.getBoundingClientRect().width;
@@ -641,6 +571,35 @@ function maskCanvasToBrasil(ctx){
 }
 
 /* =========================
+   BASE RASTER (mapa_base.png)
+========================= */
+function drawBaseRaster(){
+  const W = cnvBase.getBoundingClientRect().width;
+  const H = cnvBase.getBoundingClientRect().height;
+
+  if(!state.baseImg){
+    // fallback suave se não existir o arquivo
+    fillPolygons(ctxBase, state.biomas, "rgba(0,255,200,1)", 0.035);
+    maskCanvasToBrasil(ctxBase);
+    return;
+  }
+
+  // desenha ocupando todo o canvas, depois recorta no BR
+  ctxBase.save();
+  ctxBase.globalAlpha = 0.95;
+  ctxBase.drawImage(state.baseImg, 0, 0, W, H);
+  ctxBase.restore();
+
+  // recorta para Brasil e dá um “tint” ciano (holograma)
+  maskCanvasToBrasil(ctxBase);
+  ctxBase.save();
+  ctxBase.globalCompositeOperation = "screen";
+  ctxBase.fillStyle = "rgba(0,255,220,0.10)";
+  ctxBase.fillRect(0,0,W,H);
+  ctxBase.restore();
+}
+
+/* =========================
    POINTS + GRID (densidade)
 ========================= */
 function buildProjectedPoints(fc){
@@ -655,8 +614,7 @@ function buildProjectedPoints(fc){
     pts.push({ x,y, ph: Math.random()*Math.PI*2, sp: 0.7+Math.random()*1.3, base: 0.6+Math.random()*0.8 });
   }
 
-  // LIMITADOR (pra FULL não travar)
-  const MAX = 140000;
+  const MAX = 160000;
   if(pts.length > MAX){
     const step = Math.ceil(pts.length / MAX);
     const slim = [];
@@ -722,258 +680,21 @@ function densityAt(x,y){
 function colorForDensity(count){
   const norm = Math.min(1, count / state.target);
 
-  // verde (bom) -> amarelo (transição) -> vermelho (pressão)
-  if(norm >= 0.70) return [60, 255, 180];   // verde
-  if(norm >= 0.40) return [255, 235, 90];   // amarelo
+  // MAIS forte (pra bater com referência)
+  if(norm >= 0.78) return [60, 255, 180];   // verde
+  if(norm >= 0.46) return [255, 235, 90];   // amarelo
   return [255, 80, 60];                     // vermelho
 }
 
 /* =========================
-   STATIC REDRAW (mapa sempre aparece)
+   STATIC REDRAW
 ========================= */
 function redrawStatic(){
   if(!bbox) return;
   clearAll();
 
-  // base leve
-  fillPolygons(ctxBase, state.biomas, "rgba(0,255,200,1)", 0.035);
-  maskCanvasToBrasil(ctxBase);
+  // base raster
+  drawBaseRaster();
 
   // borda
-  strokePolygonsGlow(ctxB, state.brasilMask);
-
-  // linhas (água e limites)
-  strokeLines(ctxL, state.macro, "rgba(0,234,255,0.90)", 1.15, 1);
-  strokeLines(ctxL, state.micro, "rgba(0,120,255,0.60)", 0.55, 1);
-  strokeLines(ctxL, state.uf,    "rgba(160,245,255,0.70)", 1.05, 1);
-  maskCanvasToBrasil(ctxL);
-}
-
-/* =========================
-   ANIMAÇÃO (pontos pequenos + brilho)
-========================= */
-function startAnim(){
-  if(state.animStarted) return;
-  state.animStarted = true;
-
-  const loop = ()=>{
-    const W = cnvPoints.getBoundingClientRect().width;
-    const H = cnvPoints.getBoundingClientRect().height;
-    ctxP.clearRect(0,0,W,H);
-
-    if(state.ptsXY.length){
-      ctxP.globalCompositeOperation = "lighter";
-
-      // 1) micro pontos (bem pequenos)
-      for(const p of state.ptsXY){
-        const count = densityAt(p.x, p.y);
-        const [r,g,b] = colorForDensity(count);
-
-        const pulse = 0.55 + 0.45*Math.sin(p.ph + state.t*p.sp*0.025);
-        const alpha = (0.08 + 0.28*pulse);
-        const rad   = 0.38 + p.base*0.42; // pequeno
-
-        ctxP.beginPath();
-        ctxP.fillStyle = `rgba(${r},${g},${b},${alpha})`;
-        ctxP.arc(p.x, p.y, rad, 0, Math.PI*2);
-        ctxP.fill();
-      }
-
-      // 2) “sparkles” (dá o efeito referência)
-      const glowCount = Math.min(1800, Math.max(500, (state.ptsXY.length/14)|0));
-      ctxP.save();
-      ctxP.shadowBlur = 10;
-      for(let i=0;i<glowCount;i++){
-        const p = state.ptsXY[(Math.random()*state.ptsXY.length)|0];
-        if(!p) continue;
-
-        const count = densityAt(p.x, p.y);
-        const [r,g,b] = colorForDensity(count);
-
-        const pulse = 0.55 + 0.45*Math.sin(p.ph + state.t*0.03);
-        const alpha = 0.06 + 0.18*pulse;
-
-        ctxP.shadowColor = `rgba(${r},${g},${b},${0.55})`;
-        ctxP.fillStyle   = `rgba(${r},${g},${b},${alpha})`;
-
-        ctxP.beginPath();
-        ctxP.arc(p.x, p.y, 1.2 + pulse*1.5, 0, Math.PI*2);
-        ctxP.fill();
-      }
-      ctxP.restore();
-
-      // recorte BR
-      maskCanvasToBrasil(ctxP);
-      ctxP.globalCompositeOperation = "source-over";
-    }
-
-    state.t++;
-    requestAnimationFrame(loop);
-  };
-  loop();
-}
-
-/* =========================
-   TELEMETRY
-========================= */
-const wave = document.getElementById("wave");
-const wctx = wave.getContext("2d");
-let tWave=0;
-function resizeWave(){
-  const dpr = Math.max(1, window.devicePixelRatio || 1);
-  wave.width = Math.floor(wave.clientWidth * dpr);
-  wave.height = Math.floor(wave.clientHeight * dpr);
-  wctx.setTransform(dpr,0,0,dpr,0,0);
-}
-function startWave(series){
-  const s = Array.isArray(series) ? series : [];
-  const draw = ()=>{
-    const W = wave.clientWidth, H = wave.clientHeight;
-    wctx.clearRect(0,0,W,H);
-    wctx.fillStyle = "rgba(0,0,0,.25)";
-    wctx.fillRect(0,0,W,H);
-
-    wctx.strokeStyle = "rgba(110,210,255,.10)";
-    wctx.lineWidth = 1;
-    for(let y=12; y<H; y+=18){
-      wctx.beginPath(); wctx.moveTo(0,y); wctx.lineTo(W,y); wctx.stroke();
-    }
-
-    const min = s.length? Math.min(...s) : 0;
-    const max = s.length? Math.max(...s) : 1;
-
-    function yAt(i){
-      if(s.length>=2){
-        const idx = (i / (W-1)) * (s.length-1);
-        const a = Math.floor(idx);
-        const b = Math.min(s.length-1, a+1);
-        const f = idx - a;
-        const v = s[a]*(1-f) + s[b]*f;
-        const norm = (max-min) < 1e-9 ? 0.5 : (v - min) / (max - min);
-        let y = (H*0.18) + (1-norm) * (H*0.68);
-        y += Math.sin((i + tWave)/28) * (H*0.02);
-        return y;
-      }
-      return (H*0.52)
-        + Math.sin((i+tWave)/38)*(H*0.20)
-        + Math.sin((i+tWave)/13)*(H*0.07);
-    }
-
-    wctx.lineWidth = 2;
-    wctx.strokeStyle = "rgba(110,210,255,.35)";
-    wctx.beginPath();
-    for(let i=0;i<W;i++){
-      const y = yAt(i);
-      if(i===0) wctx.moveTo(i,y); else wctx.lineTo(i,y);
-    }
-    wctx.stroke();
-
-    wctx.strokeStyle = "rgba(110,210,255,.90)";
-    wctx.beginPath();
-    for(let i=0;i<W;i++){
-      const y = yAt(i);
-      if(i===0) wctx.moveTo(i,y); else wctx.lineTo(i,y);
-    }
-    wctx.stroke();
-
-    tWave += 2;
-    requestAnimationFrame(draw);
-  };
-  draw();
-}
-
-/* =========================
-   BUY
-========================= */
-const solInput = document.getElementById("sol");
-const out = document.getElementById("out");
-function updateOut(){
-  const sol = parseFloat(solInput.value) || 0;
-  out.textContent = (sol * rate).toLocaleString("pt-BR") + " CNT";
-}
-solInput.addEventListener("input", updateOut);
-updateOut();
-document.getElementById("btnBuy").addEventListener("click", ()=>{
-  window.open(PUMP_URL, "_blank", "noopener,noreferrer");
-});
-
-/* =========================
-   BOOT
-========================= */
-async function boot(){
-  try{
-    statusEl.textContent = "Status: carregando camadas base…";
-
-    // base
-    state.biomas = await loadJSON(FILES.biomas);
-    state.brasilMask = await loadEither(FILES.br_simpl, FILES.br_full);
-    state.uf = await loadJSON(FILES.uf);
-    state.macro = await loadJSON(FILES.macro);
-    state.micro = await loadJSON(FILES.micro);
-    state.cnt = await loadJSON(FILES.cnt);
-
-    bbox = calcBBox(state.biomas);
-
-    // HUD CNT
-    const props = state.cnt?.features?.[0]?.properties || {};
-    const rawA = Number(props.cnt_A);
-    const A100 = Number.isFinite(rawA) ? clamp(rawA * 4, 0, 100) : NaN;
-
-    document.getElementById("raw").textContent = fmt(rawA,2);
-    document.getElementById("eco").textContent = fmt1(A100);
-    document.getElementById("A").textContent   = fmt(A100,2);
-
-    const b = Number(props.cnt_B);
-    document.getElementById("B").textContent = Number.isFinite(b) ? ((b>=0?"+":"") + fmt(b,2)) : "--";
-    document.getElementById("C").textContent = fmt(props.cnt_C,2);
-    document.getElementById("R").textContent = props.grade || "--";
-
-    document.getElementById("ibe").textContent = Number.isFinite(Number(props.FUNC)) ? fmt(props.FUNC,1) : "--";
-    document.getElementById("iab").textContent = Number.isFinite(Number(props.IAB))  ? fmt(props.IAB,1)  : "N/D";
-    document.getElementById("ibi").textContent = Number.isFinite(Number(props.IBI))  ? fmt(props.IBI,1)  : "--";
-    document.getElementById("hid").textContent = Number.isFinite(Number(props.HID))  ? fmt(props.HID,2)  : "--";
-    document.getElementById("ent").textContent = Number.isFinite(Number(props.ENT))  ? fmt(props.ENT,1)  : "--";
-    document.getElementById("pan").textContent = Number.isFinite(Number(props.PAN))  ? fmt(props.PAN,1)  : "--";
-
-    const series = Array.isArray(props.series_10y) ? props.series_10y.map(Number).filter(Number.isFinite) : [];
-    document.getElementById("telemetryHint").textContent = series.length
-      ? ("Histórico: " + series.length + " • Último (RAW): " + fmt(rawA,2))
-      : "Sem série 10y no GeoJSON.";
-    resizeAll();
-    state.ready = true;
-
-    // desenha mapa imediatamente (SEM pontos)
-    redrawStatic();
-    startWave(series);
-
-    // carrega pontos sample primeiro (rápido)
-    statusEl.textContent = "Status: mapa base OK • carregando pontos (sample)…";
-    const ptsSample = await loadJSON(FILES.pts_sample);
-    state.ptsFC = ptsSample;
-    buildProjectedPoints(ptsSample);
-    startAnim();
-    statusEl.textContent = `Status: pontos sample OK • exibindo ${state.ptsXY.length.toLocaleString("pt-BR")} pontos • tentando FULL…`;
-
-    // tenta FULL em seguida (se existir e se aguentar)
-    setTimeout(async ()=>{
-      try{
-        const ptsFull = await loadJSON(FILES.pts_full);
-        state.ptsFC = ptsFull;
-        buildProjectedPoints(ptsFull);
-        statusEl.textContent = `Status: FULL OK • exibindo ${state.ptsXY.length.toLocaleString("pt-BR")} pontos (cap)`;
-      }catch(e){
-        statusEl.textContent = `Status: FULL indisponível • mantendo sample (${state.ptsXY.length.toLocaleString("pt-BR")} pts)`;
-      }
-    }, 250);
-
-  }catch(err){
-    console.error(err);
-    statusEl.textContent = "Status: ERRO • " + (err?.message || err);
-    document.getElementById("telemetryHint").textContent = "Erro: arquivos não carregaram. Veja o console (F12).";
-  }
-}
-boot();
-</script>
-
-</body>
-</html>
+  strokePolygonsGlow(ctxB, st
