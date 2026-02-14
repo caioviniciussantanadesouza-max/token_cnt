@@ -22,7 +22,6 @@ html,body{
   font-family:"Segoe UI", Arial, sans-serif;
   overflow:hidden;
 }
-
 #app{
   position:fixed; inset:0;
   display:grid;
@@ -32,7 +31,6 @@ html,body{
   padding:14px;
   align-items:stretch;
 }
-
 .glass{
   background: var(--glass);
   backdrop-filter: blur(14px);
@@ -202,6 +200,23 @@ html,body{
 }
 @keyframes scan{ 0%{ transform:translateY(-22px);} 100%{ transform:translateY(22px);} }
 
+/* Debug overlay (aparece só se der erro) */
+#dbg{
+  position:absolute;
+  left:14px; bottom:14px;
+  max-width:min(560px, 88vw);
+  padding:10px 12px;
+  border-radius:14px;
+  border:1px solid rgba(255,120,120,.35);
+  background: rgba(40,0,0,.35);
+  color:#ffd9d9;
+  font-size:11px;
+  line-height:1.25;
+  display:none;
+  white-space:pre-wrap;
+  z-index:5;
+}
+
 /* Right */
 #right{
   display:flex;
@@ -279,7 +294,7 @@ input:focus{
   opacity:.92;
 }
 
-/* Mobile: COMPRA antes do MAPA, e ÍNDICES depois (como você pediu) */
+/* Mobile: COMPRA antes do MAPA, e ÍNDICES depois */
 @media (max-width: 1100px){
   body{ overflow:auto; }
   #app{
@@ -288,9 +303,9 @@ input:focus{
     grid-template-rows: auto auto auto auto;
   }
   #header{ grid-column:auto; }
-  #right{ order: 1; }   /* compra/telemetria vem antes */
-  #center{ order: 2; height:46vh; }
-  #left{ order: 3; }    /* índices depois do mapa */
+  #right{ order: 1; }     /* compra antes */
+  #center{ order: 2; height:46vh; min-height:320px; } /* garante altura */
+  #left{ order: 3; }      /* índices depois */
 }
 </style></head><body>
 <div id="app">
@@ -338,6 +353,7 @@ input:focus{
       <canvas id="cnvPoints" class="layer"></canvas>
       <div id="mapGlow"></div>
       <div id="scanlines"></div>
+      <div id="dbg"></div>
     </div>
   </div>  <div id="right">
     <div id="buy" class="glass">
@@ -364,29 +380,39 @@ input:focus{
    CONFIG
 ========================= */
 const PUMP_URL = "https://pump.fun/coin/GCVyjNaCbXkwGUuktyNxSXad4ozmTp2fzQr2jieSpump";
-
-// tenta funcionar tanto no /root quanto no /public (GitHub Pages)
-const BASES = ["./","../","./public/","../public/"];
+const rate = 147449130; // demo SOL -> CNT
+const ECO_SCALE_MULT = 4;
 
 const FILES = {
   ibge: ["BR_IBGE_simplificado.geojson","BR_IBGE.geojson"],
-  cnt:  ["CNT_FULL_10Y.geojson","dados_cnt.json"],
+  cnt:  ["dados_cnt.json","CNT_FULL_10Y.geojson"],    // tenta JSON primeiro (mais leve)
   macro: ["macro_rh.geojson"],
   micro: ["micro_rh.geojson"],
-  // pontos "prontos" e leves (se existir)
-  layers: ["layers_points.json"],
-  // fallback
+  layers: ["layers_points.json"],                     // pontos por classe (se existir)
   vegeSample: ["vege_pts_sample.geojson"],
   vegeFull:   ["vege_pts.geojson"]
 };
 
-const ECO_SCALE_MULT = 4;  // ECO/100 = cnt_A * 4
-const rate = 147449130;    // demo SOL -> CNT
+/* =========================
+   BASE PATH (GitHub Pages)
+   Ex: https://za-max.github.io/token_cnt/  -> base = /token_cnt/
+========================= */
+const BASE_URL = (() => {
+  const u = new URL(location.href);
+  // pega pasta onde está o index.html
+  const path = u.pathname.endsWith("/") ? u.pathname : u.pathname.substring(0, u.pathname.lastIndexOf("/") + 1);
+  return u.origin + path; // absoluto, sem gambiarra
+})();
 
 /* =========================
-   HELPERS
+   UI helpers
 ========================= */
 const statusEl = document.getElementById("status");
+const dbg = document.getElementById("dbg");
+function showDbg(msg){
+  dbg.style.display = "block";
+  dbg.textContent = msg;
+}
 function fmt(n, d=2){
   if(n === null || n === undefined || !Number.isFinite(Number(n))) return "--";
   return Number(n).toFixed(d).replace(".", ",");
@@ -394,29 +420,33 @@ function fmt(n, d=2){
 function fmt1(n){ return fmt(n,1); }
 function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
 
-async function fetchTry(url){
-  const res = await fetch(url, { cache:"no-store" });
-  if(!res.ok) throw new Error(`${url} HTTP ${res.status}`);
+/* =========================
+   Fetch robusto
+========================= */
+async function fetchTryAbs(absUrl){
+  const res = await fetch(absUrl, { cache:"no-store" });
+  if(!res.ok) throw new Error(`${absUrl} HTTP ${res.status}`);
   return res;
 }
 async function fetchFirst(paths){
   const errs = [];
-  for(const b of BASES){
-    for(const p of paths){
-      try{
-        const res = await fetchTry(b + p);
-        const ct = (res.headers.get("content-type")||"").toLowerCase();
-        if(ct.includes("application/json") || ct.includes("geo+json") || p.endsWith(".json") || p.endsWith(".geojson")){
-          return { data: await res.json(), path: b+p };
-        }
-        return { data: await res.text(), path: b+p };
-      }catch(e){ errs.push(String(e.message||e)); }
-    }
+  for(const p of paths){
+    const url = BASE_URL + p;
+    try{
+      const res = await fetchTryAbs(url);
+      const ct = (res.headers.get("content-type")||"").toLowerCase();
+      if(ct.includes("application/json") || ct.includes("geo+json") || p.endsWith(".json") || p.endsWith(".geojson")){
+        return { data: await res.json(), path: url };
+      }
+      return { data: await res.text(), path: url };
+    }catch(e){ errs.push(String(e.message||e)); }
   }
-  throw new Error("Nenhum caminho funcionou:\n" + errs.slice(0,12).join("\n"));
+  throw new Error("Arquivos não encontrados.\n" + errs.join("\n"));
 }
 
-/* GeoJSON robusto */
+/* =========================
+   GeoJSON parse (robusto)
+========================= */
 function isGeomOK(g){ return g && (g.type==="Polygon" || g.type==="MultiPolygon"); }
 function extractGeomsFromAny(obj){
   const out = [];
@@ -426,9 +456,6 @@ function extractGeomsFromAny(obj){
     for(const f of obj.features){
       const g = f?.geometry;
       if(isGeomOK(g)) out.push(g);
-      if(g?.type==="GeometryCollection" && Array.isArray(g.geometries)){
-        for(const gg of g.geometries) if(isGeomOK(gg)) out.push(gg);
-      }
     }
   } else if(obj.type==="Feature"){
     const g = obj.geometry;
@@ -480,7 +507,7 @@ function projectFactory(bbox, W, H, pad=0.06){
 }
 
 /* =========================
-   CANVAS SETUP
+   Canvas
 ========================= */
 const cnvFill  = document.getElementById("cnvFill");
 const cnvBorder= document.getElementById("cnvBorder");
@@ -522,11 +549,11 @@ const state = {
   series:[],
   points:[],
   pointsMode:"none",
-  riversReady:false
+  rivers:[]
 };
 
 /* =========================
-   DRAW MAP
+   Draw map
 ========================= */
 function makePath(ctx){
   ctx.beginPath();
@@ -587,8 +614,8 @@ function redrawStatic(){
   state.proj = projectFactory(state.bbox, W, H, 0.06);
   drawFill();
   drawBorder();
-  drawRivers();    // redesenha se já carregou
-  rebuildPoints(); // re-projeta pontos na tela nova
+  drawRivers();
+  rebuildPoints();
 }
 
 function drawRivers(){
@@ -596,7 +623,7 @@ function drawRivers(){
   const H = cnvRivers.getBoundingClientRect().height;
   ctxR.clearRect(0,0,W,H);
 
-  if(!state.rivers || !state.rivers.length) return;
+  if(!state.rivers.length) return;
 
   ctxR.save();
   ctxR.lineJoin="round"; ctxR.lineCap="round";
@@ -605,111 +632,88 @@ function drawRivers(){
   ctxR.strokeStyle = "rgba(40,170,255,.70)";
   ctxR.lineWidth = 0.9;
 
-  for(const lines of state.rivers){
-    for(const line of lines){
-      ctxR.beginPath();
-      for(let i=0;i<line.length;i++){
-        const c=line[i];
-        const [x,y]=state.proj(c[0], c[1]);
-        if(i===0) ctxR.moveTo(x,y); else ctxR.lineTo(x,y);
-      }
-      ctxR.stroke();
+  for(const line of state.rivers){
+    ctxR.beginPath();
+    for(let i=0;i<line.length;i++){
+      const [x,y]=state.proj(line[i][0], line[i][1]);
+      if(i===0) ctxR.moveTo(x,y); else ctxR.lineTo(x,y);
     }
-  }
-
-  ctxR.shadowBlur = 0;
-  ctxR.strokeStyle = "rgba(40,170,255,.35)";
-  ctxR.lineWidth = 0.6;
-
-  for(const lines of state.rivers){
-    for(const line of lines){
-      ctxR.beginPath();
-      for(let i=0;i<line.length;i++){
-        const c=line[i];
-        const [x,y]=state.proj(c[0], c[1]);
-        if(i===0) ctxR.moveTo(x,y); else ctxR.lineTo(x,y);
-      }
-      ctxR.stroke();
-    }
+    ctxR.stroke();
   }
 
   ctxR.restore();
 }
 
 /* =========================
-   POINTS (reais por classe)
-   Preferência: layers_points.json (rápido)
-   Fallback: vege_pts_sample/full (verde)
+   Points (pequenos)
 ========================= */
 function colorFromClass(cls){
-  // aceita números ou strings
-  const c = String(cls).toLowerCase();
-  if(c.includes("water") || c.includes("hid") || c==="1" || c==="agua" || c==="blue") return [40,170,255];      // azul
-  if(c.includes("def")  || c.includes("red") || c==="3" || c==="desmat" )            return [255,90,60];        // vermelho
-  if(c.includes("tran") || c.includes("yell")|| c==="2" || c==="transicao")          return [255,210,70];       // amarelo
-  return [90,255,180]; // verde default
+  const c = String(cls ?? "").toLowerCase();
+  if(c.includes("water") || c.includes("agua") || c.includes("hid") || c==="1") return [40,170,255];   // azul
+  if(c.includes("tran")  || c.includes("amarel") || c==="2") return [255,210,70];                     // amarelo
+  if(c.includes("desm")  || c.includes("def") || c.includes("verm") || c==="3") return [255,90,60];   // vermelho
+  return [90,255,180]; // verde
 }
-
 function rebuildPoints(){
-  if(!state.points || !state.points.length) return;
+  if(!state.points.length || !state.proj) return;
   for(const p of state.points){
     const [x,y]=state.proj(p.lon, p.lat);
     p.x=x; p.y=y;
   }
 }
-
 function setPointsFromLayersJSON(obj){
-  // aceita vários formatos:
-  // {points:[{lon,lat,cls}...]}  OU  [{lon,lat,cls}...]  OU  {features: Point...}
   const out = [];
+  const push = (lon,lat,cls)=>{
+    const [r,g,b]=colorFromClass(cls);
+    out.push({ lon:+lon, lat:+lat, r,g,b, phase:Math.random()*6.28, speed:0.9+Math.random()*1.4, size:0.5+Math.random()*0.8, x:0,y:0 });
+  };
 
   if(Array.isArray(obj)){
     for(const it of obj){
-      if(it && Number.isFinite(+it.lon) && Number.isFinite(+it.lat)){
-        const [r,g,b]=colorFromClass(it.cls ?? it.class ?? it.type ?? it.c);
-        out.push({ lon:+it.lon, lat:+it.lat, r,g,b, phase:Math.random()*6.28, speed:0.9+Math.random()*1.4, size:0.55+Math.random()*0.9, x:0,y:0 });
-      }
+      if(it && Number.isFinite(+it.lon) && Number.isFinite(+it.lat)) push(it.lon,it.lat,it.cls ?? it.class ?? it.type ?? it.c);
     }
   } else if(Array.isArray(obj?.points)){
     for(const it of obj.points){
-      if(it && Number.isFinite(+it.lon) && Number.isFinite(+it.lat)){
-        const [r,g,b]=colorFromClass(it.cls ?? it.class ?? it.type ?? it.c);
-        out.push({ lon:+it.lon, lat:+it.lat, r,g,b, phase:Math.random()*6.28, speed:0.9+Math.random()*1.4, size:0.55+Math.random()*0.9, x:0,y:0 });
-      }
+      if(it && Number.isFinite(+it.lon) && Number.isFinite(+it.lat)) push(it.lon,it.lat,it.cls ?? it.class ?? it.type ?? it.c);
     }
   } else if(obj?.type==="FeatureCollection" && Array.isArray(obj.features)){
     for(const f of obj.features){
       const g=f?.geometry;
-      if(g?.type==="Point" && Array.isArray(g.coordinates)){
-        const lon=+g.coordinates[0], lat=+g.coordinates[1];
-        if(!Number.isFinite(lon)||!Number.isFinite(lat)) continue;
-        const cls=f?.properties?.cls ?? f?.properties?.class ?? f?.properties?.type ?? f?.properties?.c;
-        const [r,gc,b]=colorFromClass(cls);
-        out.push({ lon, lat, r, g:gc, b, phase:Math.random()*6.28, speed:0.9+Math.random()*1.4, size:0.55+Math.random()*0.9, x:0,y:0 });
+      if(g?.type==="Point"){
+        const lon=g.coordinates?.[0], lat=g.coordinates?.[1];
+        if(Number.isFinite(+lon) && Number.isFinite(+lat)){
+          push(lon,lat,f?.properties?.cls ?? f?.properties?.class ?? f?.properties?.type ?? f?.properties?.c);
+        }
       }
     }
   }
 
-  // performance mobile: limita
   const isMobile = matchMedia("(max-width: 1100px)").matches;
   if(isMobile && out.length > 9000){
-    // pega amostra para não travar
     const step = Math.ceil(out.length / 9000);
     const slim = [];
     for(let i=0;i<out.length;i+=step) slim.push(out[i]);
     state.points = slim;
-  } else {
-    state.points = out;
-  }
+  } else state.points = out;
 
   state.pointsMode = "layers_points.json";
   rebuildPoints();
 }
-
 function setPointsFromVegeGeoJSON(obj){
   const out = [];
   if(obj?.type==="FeatureCollection" && Array.isArray(obj.features)){
     for(const f of obj.features){
       const g=f?.geometry;
       if(g?.type==="Point"){
-        const lon=+g.coordinates[0], la
+        const lon=g.coordinates?.[0], lat=g.coordinates?.[1];
+        if(Number.isFinite(+lon) && Number.isFinite(+lat)){
+          out.push({ lon:+lon, lat:+lat, r:90,g:255,b:180, phase:Math.random()*6.28, speed:0.9+Math.random()*1.4, size:0.5+Math.random()*0.8, x:0,y:0 });
+        }
+      }
+    }
+  }
+  const isMobile = matchMedia("(max-width: 1100px)").matches;
+  if(isMobile && out.length > 8000){
+    const step = Math.ceil(out.length / 8000);
+    const slim = [];
+    for(let 
