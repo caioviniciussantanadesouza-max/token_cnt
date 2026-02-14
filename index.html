@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>CNT — Centro Natural TEC Amazônia</title>
 
+<!-- ✅ FIX GITHUB PAGES: força o navegador a resolver tudo relativo ao index -->
+<base href="./">
+
 <style>
 :root{
   --bg0:#000;
@@ -290,7 +293,7 @@ input:focus{
   opacity:.92;
 }
 
-/* ✅ MOBILE: compra vem ANTES do mapa, e índices vão DEPOIS do mapa */
+/* ✅ MOBILE: Compra em cima do mapa, Índices depois do mapa */
 @media (max-width: 900px){
   html, body { overflow-x:hidden !important; overflow-y:auto; }
   #app{
@@ -396,26 +399,17 @@ input:focus{
 </div>
 
 <script>
-/* =========================================================
-   ✅ BASE PATH CORRIGIDO (User Pages e Project Pages)
-   - User Pages: https://za-max.github.io/  -> base=""
-   - Project Pages: https://user.github.io/repo/ -> base="/repo"
-========================================================= */
-(function(){
-  const hostIsGithub = location.hostname.endsWith("github.io");
-  const parts = location.pathname.split("/").filter(Boolean); // sem vazios
-  // Se o primeiro "pedaço" parece arquivo (tem .), então é User Pages na raiz.
-  const first = parts[0] || "";
-  const looksLikeFile = first.includes(".");
-  window.__BASE__ = (hostIsGithub && parts.length >= 1 && !looksLikeFile) ? ("/" + first) : "";
+/* ✅ força “/” no final (isso sozinho resolve MUITO bug de caminho no GitHub Pages) */
+(function ensureTrailingSlash(){
+  const isFile = location.pathname.split("/").pop().includes(".");
+  if(!isFile && !location.pathname.endsWith("/")){
+    location.replace(location.href + "/");
+  }
 })();
 
-const BASE_PATH = window.__BASE__ || "";
-const url = (f)=> (BASE_PATH ? (BASE_PATH + "/" + f) : ("./" + f));
+/* ✅ sempre relativo */
+const url = (f)=> "./" + f;
 
-/* =========================
-   CONFIG
-========================= */
 const PUMP_URL = "https://pump.fun/coin/GCVyjNaCbXkwGUuktyNxSXad4ozmTp2fzQr2jieSpump";
 
 const FILES = {
@@ -434,9 +428,6 @@ const FILES = {
 const ECO_SCALE_MULT = 4;
 const rate = 147449130;
 
-/* =========================
-   HELPERS
-========================= */
 const statusEl = document.getElementById("status");
 const chipPts = document.getElementById("chipPts");
 const mapMsg = document.getElementById("mapMsg");
@@ -472,7 +463,6 @@ async function fetchImage(file){
   });
 }
 
-/* GEOJSON robusto */
 function isGeomOK(g){ return g && (g.type==="Polygon" || g.type==="MultiPolygon"); }
 function extractGeomsFromAny(obj){
   const out = [];
@@ -533,7 +523,6 @@ function projectFactory(bbox, W, H, pad=0.06){
   return (lon, lat)=>[ ox + (lon - minLon)*s, oy + (maxLat - lat)*s ];
 }
 
-/* pontos dentro do Brasil */
 function buildOuterRingsFromMultiPolygon(mp){
   const rings = [];
   for(const poly of mp.coordinates){
@@ -556,9 +545,6 @@ function pointInAnyOuterRing(lonlat, rings){
   return false;
 }
 
-/* =========================
-   CANVAS
-========================= */
 const cnvBase   = document.getElementById("cnvBase");
 const cnvOverlay= document.getElementById("cnvOverlay");
 const cnvHydro  = document.getElementById("cnvHydro");
@@ -591,7 +577,6 @@ window.addEventListener("resize", ()=>{
   if(state.brGeom) redrawAll();
 });
 
-/* STATE */
 const state = {
   brGeom:null,
   bbox:null,
@@ -619,9 +604,6 @@ function makePathFromMultiPolygon(ctx, mp){
   }
 }
 
-/* =========================
-   DRAW
-========================= */
 function drawRasterBaseUnclipped(){
   const W = cnvBase.getBoundingClientRect().width;
   const H = cnvBase.getBoundingClientRect().height;
@@ -702,7 +684,6 @@ function drawBorders(){
   strokeOnce(10, "rgba(120,220,255,0.18)", 18, "rgba(120,220,255,.65)");
   strokeOnce(3.2, "rgba(120,220,255,0.85)", 10, "rgba(120,220,255,.65)");
 
-  // UF
   if(state.uf?.features){
     ctxB.shadowBlur = 0;
     ctxB.lineWidth = 1.1;
@@ -738,4 +719,28 @@ function drawHydro(){
     ctxH.strokeStyle = `rgba(0,170,255,${alpha})`;
     ctxH.shadowColor = "rgba(0,170,255,0.7)";
     ctxH.shadowBlur = 10;
-    ctxH.lineWidth = w
+    ctxH.lineWidth = w;
+
+    ctxH.beginPath();
+    for(const f of fc.features){
+      const g = f.geometry;
+      if(!g) continue;
+      const drawLine = (coords)=>{
+        for(let i=0;i<coords.length;i++){
+          const [x,y]=state.proj(coords[i][0], coords[i][1]);
+          if(i===0) ctxH.moveTo(x,y); else ctxH.lineTo(x,y);
+        }
+      };
+      if(g.type==="LineString") drawLine(g.coordinates);
+      else if(g.type==="MultiLineString") for(const ln of g.coordinates) drawLine(ln);
+    }
+    ctxH.stroke();
+    ctxH.restore();
+  }
+
+  strokeLineCollection(state.micro, 0.26, 0.9);
+  strokeLineCollection(state.macro, 0.36, 1.6);
+
+  ctxH.save();
+  makePathFromMultiPolygon(ctxH, state.brGeom);
+  ctxH.globalCompositeOperation = "destinati
