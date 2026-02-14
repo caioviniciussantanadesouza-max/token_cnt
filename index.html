@@ -112,6 +112,7 @@ body{ overflow:hidden; }
 }
 .layer{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
 
+/* holograma */
 #mapGlow{
   position:absolute; inset:-10%;
   pointer-events:none;
@@ -195,7 +196,7 @@ input:focus{ border-color: rgba(110,210,255,.70); box-shadow: 0 0 16px rgba(110,
 }
 #telemetryHint{ margin-top:8px; font-size:11px; color:var(--muted); opacity:.92; }
 
-/* MOBILE: Compra antes do mapa, índices depois */
+/* MOBILE: Compra antes do mapa */
 @media (max-width: 1100px){
   body{ overflow:auto; }
   #app{
@@ -204,7 +205,7 @@ input:focus{ border-color: rgba(110,210,255,.70); box-shadow: 0 0 16px rgba(110,
     grid-template-rows: auto auto auto auto;
   }
   #header{ grid-column:auto; }
-  #right{ order:1; }         /* compra/telemetria vem antes */
+  #right{ order:1; }
   #center{ order:2; height:46vh; min-height:320px; }
   #left{ order:3; }
 }
@@ -219,35 +220,35 @@ input:focus{ border-color: rgba(110,210,255,.70); box-shadow: 0 0 16px rgba(110,
     <div id="chips">
       <div class="chip">Fonte: dados públicos governamentais</div>
       <div class="chip">Ano base: 2025</div>
-      <div class="chip">Pontos reais (rápido)</div>
+      <div class="chip">Holograma: MapBiomas/IBGE (pontos)</div>
       <div class="chip">Compra: Pump.fun</div>
     </div>
   </div>
 
   <div id="left" class="glass">
     <div class="small"><b>CNT</b> (índice único Brasil)</div>
-    <div class="big"><span id="eco">72,4</span><span style="font-size:16px; opacity:.9;">/100</span></div>
-    <div class="small">RAW auditável: <b id="raw">18,11</b></div>
+    <div class="big"><span id="eco">--</span><span style="font-size:16px; opacity:.9;">/100</span></div>
+    <div class="small">RAW auditável: <b id="raw">--</b></div>
 
     <div class="hr"></div>
 
     <div class="abclist">
-      <div class="abcline"><b>A — Estado</b><span id="A">72,43</span></div>
-      <div class="abcline"><b>B — Tendência</b><span id="B">-0,10</span></div>
-      <div class="abcline"><b>C — Estabilidade</b><span id="C">0,49</span></div>
-      <div class="abcline"><b>Grau</b><span id="R">E</span></div>
+      <div class="abcline"><b>A — Estado</b><span id="A">--</span></div>
+      <div class="abcline"><b>B — Tendência</b><span id="B">--</span></div>
+      <div class="abcline"><b>C — Estabilidade</b><span id="C">--</span></div>
+      <div class="abcline"><b>Grau</b><span id="R">--</span></div>
     </div>
 
     <div class="hr"></div>
 
     <div class="small" style="font-weight:900; letter-spacing:.3px;">Sub-índices</div>
     <div class="grid2">
-      <div class="kv"><b>IBE</b><span id="ibe">55,2</span></div>
-      <div class="kv"><b>IAB</b><span id="iab">N/D</span></div>
-      <div class="kv"><b>IBI</b><span id="ibi">23,5</span></div>
-      <div class="kv"><b>HID</b><span id="hid">1,03</span></div>
-      <div class="kv"><b>ENT</b><span id="ent">86,2</span></div>
-      <div class="kv"><b>PAN</b><span id="pan">11,7</span></div>
+      <div class="kv"><b>IBE</b><span id="ibe">--</span></div>
+      <div class="kv"><b>IAB</b><span id="iab">--</span></div>
+      <div class="kv"><b>IBI</b><span id="ibi">--</span></div>
+      <div class="kv"><b>HID</b><span id="hid">--</span></div>
+      <div class="kv"><b>ENT</b><span id="ent">--</span></div>
+      <div class="kv"><b>PAN</b><span id="pan">--</span></div>
     </div>
 
     <div id="status">Status: iniciando…</div>
@@ -255,9 +256,7 @@ input:focus{ border-color: rgba(110,210,255,.70); box-shadow: 0 0 16px rgba(110,
 
   <div id="center" class="glass">
     <div id="mapWrap">
-      <!-- Mapa base (sempre aparece) -->
       <img id="mapImg" src="mapa_base.png" alt="Mapa base CNT" />
-      <!-- Pontos estilo holograma pontilhado -->
       <canvas id="cnvPoints" class="layer"></canvas>
       <div id="mapGlow"></div>
       <div id="scanlines"></div>
@@ -276,26 +275,51 @@ input:focus{ border-color: rgba(110,210,255,.70); box-shadow: 0 0 16px rgba(110,
         <button class="btn" id="btnBuy" type="button">Comprar no Pump</button>
       </div>
 
-      <div class="valueLine">Estimativa: <b id="out">14.744.913 CNT</b></div>
+      <div class="valueLine">Estimativa: <b id="out">-- CNT</b></div>
       <div class="smallnote">Estimativa demo (não é cotação real).</div>
     </div>
 
     <div id="telemetry" class="glass">
       <div id="telemetryTitle">TELEMETRIA — Série 10 anos</div>
       <canvas id="wave"></canvas>
-      <div id="telemetryHint">Histórico: 10 • Último (RAW): 18,11</div>
+      <div id="telemetryHint">Carregando…</div>
     </div>
   </div>
 </div>
 
 <script>
 /* =========================
-   CONFIG — MUDA SÓ AQUI
+   CONFIG
 ========================= */
 const PUMP_URL = "https://pump.fun/coin/GCVyjNaCbXkwGUuktyNxSXad4ozmTp2fzQr2jieSpump";
-const RATE_SOL_TO_CNT = 147449130;   // demo
-const MAX_POINTS_DESKTOP = 12000;
-const MAX_POINTS_MOBILE  = 6500;
+const RATE_SOL_TO_CNT = 147449130; // demo
+
+// arquivos (usa o que existir)
+const POINTS_FILES = [
+  "layers_points.json",
+  "vege_pts.geojson",
+  "vege_pts_sample.geojson"
+];
+
+// Mapeamento de campos (se teu JSON usar outros nomes, ajusta aqui)
+const FIELD_MAP = {
+  lat: ["lat","latitude","y","LAT","LATITUDE"],
+  lon: ["lon","lng","longitude","x","LON","LONG","LONGITUDE"],
+  cls: ["class","classe","tipo","cat","category","label","CLASSE","CLASS"],
+  val: ["value","v","score","peso","intensity","VAL","VALUE"]
+};
+
+// classes padrão
+const CLASS_KEYS = {
+  water: ["water","agua","hidro","hidrografia","river","rio","lago","lake"],
+  veg: ["veg","vegetacao","vegetation","floresta","forest","mata","native_veg","secondary_veg","secveg"],
+  tran: ["transition","transicao","mosaic","agro","pasture","lavoura","agricultura","uso_misto"],
+  def: ["deforestation","desmatamento","deforest","clearcut","fire","fogo","burn","degradation","degradacao"]
+};
+
+// limites de pontos por performance (mobile)
+const MAX_POINTS_DESKTOP = 22000;
+const MAX_POINTS_MOBILE  = 9000;
 
 /* =========================
    Helpers
@@ -313,21 +337,40 @@ function fmt(n, d=2){
 }
 function clamp(v,a,b){ return Math.max(a, Math.min(b,v)); }
 
-/* =========================
-   BASE PATH robusto (GitHub Pages + local)
-   -> sempre usa caminho relativo correto do index
-========================= */
 const BASE_URL = (() => {
   const u = new URL(location.href);
   const path = u.pathname.endsWith("/") ? u.pathname : u.pathname.substring(0, u.pathname.lastIndexOf("/") + 1);
   return u.origin + path;
 })();
 
-async function fetchJSON(rel){
+async function fetchText(rel){
   const url = BASE_URL + rel;
   const res = await fetch(url, { cache:"no-store" });
   if(!res.ok) throw new Error(`${rel} (HTTP ${res.status})`);
-  return res.json();
+  return res.text();
+}
+
+function tryGet(obj, keys){
+  for(const k of keys){
+    if(obj && obj[k] !== undefined && obj[k] !== null) return obj[k];
+  }
+  return null;
+}
+function normalizeClass(s){
+  if(!s) return "veg";
+  const x = String(s).toLowerCase();
+  const has = (arr)=>arr.some(a=>x.includes(a));
+  if(has(CLASS_KEYS.water)) return "water";
+  if(has(CLASS_KEYS.def))   return "def";
+  if(has(CLASS_KEYS.tran))  return "tran";
+  if(has(CLASS_KEYS.veg))   return "veg";
+  return "veg";
+}
+function colorOf(cls){
+  if(cls==="water") return [80,170,255];
+  if(cls==="veg")   return [90,255,180];
+  if(cls==="tran")  return [255,210,70];
+  return [255,90,60];
 }
 
 /* =========================
@@ -339,18 +382,14 @@ function updateOut(){
 }
 $("sol").addEventListener("input", updateOut);
 updateOut();
-
-$("btnBuy").addEventListener("click", ()=>{
-  // link direto (sem plugin), funciona no mobile
-  location.href = PUMP_URL;
-});
+$("btnBuy").addEventListener("click", ()=> location.href = PUMP_URL);
 
 /* =========================
-   Telemetry (sempre desenha)
+   Telemetry
 ========================= */
 const wave = $("wave");
 const wctx = wave.getContext("2d");
-let series = [10,12,11,15,14,13,12,8,11,12]; // fallback
+let series = [10,12,11,15,14,13,12,8,11,12];
 
 function resizeWave(){
   const dpr = Math.max(1, window.devicePixelRatio || 1);
@@ -405,13 +444,49 @@ function drawWave(){
 drawWave();
 
 /* =========================
-   PONTOS REAIS (estilo referência)
-   -> gera pontos DENTRO do mapa usando a máscara do mapa_base.png
-   -> NÃO depende de geojson
+   MAP -> converte lat/lon para pixel usando bbox do Brasil
+   (simples e rápido)
+========================= */
+const BRAZIL_BBOX = { // approx (lon/lat)
+  minLon: -74.0,
+  maxLon: -34.0,
+  minLat: -34.5,
+  maxLat:  5.5
+};
+
+function projectLatLonToPixel(lon, lat, imgRect, canvasRect){
+  // pega área real onde a imagem está desenhada (contain)
+  const img = $("mapImg");
+  const imgAR = img.naturalWidth / img.naturalHeight;
+  const boxAR = imgRect.width / imgRect.height;
+
+  let drawW, drawH, dx, dy;
+  if(imgAR > boxAR){
+    drawW = imgRect.width;
+    drawH = imgRect.width / imgAR;
+  } else {
+    drawH = imgRect.height;
+    drawW = imgRect.height * imgAR;
+  }
+  dx = (imgRect.left - canvasRect.left) + (imgRect.width - drawW)/2;
+  dy = (imgRect.top  - canvasRect.top ) + (imgRect.height - drawH)/2;
+
+  const xNorm = (lon - BRAZIL_BBOX.minLon) / (BRAZIL_BBOX.maxLon - BRAZIL_BBOX.minLon);
+  const yNorm = (BRAZIL_BBOX.maxLat - lat) / (BRAZIL_BBOX.maxLat - BRAZIL_BBOX.minLat);
+
+  const x = dx + xNorm * drawW;
+  const y = dy + yNorm * drawH;
+
+  return {x, y, drawBox:{dx,dy,drawW,drawH}};
+}
+
+/* =========================
+   HOLOGRAMA de pontos (dados reais)
 ========================= */
 const cnv = $("cnvPoints");
 const ctx = cnv.getContext("2d");
 let points = [];
+let counts = {water:0, veg:0, tran:0, def:0};
 let t=0;
 
 function resizeCanvas(){
@@ -426,27 +501,102 @@ resizeCanvas();
 window.addEventListener("resize", ()=>{
   resizeCanvas();
   resizeWave();
-  // reposiciona pontos para o novo tamanho (regera máscara)
-  buildPointsFromMapMask().catch(()=>{});
+  // reprojeta pontos na nova tela
+  if(points.length) buildProjectedPoints(points.__raw || []).catch(()=>{});
 });
 
-function pickClass(){
-  // proporções: mais verde, depois amarelo, depois vermelho
-  const r = Math.random();
-  if(r < 0.72) return "veg";     // verde
-  if(r < 0.92) return "tran";    // amarelo
-  return "def";                  // vermelho
-}
-function colorOf(cls){
-  if(cls==="veg") return [90,255,180];
-  if(cls==="tran") return [255,210,70];
-  return [255,90,60];
+function limitForDevice(n){
+  const isMobile = matchMedia("(max-width: 1100px)").matches;
+  const limit = isMobile ? MAX_POINTS_MOBILE : MAX_POINTS_DESKTOP;
+  return Math.min(n, limit);
 }
 
-async function buildPointsFromMapMask(){
+async function loadPointsAny(){
+  for(const f of POINTS_FILES){
+    try{
+      const txt = await fetchText(f);
+      return {file:f, text:txt};
+    }catch(e){}
+  }
+  throw new Error("Não encontrei 'layers_points.json' nem 'vege_pts.geojson'. Coloca um deles na mesma pasta do index.html.");
+}
+
+function parsePoints(payloadText){
+  let data;
+  try{
+    data = JSON.parse(payloadText);
+  }catch{
+    // geojson às vezes vem com BOM/trailing — tenta limpar
+    data = JSON.parse(payloadText.replace(/^\uFEFF/, "").trim());
+  }
+
+  let arr = [];
+  // GeoJSON FeatureCollection
+  if(data && data.type === "FeatureCollection" && Array.isArray(data.features)){
+    for(const ft of data.features){
+      const p = ft.properties || {};
+      const geom = ft.geometry || {};
+      let lon=null, lat=null;
+
+      if(geom.type==="Point" && Array.isArray(geom.coordinates)){
+        lon = geom.coordinates[0];
+        lat = geom.coordinates[1];
+      }else{
+        // fallback por properties
+        lat = tryGet(p, FIELD_MAP.lat);
+        lon = tryGet(p, FIELD_MAP.lon);
+      }
+
+      const clsRaw = tryGet(p, FIELD_MAP.cls) ?? p.class ?? p.classe;
+      const cls = normalizeClass(clsRaw);
+
+      const val = Number(tryGet(p, FIELD_MAP.val) ?? 1) || 1;
+
+      if(lon!==null && lat!==null){
+        arr.push({lon:Number(lon), lat:Number(lat), cls, val});
+      }
+    }
+  }
+  // Array direto
+  else if(Array.isArray(data)){
+    for(const row of data){
+      const lat = tryGet(row, FIELD_MAP.lat);
+      const lon = tryGet(row, FIELD_MAP.lon);
+      const clsRaw = tryGet(row, FIELD_MAP.cls);
+      const cls = normalizeClass(clsRaw);
+      const val = Number(tryGet(row, FIELD_MAP.val) ?? 1) || 1;
+      if(lat!==null && lon!==null){
+        arr.push({lon:Number(lon), lat:Number(lat), cls, val});
+      }
+    }
+  }
+  // Objeto com "points"
+  else if(data && Array.isArray(data.points)){
+    for(const row of data.points){
+      const lat = tryGet(row, FIELD_MAP.lat);
+      const lon = tryGet(row, FIELD_MAP.lon);
+      const clsRaw = tryGet(row, FIELD_MAP.cls);
+      const cls = normalizeClass(clsRaw);
+      const val = Number(tryGet(row, FIELD_MAP.val) ?? 1) || 1;
+      if(lat!==null && lon!==null){
+        arr.push({lon:Number(lon), lat:Number(lat), cls, val});
+      }
+    }
+  }
+
+  if(!arr.length){
+    throw new Error("Arquivo de pontos existe, mas não achei lat/lon + class. Ajusta FIELD_MAP no index.");
+  }
+  return arr;
+}
+
+async function buildProjectedPoints(rawPoints){
+  points = [];
+  points.__raw = rawPoints;
+
+  counts = {water:0, veg:0, tran:0, def:0};
+
   const img = $("mapImg");
-
-  // Espera a imagem carregar
   if(!img.complete){
     await new Promise((ok,err)=>{
       img.onload=()=>ok();
@@ -454,144 +604,45 @@ async function buildPointsFromMapMask(){
     });
   }
 
-  // pega o retângulo renderizado da imagem na tela
-  const wrap = img.getBoundingClientRect();
+  const imgRect = img.getBoundingClientRect();
   const cnvRect = cnv.getBoundingClientRect();
 
-  // desenha a imagem em um offscreen na resolução da tela (leve)
-  const off = document.createElement("canvas");
-  const octx = off.getContext("2d", { willReadFrequently:true });
+  const N = limitForDevice(rawPoints.length);
 
-  const W = Math.floor(cnvRect.width);
-  const H = Math.floor(cnvRect.height);
-  off.width = W; off.height = H;
+  // amostra uniforme se vier gigante
+  const step = Math.max(1, Math.floor(rawPoints.length / N));
 
-  // calcula onde a imagem está dentro do canvas (porque é contain)
-  // replica o "contain"
-  const imgAR = img.naturalWidth / img.naturalHeight;
-  const boxAR = wrap.width / wrap.height;
+  for(let i=0, c=0; i<rawPoints.length && c<N; i+=step, c++){
+    const rp = rawPoints[i];
+    const {x,y, drawBox} = projectLatLonToPixel(rp.lon, rp.lat, imgRect, cnvRect);
 
-  let drawW, drawH, dx, dy;
-  if(imgAR > boxAR){
-    drawW = wrap.width;
-    drawH = wrap.width / imgAR;
-  } else {
-    drawH = wrap.height;
-    drawW = wrap.height * imgAR;
-  }
-  dx = (wrap.left - cnvRect.left) + (wrap.width - drawW)/2;
-  dy = (wrap.top  - cnvRect.top ) + (wrap.height - drawH)/2;
+    // filtra pontos fora do mapa desenhado
+    if(x < drawBox.dx || x > drawBox.dx+drawBox.drawW || y < drawBox.dy || y > drawBox.dy+drawBox.drawH) continue;
 
-  // limpa e desenha (convertendo para coords do canvas)
-  octx.clearRect(0,0,W,H);
-  octx.drawImage(img, dx, dy, drawW, drawH);
+    const cls = rp.cls;
+    counts[cls]++;
 
-  const imgData = octx.getImageData(0,0,W,H).data;
+    const [r,g,b] = colorOf(cls);
+    // pontinho pequeno e real
+    const base = 0.45 + Math.random()*0.75;
+    const speed = 0.8 + Math.random()*1.7;
 
-  // gera pontos dentro da máscara:
-  const isMobile = matchMedia("(max-width: 1100px)").matches;
-  const TARGET = isMobile ? MAX_POINTS_MOBILE : MAX_POINTS_DESKTOP;
-
-  points = [];
-  let tries = 0;
-  const maxTries = TARGET * 40;
-
-  while(points.length < TARGET && tries < maxTries){
-    tries++;
-    const x = Math.floor(Math.random()*W);
-    const y = Math.floor(Math.random()*H);
-
-    // pega pixel
-    const i = (y*W + x)*4;
-    const r = imgData[i], g = imgData[i+1], b = imgData[i+2], a = imgData[i+3];
-
-    // máscara: pega pixels que NÃO são quase pretos e com alpha > 10
-    const lum = (r+g+b)/3;
-    if(a > 10 && lum > 12){
-      const cls = pickClass();
-      const [cr,cg,cb] = colorOf(cls);
-
-      points.push({
-        x, y,
-        r:cr, g:cg, b:cb,
-        base: 0.6 + Math.random()*0.8,     // tamanho base pequeno (pontilhado)
-        phase: Math.random()*Math.PI*2,
-        speed: 0.8 + Math.random()*1.6
-      });
-    }
+    points.push({
+      x, y,
+      r, g, b,
+      base,
+      phase: Math.random()*Math.PI*2,
+      speed
+    });
   }
 
-  statusEl.textContent = `Status: OK • Pontos: ${points.length.toLocaleString("pt-BR")} • Base: ${BASE_URL.replace(location.origin,"")}`;
+  statusEl.textContent = `Status: OK • ${points.length.toLocaleString("pt-BR")} pontos reais • arquivo: ${rawFileName}`;
 }
 
-function drawPoints(){
-  const W = cnv.getBoundingClientRect().width;
-  const H = cnv.getBoundingClientRect().height;
-  ctx.clearRect(0,0,W,H);
-
-  for(const p of points){
-    const pulse = 0.55 + 0.45*Math.sin(p.phase + t*p.speed*0.02);
-    const alpha = 0.07 + 0.33*pulse;  // pontinho real, não sólido
-    const size  = p.base * (0.65 + pulse*0.85);
-
-    ctx.beginPath();
-    ctx.fillStyle = `rgba(${p.r},${p.g},${p.b},${alpha})`;
-    ctx.arc(p.x, p.y, size, 0, Math.PI*2);
-    ctx.fill();
-  }
-  t++;
-  requestAnimationFrame(drawPoints);
-}
-
-/* =========================
-   Dados (se dados_cnt.json existir, usa; senão, fallback)
-========================= */
-async function loadCNTIfExists(){
-  try{
-    const d = await fetchJSON("dados_cnt.json");
-    // Aceita tanto formato "plano" quanto qualquer campo parecido
-    const raw = Number(d.raw ?? d.RAW ?? d.value ?? d.cnt_A ?? 18.11);
-    const eco = clamp(raw*4, 0, 100);
-
-    $("raw").textContent = fmt(raw,2);
-    $("eco").textContent = fmt(eco,1);
-    $("A").textContent = fmt(eco,2);
-    $("B").textContent = (Number.isFinite(Number(d.cnt_B)) ? (Number(d.cnt_B)>=0?"+":"") + fmt(d.cnt_B,2) : "-0,10");
-    $("C").textContent = (Number.isFinite(Number(d.cnt_C)) ? fmt(d.cnt_C,2) : "0,49");
-    $("R").textContent = (d.grade ?? "E");
-
-    $("ibe").textContent = Number.isFinite(Number(d.IBE ?? d.FUNC)) ? fmt(d.IBE ?? d.FUNC,1) : "55,2";
-    $("iab").textContent = Number.isFinite(Number(d.IAB)) ? fmt(d.IAB,1) : "N/D";
-    $("ibi").textContent = Number.isFinite(Number(d.IBI)) ? fmt(d.IBI,1) : "23,5";
-    $("hid").textContent = Number.isFinite(Number(d.HID)) ? fmt(d.HID,2) : "1,03";
-    $("ent").textContent = Number.isFinite(Number(d.ENT)) ? fmt(d.ENT,1) : "86,2";
-    $("pan").textContent = Number.isFinite(Number(d.PAN)) ? fmt(d.PAN,1) : "11,7";
-
-    if(Array.isArray(d.series_10y)){
-      const s = d.series_10y.map(Number).filter(Number.isFinite);
-      if(s.length>=3) series = s;
-    }
-    $("telemetryHint").textContent = `Histórico: ${series.length} • Último (RAW): ${fmt(raw,2)}`;
-
-  }catch(e){
-    // não quebra o site
-  }
-}
-
-/* =========================
-   BOOT (garantido)
-========================= */
-(async ()=>{
-  try{
-    statusEl.textContent = "Status: carregando mapa…";
-    await loadCNTIfExists();
-    await buildPointsFromMapMask();
-    drawPoints();
-  }catch(err){
-    statusEl.textContent = "Status: ERRO.";
-    showErr("ERRO: " + (err?.message || err) + "\n\nConfere se 'mapa_base.png' está na mesma pasta do index.html.");
-  }
-})();
-</script>
-</body>
-        </html>
+function computeIndexFromCounts(){
+  const total = counts.water + counts.veg + counts.tran + counts.def;
+  if(!total){
+    return {
+      eco: null, raw: null,
+      A:null, B:null, C:null, grade:"--",
+      ibe:null, iab:null, ibi:null
