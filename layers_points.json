@@ -1,1 +1,5 @@
-[[-55, -10], [-50, -15], [-47, -22]]
+[
+  {"lon": -55, "lat": -10, "class": "veg"},
+  {"lon": -50, "lat": -15, "class": "transition"},
+  {"lon": -47, "lat": -22, "class": "deforestation"}
+]
