@@ -1,204 +1,715 @@
-<!DOCTYPE html><html lang="pt-br">
+<!DOCTYPE html><html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>CNT — Centro Natural TEC Amazônia</title><style>
-body{
-margin:0;
-font-family:Arial,Helvetica,sans-serif;
-background:#020a12;
-color:#c8f3ff;
+:root{
+  --bg0:#000;
+  --bg1:#050b10;
+  --hud: rgba(110,210,255,.95);
+  --hud2: rgba(110,210,255,.55);
+  --stroke: rgba(110,210,255,.18);
+  --glass: rgba(2,12,24,.46);
+  --text: #c8f3ff;
+  --muted:#86dcff;
+  --shadow: 0 0 22px rgba(110,210,255,.14), 0 0 70px rgba(0,200,255,.08);
+}
+*{ box-sizing:border-box; }
+html,body{
+  margin:0;height:100%;
+  background: radial-gradient(1200px 700px at 50% 35%, var(--bg1), var(--bg0) 70%);
+  color:var(--text);
+  font-family:"Segoe UI", Arial, sans-serif;
+  overflow:hidden;
 }
 
-.container{
-max-width:1400px;
-margin:auto;
-padding:15px;
+#app{
+  position:fixed; inset:0;
+  display:grid;
+  grid-template-columns: 300px 1fr 360px;
+  grid-template-rows: 120px minmax(0,1fr);
+  gap:14px;
+  padding:14px;
+  align-items:stretch;
 }
 
-.header{
-text-align:center;
-padding:20px;
-border-radius:18px;
-background:linear-gradient(#031a26,#021018);
-box-shadow:0 0 40px rgba(0,255,255,.1) inset;
-margin-bottom:20px;
+.glass{
+  background: var(--glass);
+  backdrop-filter: blur(14px);
+  border:1px solid var(--stroke);
+  border-radius:22px;
+  box-shadow: var(--shadow);
 }
 
-.grid{
-display:grid;
-grid-template-columns:320px 1fr 320px;
-gap:18px;
-align-items:start;
+/* Header */
+#header{
+  grid-column:1 / 4;
+  padding:14px 16px;
+  border-radius:24px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:8px;
+}
+#header h1{
+  margin:0;
+  font-size:26px;
+  letter-spacing:.6px;
+  font-weight:900;
+  color:#e9fdff;
+  text-align:center;
+}
+#header .sub{
+  margin:0;
+  text-align:center;
+  font-size:12px;
+  color:var(--muted);
+  opacity:.95;
+}
+#chips{
+  display:flex;
+  justify-content:center;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.chip{
+  font-size:11px;
+  padding:7px 10px;
+  border-radius:999px;
+  border:1px solid rgba(110,210,255,.22);
+  background: rgba(0,0,0,.20);
+  color:#cfefff;
+  opacity:.95;
 }
 
-.panel{
-background:linear-gradient(#02131c,#010c12);
-border-radius:18px;
-padding:18px;
-box-shadow:0 0 20px rgba(0,255,255,.12);
+/* Left */
+#left{
+  padding:12px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  min-height:0;
+  overflow:hidden;
+}
+.big{
+  font-size:56px;
+  line-height:1;
+  font-weight:260;
+  color:#e9fdff;
+  margin:0;
+}
+.small{
+  font-size:12px;
+  color:var(--muted);
+  opacity:.95;
+}
+.hr{
+  height:1px;
+  background:linear-gradient(90deg,transparent,rgba(110,210,255,.30),transparent);
+  margin:6px 0;
+}
+.abclist{ display:grid; gap:8px; }
+.abcline{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:7px 10px;
+  border:1px solid rgba(110,210,255,.14);
+  background:rgba(0,0,0,.18);
+  border-radius:14px;
+  font-size:12px;
+}
+.abcline b{ color:#e9fdff; font-weight:900; }
+.abcline span{ color:#d5fbff; font-weight:900; }
+
+.grid2{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:8px 10px;
+}
+.kv{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-size:12px;
+  padding:7px 10px;
+  border:1px solid rgba(110,210,255,.16);
+  border-radius:14px;
+  background:rgba(0,0,0,.18);
+}
+.kv b{ font-weight:900; color:#e9fdff; }
+.kv span{ color:#d0fbff; font-weight:900; }
+
+#status{
+  margin-top:4px;
+  font-size:10px;
+  color:rgba(180,245,255,.9);
+  opacity:.85;
+  line-height:1.2;
 }
 
-#map{
-height:620px;
-border-radius:22px;
-background:radial-gradient(circle at center,#063447 0%,#021018 70%);
-position:relative;
-overflow:hidden;
+/* Center */
+#center{
+  position:relative;
+  overflow:hidden;
+  border-radius:26px;
+  min-height:0;
+}
+#mapWrap{
+  position:absolute; inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background: radial-gradient(900px 600px at 50% 40%, rgba(20,60,80,.35), rgba(0,0,0,1) 70%);
+}
+.layer{
+  position:absolute; inset:0;
+  width:100%;
+  height:100%;
+  pointer-events:none;
+}
+#mapGlow{
+  position:absolute; inset:-10%;
+  pointer-events:none;
+  mix-blend-mode: screen;
+  opacity:.26;
+  filter: blur(12px);
+  background:
+    radial-gradient(circle at 42% 55%, rgba(120,220,255,.25), transparent 52%),
+    radial-gradient(circle at 70% 45%, rgba(120,220,255,.18), transparent 60%),
+    radial-gradient(circle at 35% 70%, rgba(120,220,255,.12), transparent 60%);
+  animation: glowPulse 6s ease-in-out infinite;
+}
+@keyframes glowPulse{
+  0%{ opacity:.18; transform:scale(1); }
+  50%{ opacity:.34; transform:scale(1.02); }
+  100%{ opacity:.18; transform:scale(1); }
+}
+#scanlines{
+  position:absolute; inset:0;
+  pointer-events:none;
+  opacity:.16;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      rgba(120,220,255,.06) 0px,
+      rgba(120,220,255,.06) 1px,
+      transparent 2px,
+      transparent 7px
+    );
+  mix-blend-mode: overlay;
+  animation: scan 3.2s linear infinite;
+}
+@keyframes scan{ 0%{ transform:translateY(-22px);} 100%{ transform:translateY(22px);} }
+
+/* Right */
+#right{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  min-height:0;
+}
+#buy, #telemetry{ padding:14px; }
+#buy h2{
+  margin:0;
+  font-size:18px;
+  font-weight:900;
+  letter-spacing:.4px;
+  color:#e9fdff;
+}
+#buy .mut{
+  margin:8px 0 10px;
+  font-size:12px;
+  color:var(--muted);
+  opacity:.95;
+  line-height:1.35;
+}
+label{ display:block; font-size:12px; color:var(--muted); margin:10px 0 6px; }
+.row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+input{
+  width:170px;
+  padding:10px 12px;
+  border-radius:14px;
+  border:1px solid rgba(110,210,255,.35);
+  background:rgba(0,0,0,.18);
+  color:#e9fbff;
+  outline:none;
+}
+input:focus{
+  border-color: rgba(110,210,255,.70);
+  box-shadow: 0 0 16px rgba(110,210,255,.18);
+}
+.btn{
+  background:linear-gradient(180deg,rgba(110,210,255,.20),rgba(0,0,0,.16));
+  border:1px solid rgba(110,210,255,.45);
+  color:#eafcff;
+  border-radius:14px;
+  padding:10px 13px;
+  cursor:pointer;
+  font-weight:900;
+  letter-spacing:.2px;
+  min-width:160px;
+}
+.btn:hover{ box-shadow:0 0 18px rgba(110,210,255,.30); }
+
+.valueLine{ margin-top:10px; font-size:12px; color:#bdf4ff; }
+.valueLine b{ font-size:19px; color:#e9fdff; }
+.smallnote{ margin-top:6px; font-size:11px; color:var(--muted); opacity:.95; }
+
+#telemetryTitle{
+  font-size:12px;
+  letter-spacing:.8px;
+  color:#d4fbff;
+  opacity:.95;
+  margin-bottom:8px;
+  font-weight:900;
+}
+#wave{
+  width:100%;
+  height:74px;
+  display:block;
+  background: rgba(0,0,0,.22);
+  border:1px solid rgba(110,210,255,.14);
+  border-radius:14px;
+}
+#telemetryHint{
+  margin-top:8px;
+  font-size:11px;
+  color:var(--muted);
+  opacity:.92;
 }
 
-canvas{
-position:absolute;
-top:0;
-left:0;
-width:100%;
-height:100%;
-}
-
-h2{margin:0 0 12px 0}
-
-.value{
-font-size:42px;
-margin:8px 0;
-}
-
-input,button{
-width:100%;
-padding:12px;
-border-radius:12px;
-border:none;
-margin-top:8px;
-background:#041b25;
-color:#c8f3ff;
-}
-
-button{
-background:linear-gradient(#1f6b82,#123b49);
-cursor:pointer;
-font-weight:bold;
-}
-
-.mobileOnly{display:none}
-
-@media(max-width:900px){
-.grid{
-grid-template-columns:1fr;
-}
-.desktopOnly{display:none}
-.mobileOnly{display:block}
-#map{height:420px}
+/* Mobile: COMPRA antes do MAPA, e ÍNDICES depois (como você pediu) */
+@media (max-width: 1100px){
+  body{ overflow:auto; }
+  #app{
+    position:relative;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto auto;
+  }
+  #header{ grid-column:auto; }
+  #right{ order: 1; }   /* compra/telemetria vem antes */
+  #center{ order: 2; height:46vh; }
+  #left{ order: 3; }    /* índices depois do mapa */
 }
 </style></head><body>
-<div class="container"><div class="header">
-<h1>CNT — Centro Natural TEC Amazônia</h1>
-Mapa ecológico real • Água (azul) • Vegetação (verde) • Transição (amarelo) • Desmatamento (vermelho)
-</div><div class="grid"><!-- MOBILE COMPRA --><div class="panel mobileOnly">
-<h2>COMPRAR CNT</h2>
-<input value="0,10">
-<button>Abrir no Pump</button>
-</div><!-- INDICES --><div class="panel">
-<h2>CNT (índice único Brasil)</h2>
-<div class="value" id="score">--</div>
-RAW auditável: <span id="raw">--</span>
-</div><!-- MAPA --><div id="map" class="panel">
-<canvas id="c"></canvas>
-</div><!-- DESKTOP COMPRA --><div class="panel desktopOnly">
-<h2>COMPRAR CNT</h2>
-<input value="0,10">
-<button>Abrir no Pump</button>
-</div></div>
+<div id="app">
+  <div id="header" class="glass">
+    <h1>CNT — Centro Natural TEC Amazônia</h1>
+    <p class="sub">Mapa ecológico real • Água (azul) • Vegetação (verde) • Transição (amarelo) • Desmatamento (vermelho)</p>
+    <div id="chips">
+      <div class="chip">Fonte: dados públicos governamentais</div>
+      <div class="chip">Ano base: 2025</div>
+      <div class="chip">Pontos reais (sample → full)</div>
+      <div class="chip">Compra: Pump.fun</div>
+    </div>
+  </div>  <div id="left" class="glass">
+    <div class="small"><b>CNT</b> (índice único Brasil)</div><div class="big"><span id="eco">--</span><span style="font-size:16px; opacity:.9;">/100</span></div>
+<div class="small">RAW auditável: <b id="raw">--</b></div>
+
+<div class="hr"></div>
+
+<div class="abclist">
+  <div class="abcline"><b>A — Estado</b><span id="A">--</span></div>
+  <div class="abcline"><b>B — Tendência</b><span id="B">--</span></div>
+  <div class="abcline"><b>C — Estabilidade</b><span id="C">--</span></div>
+  <div class="abcline"><b>Grau</b><span id="R">--</span></div>
+</div>
+
+<div class="hr"></div>
+
+<div class="small" style="font-weight:900; letter-spacing:.3px;">Sub-índices</div>
+<div class="grid2">
+  <div class="kv"><b>IBE</b><span id="ibe">--</span></div>
+  <div class="kv"><b>IAB</b><span id="iab">--</span></div>
+  <div class="kv"><b>IBI</b><span id="ibi">--</span></div>
+  <div class="kv"><b>HID</b><span id="hid">--</span></div>
+  <div class="kv"><b>ENT</b><span id="ent">--</span></div>
+  <div class="kv"><b>PAN</b><span id="pan">--</span></div>
+</div>
+
+<div id="status">Status: iniciando…</div>
+
+  </div>  <div id="center" class="glass">
+    <div id="mapWrap">
+      <canvas id="cnvFill" class="layer"></canvas>
+      <canvas id="cnvBorder" class="layer"></canvas>
+      <canvas id="cnvRivers" class="layer"></canvas>
+      <canvas id="cnvPoints" class="layer"></canvas>
+      <div id="mapGlow"></div>
+      <div id="scanlines"></div>
+    </div>
+  </div>  <div id="right">
+    <div id="buy" class="glass">
+      <h2>COMPRAR CNT</h2>
+      <p class="mut">Abre o token no Pump.fun.</p>  <label for="sol">Contribuição</label>
+  <div class="row">
+    <input id="sol" type="number" step="0.01" min="0" value="0.10" />
+    <button class="btn" id="btnBuy">Comprar no Pump</button>
+  </div>
+
+  <div class="valueLine">Estimativa: <b id="out">-- CNT</b></div>
+  <div class="smallnote">Estimativa demo (não é cotação real).</div>
+</div>
+
+<div id="telemetry" class="glass">
+  <div id="telemetryTitle">TELEMETRIA — Série 10 anos</div>
+  <canvas id="wave"></canvas>
+  <div id="telemetryHint">Carregando…</div>
+</div>
+
+  </div>
 </div><script>
 /* =========================
-PATH FIX GITHUB PAGES
+   CONFIG
 ========================= */
-const PATHS=["./","../","./public/","../public/"];
-async function loadJSON(file){
-for(const p of PATHS){
-try{
-let r=await fetch(p+file);
-if(r.ok) return r.json();
-}catch(e){}
+const PUMP_URL = "https://pump.fun/coin/GCVyjNaCbXkwGUuktyNxSXad4ozmTp2fzQr2jieSpump";
+
+// tenta funcionar tanto no /root quanto no /public (GitHub Pages)
+const BASES = ["./","../","./public/","../public/"];
+
+const FILES = {
+  ibge: ["BR_IBGE_simplificado.geojson","BR_IBGE.geojson"],
+  cnt:  ["CNT_FULL_10Y.geojson","dados_cnt.json"],
+  macro: ["macro_rh.geojson"],
+  micro: ["micro_rh.geojson"],
+  // pontos "prontos" e leves (se existir)
+  layers: ["layers_points.json"],
+  // fallback
+  vegeSample: ["vege_pts_sample.geojson"],
+  vegeFull:   ["vege_pts.geojson"]
+};
+
+const ECO_SCALE_MULT = 4;  // ECO/100 = cnt_A * 4
+const rate = 147449130;    // demo SOL -> CNT
+
+/* =========================
+   HELPERS
+========================= */
+const statusEl = document.getElementById("status");
+function fmt(n, d=2){
+  if(n === null || n === undefined || !Number.isFinite(Number(n))) return "--";
+  return Number(n).toFixed(d).replace(".", ",");
 }
-throw "Arquivo não encontrado: "+file;
+function fmt1(n){ return fmt(n,1); }
+function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+
+async function fetchTry(url){
+  const res = await fetch(url, { cache:"no-store" });
+  if(!res.ok) throw new Error(`${url} HTTP ${res.status}`);
+  return res;
+}
+async function fetchFirst(paths){
+  const errs = [];
+  for(const b of BASES){
+    for(const p of paths){
+      try{
+        const res = await fetchTry(b + p);
+        const ct = (res.headers.get("content-type")||"").toLowerCase();
+        if(ct.includes("application/json") || ct.includes("geo+json") || p.endsWith(".json") || p.endsWith(".geojson")){
+          return { data: await res.json(), path: b+p };
+        }
+        return { data: await res.text(), path: b+p };
+      }catch(e){ errs.push(String(e.message||e)); }
+    }
+  }
+  throw new Error("Nenhum caminho funcionou:\n" + errs.slice(0,12).join("\n"));
+}
+
+/* GeoJSON robusto */
+function isGeomOK(g){ return g && (g.type==="Polygon" || g.type==="MultiPolygon"); }
+function extractGeomsFromAny(obj){
+  const out = [];
+  if(!obj) return out;
+
+  if(obj.type==="FeatureCollection" && Array.isArray(obj.features)){
+    for(const f of obj.features){
+      const g = f?.geometry;
+      if(isGeomOK(g)) out.push(g);
+      if(g?.type==="GeometryCollection" && Array.isArray(g.geometries)){
+        for(const gg of g.geometries) if(isGeomOK(gg)) out.push(gg);
+      }
+    }
+  } else if(obj.type==="Feature"){
+    const g = obj.geometry;
+    if(isGeomOK(g)) out.push(g);
+  } else if(isGeomOK(obj)) out.push(obj);
+
+  return out;
+}
+function mergeToMultiPolygon(geoms){
+  const mp = { type:"MultiPolygon", coordinates: [] };
+  for(const g of geoms){
+    if(g.type==="Polygon") mp.coordinates.push(g.coordinates);
+    else if(g.type==="MultiPolygon") mp.coordinates.push(...g.coordinates);
+  }
+  return mp;
+}
+function bboxFromCoords(coords){
+  let minLon=+Infinity, minLat=+Infinity, maxLon=-Infinity, maxLat=-Infinity;
+  const walk = (arr)=>{
+    for(const v of arr){
+      if(Array.isArray(v[0])) walk(v);
+      else{
+        const lon=v[0], lat=v[1];
+        if(lon<minLon) minLon=lon;
+        if(lat<minLat) minLat=lat;
+        if(lon>maxLon) maxLon=lon;
+        if(lat>maxLat) maxLat=lat;
+      }
+    }
+  };
+  walk(coords);
+  return [minLon, minLat, maxLon, maxLat];
+}
+function projectFactory(bbox, W, H, pad=0.06){
+  const [minLon, minLat, maxLon, maxLat] = bbox;
+  const wLon = maxLon - minLon;
+  const hLat = maxLat - minLat;
+  const padX = W * pad, padY = H * pad;
+
+  const sx = (W - padX*2) / wLon;
+  const sy = (H - padY*2) / hLat;
+  const s = Math.min(sx, sy);
+
+  const drawW = wLon * s, drawH = hLat * s;
+  const ox = (W - drawW)/2;
+  const oy = (H - drawH)/2;
+
+  return (lon, lat)=>[ ox + (lon - minLon)*s, oy + (maxLat - lat)*s ];
 }
 
 /* =========================
-CANVAS
+   CANVAS SETUP
 ========================= */
-const canvas=document.getElementById("c");
-const ctx=canvas.getContext("2d");
+const cnvFill  = document.getElementById("cnvFill");
+const cnvBorder= document.getElementById("cnvBorder");
+const cnvRivers= document.getElementById("cnvRivers");
+const cnvPoints= document.getElementById("cnvPoints");
 
-function resize(){
-canvas.width=canvas.clientWidth;
-canvas.height=canvas.clientHeight;
+const ctxF = cnvFill.getContext("2d");
+const ctxB = cnvBorder.getContext("2d");
+const ctxR = cnvRivers.getContext("2d");
+const ctxP = cnvPoints.getContext("2d");
+
+function resizeCanvas(cnv, ctx){
+  const dpr = Math.max(1, window.devicePixelRatio || 1);
+  const r = cnv.getBoundingClientRect();
+  cnv.width  = Math.floor(r.width * dpr);
+  cnv.height = Math.floor(r.height * dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
 }
-window.onresize=resize;
-resize();
+function resizeAll(){
+  resizeCanvas(cnvFill, ctxF);
+  resizeCanvas(cnvBorder, ctxB);
+  resizeCanvas(cnvRivers, ctxR);
+  resizeCanvas(cnvPoints, ctxP);
+  resizeWave();
+}
+window.addEventListener("resize", ()=>{
+  resizeAll();
+  if(state.geom) redrawStatic();
+});
 
 /* =========================
-DESENHO
+   STATE
 ========================= */
+const state = {
+  geom:null,
+  bbox:null,
+  proj:null,
+  cntProps:null,
+  series:[],
+  points:[],
+  pointsMode:"none",
+  riversReady:false
+};
 
-function proj(lon,lat){
-return[
-((lon+74)/108)*canvas.width,
-canvas.height-((lat+34)/68)*canvas.height
-];
+/* =========================
+   DRAW MAP
+========================= */
+function makePath(ctx){
+  ctx.beginPath();
+  for(const poly of state.geom.coordinates){
+    const outer = poly[0];
+    for(let i=0;i<outer.length;i++){
+      const [x,y]=state.proj(outer[i][0], outer[i][1]);
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.closePath();
+  }
 }
 
-function drawPoints(geo,color,size,alpha){
-ctx.fillStyle=color;
-ctx.globalAlpha=alpha;
+function drawFill(){
+  const W = cnvFill.getBoundingClientRect().width;
+  const H = cnvFill.getBoundingClientRect().height;
+  ctxF.clearRect(0,0,W,H);
 
-geo.features.forEach(f=>{
-const [x,y]=proj(f.geometry.coordinates[0],f.geometry.coordinates[1]);
-ctx.beginPath();
-ctx.arc(x,y,size,0,Math.PI*2);
-ctx.fill();
-});
+  makePath(ctxF);
 
-ctx.globalAlpha=1;
+  const grd = ctxF.createRadialGradient(W*0.50,H*0.45, 10, W*0.50,H*0.50, Math.max(W,H)*0.80);
+  grd.addColorStop(0, "rgba(90,220,255,0.14)");
+  grd.addColorStop(0.6, "rgba(40,120,170,0.07)");
+  grd.addColorStop(1, "rgba(0,0,0,0)");
+  ctxF.fillStyle = grd;
+  ctxF.fill("evenodd");
+
+  ctxF.fillStyle = "rgba(90,220,255,0.025)";
+  ctxF.fill("evenodd");
+}
+
+function drawBorder(){
+  const W = cnvBorder.getBoundingClientRect().width;
+  const H = cnvBorder.getBoundingClientRect().height;
+  ctxB.clearRect(0,0,W,H);
+
+  ctxB.save();
+  ctxB.lineJoin="round"; ctxB.lineCap="round";
+
+  const strokeOnce = (w, col, blur, shadowCol)=>{
+    ctxB.lineWidth = w;
+    ctxB.strokeStyle = col;
+    ctxB.shadowBlur = blur;
+    ctxB.shadowColor = shadowCol;
+    makePath(ctxB);
+    ctxB.stroke();
+  };
+
+  strokeOnce(8, "rgba(120,220,255,0.18)", 18, "rgba(120,220,255,.55)");
+  strokeOnce(3, "rgba(120,220,255,0.78)", 10, "rgba(120,220,255,.60)");
+
+  ctxB.restore();
+}
+
+function redrawStatic(){
+  const W = cnvFill.getBoundingClientRect().width;
+  const H = cnvFill.getBoundingClientRect().height;
+  state.proj = projectFactory(state.bbox, W, H, 0.06);
+  drawFill();
+  drawBorder();
+  drawRivers();    // redesenha se já carregou
+  rebuildPoints(); // re-projeta pontos na tela nova
+}
+
+function drawRivers(){
+  const W = cnvRivers.getBoundingClientRect().width;
+  const H = cnvRivers.getBoundingClientRect().height;
+  ctxR.clearRect(0,0,W,H);
+
+  if(!state.rivers || !state.rivers.length) return;
+
+  ctxR.save();
+  ctxR.lineJoin="round"; ctxR.lineCap="round";
+  ctxR.shadowBlur = 10;
+  ctxR.shadowColor = "rgba(20,150,255,.55)";
+  ctxR.strokeStyle = "rgba(40,170,255,.70)";
+  ctxR.lineWidth = 0.9;
+
+  for(const lines of state.rivers){
+    for(const line of lines){
+      ctxR.beginPath();
+      for(let i=0;i<line.length;i++){
+        const c=line[i];
+        const [x,y]=state.proj(c[0], c[1]);
+        if(i===0) ctxR.moveTo(x,y); else ctxR.lineTo(x,y);
+      }
+      ctxR.stroke();
+    }
+  }
+
+  ctxR.shadowBlur = 0;
+  ctxR.strokeStyle = "rgba(40,170,255,.35)";
+  ctxR.lineWidth = 0.6;
+
+  for(const lines of state.rivers){
+    for(const line of lines){
+      ctxR.beginPath();
+      for(let i=0;i<line.length;i++){
+        const c=line[i];
+        const [x,y]=state.proj(c[0], c[1]);
+        if(i===0) ctxR.moveTo(x,y); else ctxR.lineTo(x,y);
+      }
+      ctxR.stroke();
+    }
+  }
+
+  ctxR.restore();
 }
 
 /* =========================
-CARREGAMENTO INTELIGENTE
+   POINTS (reais por classe)
+   Preferência: layers_points.json (rápido)
+   Fallback: vege_pts_sample/full (verde)
 ========================= */
-async function start(){
-
-// mostra rápido
-let pts=await loadJSON("vege_pts_sample.geojson");
-drawPoints(pts,"#00ff9c",1.2,0.8);
-
-// melhora qualidade depois
-loadJSON("vege_pts.geojson").then(full=>{
-ctx.clearRect(0,0,canvas.width,canvas.height);
-drawPoints(full,"#00ff9c",1.2,0.9);
-});
-
-// hidrografia
-loadJSON("macro_rh.geojson").then(r=>{
-ctx.strokeStyle="#00bfff";
-ctx.lineWidth=0.5;
-r.features.forEach(f=>{
-ctx.beginPath();
-f.geometry.coordinates.forEach(line=>{
-line.forEach((c,i)=>{
-const [x,y]=proj(c[0],c[1]);
-i?ctx.lineTo(x,y):ctx.moveTo(x,y);
-});
-});
-ctx.stroke();
-});
-});
-
-// score
-loadJSON("dados_cnt.json").then(d=>{
-document.getElementById("score").innerText=d.score||"72.4";
-document.getElementById("raw").innerText=d.raw||"18.11";
-});
-
+function colorFromClass(cls){
+  // aceita números ou strings
+  const c = String(cls).toLowerCase();
+  if(c.includes("water") || c.includes("hid") || c==="1" || c==="agua" || c==="blue") return [40,170,255];      // azul
+  if(c.includes("def")  || c.includes("red") || c==="3" || c==="desmat" )            return [255,90,60];        // vermelho
+  if(c.includes("tran") || c.includes("yell")|| c==="2" || c==="transicao")          return [255,210,70];       // amarelo
+  return [90,255,180]; // verde default
 }
 
-start();
-</script></body>
-</html>
+function rebuildPoints(){
+  if(!state.points || !state.points.length) return;
+  for(const p of state.points){
+    const [x,y]=state.proj(p.lon, p.lat);
+    p.x=x; p.y=y;
+  }
+}
+
+function setPointsFromLayersJSON(obj){
+  // aceita vários formatos:
+  // {points:[{lon,lat,cls}...]}  OU  [{lon,lat,cls}...]  OU  {features: Point...}
+  const out = [];
+
+  if(Array.isArray(obj)){
+    for(const it of obj){
+      if(it && Number.isFinite(+it.lon) && Number.isFinite(+it.lat)){
+        const [r,g,b]=colorFromClass(it.cls ?? it.class ?? it.type ?? it.c);
+        out.push({ lon:+it.lon, lat:+it.lat, r,g,b, phase:Math.random()*6.28, speed:0.9+Math.random()*1.4, size:0.55+Math.random()*0.9, x:0,y:0 });
+      }
+    }
+  } else if(Array.isArray(obj?.points)){
+    for(const it of obj.points){
+      if(it && Number.isFinite(+it.lon) && Number.isFinite(+it.lat)){
+        const [r,g,b]=colorFromClass(it.cls ?? it.class ?? it.type ?? it.c);
+        out.push({ lon:+it.lon, lat:+it.lat, r,g,b, phase:Math.random()*6.28, speed:0.9+Math.random()*1.4, size:0.55+Math.random()*0.9, x:0,y:0 });
+      }
+    }
+  } else if(obj?.type==="FeatureCollection" && Array.isArray(obj.features)){
+    for(const f of obj.features){
+      const g=f?.geometry;
+      if(g?.type==="Point" && Array.isArray(g.coordinates)){
+        const lon=+g.coordinates[0], lat=+g.coordinates[1];
+        if(!Number.isFinite(lon)||!Number.isFinite(lat)) continue;
+        const cls=f?.properties?.cls ?? f?.properties?.class ?? f?.properties?.type ?? f?.properties?.c;
+        const [r,gc,b]=colorFromClass(cls);
+        out.push({ lon, lat, r, g:gc, b, phase:Math.random()*6.28, speed:0.9+Math.random()*1.4, size:0.55+Math.random()*0.9, x:0,y:0 });
+      }
+    }
+  }
+
+  // performance mobile: limita
+  const isMobile = matchMedia("(max-width: 1100px)").matches;
+  if(isMobile && out.length > 9000){
+    // pega amostra para não travar
+    const step = Math.ceil(out.length / 9000);
+    const slim = [];
+    for(let i=0;i<out.length;i+=step) slim.push(out[i]);
+    state.points = slim;
+  } else {
+    state.points = out;
+  }
+
+  state.pointsMode = "layers_points.json";
+  rebuildPoints();
+}
+
+function setPointsFromVegeGeoJSON(obj){
+  const out = [];
+  if(obj?.type==="FeatureCollection" && Array.isArray(obj.features)){
+    for(const f of obj.features){
+      const g=f?.geometry;
+      if(g?.type==="Point"){
+        const lon=+g.coordinates[0], la
