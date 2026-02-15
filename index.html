@@ -1,263 +1,13 @@
-<!doctype html>
-<html lang="pt-BR">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>CNT — Centro Natural TEC Amazônia</title>
-
-  <style>
-    :root{
-      --bg0:#000;
-      --bg1:#061219;
-      --glass: rgba(2,12,24,.46);
-      --stroke: rgba(110,210,255,.18);
-      --stroke2: rgba(110,210,255,.28);
-      --text:#c8f3ff;
-      --muted:#86dcff;
-      --hud: rgba(110,210,255,.95);
-      --shadow: 0 0 22px rgba(110,210,255,.14), 0 0 70px rgba(0,200,255,.08);
-      --r: 22px;
-    }
-
-    *{box-sizing:border-box;}
-    html,body{height:100%;}
-    body{
-      margin:0;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Helvetica Neue", sans-serif;
-      background:
-        radial-gradient(900px 600px at 25% 15%, rgba(0,190,255,.18), transparent 55%),
-        radial-gradient(800px 600px at 70% 55%, rgba(0,255,170,.12), transparent 60%),
-        radial-gradient(900px 900px at 55% 95%, rgba(120,200,255,.10), transparent 60%),
-        linear-gradient(180deg, var(--bg0), var(--bg1));
-      color:var(--text);
-      overflow-x:hidden;
-    }
-
-    .wrap{max-width:1200px; margin:18px auto; padding:0 14px 40px;}
-
-    .panel{
-      background: linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,.15));
-      border: 1px solid var(--stroke);
-      border-radius: var(--r);
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      position:relative;
-      overflow:hidden;
-    }
-    .panel::before{
-      content:"";
-      position:absolute; inset:-2px;
-      background: radial-gradient(700px 280px at 20% 0%, rgba(0,210,255,.18), transparent 60%),
-                  radial-gradient(500px 300px at 85% 30%, rgba(0,255,170,.10), transparent 60%);
-      opacity:.9;
-      pointer-events:none;
-    }
-    .panel > *{position:relative;}
-
-    header.panel{padding:22px 18px 18px; text-align:center;}
-    h1{margin:0; font-weight:800; letter-spacing:.3px; font-size:clamp(26px, 3.2vw, 40px);}
-    .subtitle{margin:8px 0 14px; color:var(--muted); line-height:1.35; font-size:14px;}
-    .pills{display:flex; gap:10px; justify-content:center; flex-wrap:wrap;}
-    .pill{
-      border:1px solid var(--stroke);
-      padding:8px 12px;
-      border-radius:999px;
-      font-size:12px;
-      color:var(--text);
-      background: rgba(0,0,0,.18);
-    }
-
-    .grid{
-      margin-top:14px;
-      display:grid;
-      grid-template-columns: 310px 1fr 310px;
-      gap:14px;
-      align-items:stretch;
-    }
-
-    .card-title{font-weight:800; letter-spacing:.3px; margin:0 0 10px; font-size:14px; color:var(--muted);}
-
-    /* Índices */
-    .idx{padding:16px;}
-    .big{
-      font-size:60px;
-      line-height:1;
-      letter-spacing:-1px;
-      margin:6px 0 6px;
-    }
-    .big small{font-size:18px; opacity:.7; margin-left:6px;}
-    .kv{display:flex; justify-content:space-between; gap:10px; padding:10px 12px; border:1px solid var(--stroke); border-radius:999px; margin-top:10px; background: rgba(0,0,0,.16);}
-    .kv b{font-weight:800;}
-    .subgrid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px;}
-    .mini{padding:10px 12px; border:1px solid var(--stroke); border-radius:14px; background: rgba(0,0,0,.14); display:flex; justify-content:space-between; align-items:center;}
-    .mini span{color:var(--muted); font-weight:700; font-size:12px;}
-    .mini b{font-size:14px;}
-    .status{margin-top:10px; color:rgba(200,243,255,.75); font-size:12px;}
-
-    /* Compra */
-    .buy{padding:16px;}
-    .buy h2{margin:0 0 8px; font-size:22px; letter-spacing:.3px;}
-    .buy p{margin:0 0 14px; color:var(--muted); font-size:13px;}
-    .field{display:flex; flex-direction:column; gap:8px;}
-    .field label{font-size:12px; color:rgba(200,243,255,.75);}
-    .field input{
-      height:44px;
-      padding:0 14px;
-      border-radius:999px;
-      background: rgba(0,0,0,.25);
-      border:1px solid var(--stroke2);
-      color:var(--text);
-      outline:none;
-      font-size:16px;
-    }
-    .btn{
-      margin-top:12px;
-      width:100%;
-      height:52px;
-      border-radius:999px;
-      border:1px solid rgba(110,210,255,.38);
-      background: radial-gradient(400px 100px at 50% 0%, rgba(110,210,255,.25), rgba(0,0,0,.15));
-      color:var(--text);
-      font-weight:900;
-      letter-spacing:.2px;
-      font-size:16px;
-      cursor:pointer;
-      box-shadow: 0 0 18px rgba(110,210,255,.18);
-    }
-    .btn:active{transform: translateY(1px);}
-    .est{margin-top:14px; font-size:13px; color:rgba(200,243,255,.75);}
-    .est b{font-size:26px; color:var(--text);}
-
-    /* Telemetria */
-    .tel{padding:14px 16px 16px; margin-top:14px;}
-    .tel .box{height:120px; border:1px solid var(--stroke); border-radius:16px; overflow:hidden; background: rgba(0,0,0,.16);}
-    canvas{display:block; width:100%; height:100%;}
-
-    /* Mapa */
-    .map{padding:12px; display:flex; flex-direction:column; gap:10px;}
-    .mapTop{display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:center;}
-    .mapTop .hint{color:rgba(200,243,255,.75); font-size:12px;}
-    .mapWrap{
-      position:relative;
-      border:1px solid var(--stroke);
-      border-radius: 18px;
-      background: rgba(0,0,0,.16);
-      overflow:hidden;
-      box-shadow: inset 0 0 36px rgba(0,190,255,.10);
-      /* aspect-ratio setado via JS conforme a imagem */
-    }
-    .layer{position:absolute; inset:0;}
-    .vignette{
-      position:absolute; inset:0;
-      background: radial-gradient(600px 420px at 50% 50%, rgba(0,0,0,0), rgba(0,0,0,.45));
-      pointer-events:none;
-    }
-    .scan{
-      position:absolute; left:-20%; right:-20%; height:120px;
-      background: linear-gradient(180deg, transparent, rgba(110,210,255,.08), transparent);
-      mix-blend-mode: screen;
-      opacity:.7;
-      filter: blur(1px);
-      animation: scan 4.2s linear infinite;
-      pointer-events:none;
-    }
-    @keyframes scan{0%{top:-40%;}100%{top:140%;}}
-
-    /* Responsivo: mobile troca a ordem */
-    @media (max-width: 980px){
-      .grid{grid-template-columns: 1fr;}
-      .idx{order:2;}
-      .map{order:1;}
-      .right{order:3;}
-      header.panel{padding:18px 14px 14px;}
-    }
-
-    .right{display:flex; flex-direction:column; gap:14px;}
-  </style>
-</head>
-<body>
-  <div class="wrap">
-    <header class="panel">
-      <h1>CNT — Centro Natural TEC Amazônia</h1>
-      <div class="subtitle">Mapa ecológico real • Água (azul) • Vegetação (verde) • Transição (amarelo) • Desmatamento (vermelho)</div>
-      <div class="pills">
-        <div class="pill">Fonte: dados públicos governamentais</div>
-        <div class="pill">Ano base: <span id="yearPill">2025</span></div>
-        <div class="pill">Holograma: MapBiomas/IBGE (pontos)</div>
-        <div class="pill">Compra: Pump.fun</div>
-      </div>
-    </header>
-
-    <main class="grid">
-      <section class="panel idx" id="idxPanel">
-        <div class="card-title">CNT (índice único Brasil)</div>
-        <div class="big"><span id="cntValue">--</span><small>/100</small></div>
-        <div style="color:rgba(200,243,255,.75); font-size:13px;">RAW auditável: <b id="rawValue">--</b></div>
-
-        <div class="kv"><span><b>A</b> — Estado</span><b id="aEstado">--</b></div>
-        <div class="kv"><span><b>B</b> — Tendência</span><b id="bTend">--</b></div>
-        <div class="kv"><span><b>C</b> — Estabilidade</span><b id="cEstab">--</b></div>
-        <div class="kv"><span><b>G</b>rau</span><b id="grau">--</b></div>
-
-        <div class="card-title" style="margin-top:14px;">Sub-índices</div>
-        <div class="subgrid">
-          <div class="mini"><span>IBE</span><b id="ibe">--</b></div>
-          <div class="mini"><span>IAB</span><b id="iab">--</b></div>
-          <div class="mini"><span>IBI</span><b id="ibi">--</b></div>
-          <div class="mini"><span>HID</span><b id="hid">--</b></div>
-          <div class="mini"><span>ENT</span><b id="ent">--</b></div>
-          <div class="mini"><span>PAN</span><b id="pan">--</b></div>
-        </div>
-
-        <div class="status" id="status">Status: iniciando…</div>
-      </section>
-
-      <section class="panel map" id="mapPanel">
-        <div class="mapTop">
-          <div class="card-title" style="margin:0;">Mapa base + holograma</div>
-          <div class="hint" id="ptsHint">Pontos: --</div>
-        </div>
-
-        <div class="mapWrap" id="mapWrap" aria-label="Mapa CNT">
-          <canvas class="layer" id="baseCanvas"></canvas>
-          <canvas class="layer" id="holoCanvas"></canvas>
-          <div class="vignette"></div>
-          <div class="scan"></div>
-        </div>
-
-        <div class="hint" style="margin-top:2px;">Base: <span id="basePath">(auto)</span> • Se não aparecer, verifique se <b>mapa_base.png</b> e <b>prodes_mosaic.png</b> estão na mesma pasta do <b>index.html</b>.</div>
-      </section>
-
-      <aside class="right" id="rightCol">
-        <section class="panel buy" id="buyPanel">
-          <h2>COMPRAR CNT</h2>
-          <p>Abre o token no Pump.fun.</p>
-          <div class="field">
-            <label>Contribuição</label>
-            <input id="contrib" inputmode="decimal" value="0,10" />
-          </div>
-          <button class="btn" id="buyBtn">Comprar no Pump</button>
-          <div class="est">Estimativa: <b id="estCnt">--</b> CNT<br><span style="opacity:.8">Estimativa demo (não é cotação real).</span></div>
-        </section>
-
-        <section class="panel tel" id="telPanel">
-          <div class="card-title">TELEMETRIA — Série 10 anos</div>
-          <div class="box"><canvas id="telCanvas"></canvas></div>
-          <div class="hint" style="margin-top:8px;">Histórico: <span id="telN">--</span> • Último (RAW): <span id="telLast">--</span></div>
-        </section>
-      </aside>
-    </main>
-  </div>
-
 <script>
 (() => {
   // ===== Config =====
   const TOKEN_URL = "https://pump.fun/coin/GCVyjNaCbXkwGUuktyNxSXad4ozmTp2fzQr2jieSpump";
-  const ASSETS = {
+  const FILES = {
     baseImg: "mapa_base.png",
     mosaicImg: "prodes_mosaic.png",
     dados: "dados_cnt.json",
+    // opcional (se tu tiver): "biomas.geojson"
+    biomas: "biomas.geojson",
   };
 
   // ===== Helpers =====
@@ -265,16 +15,28 @@
   const clamp = (v,min,max)=>Math.max(min,Math.min(max,v));
 
   function detectBasePath(){
+    // garante sempre /.../token_cnt/ (onde está o index.html)
     let p = location.pathname;
     if (p.endsWith("index.html")) p = p.slice(0, -"index.html".length);
     if (!p.endsWith("/")) p += "/";
     return location.origin + p;
   }
 
+  function abs(base, file){ return base + file; }
+
   async function fetchJson(url){
-    const r = await fetch(url, {cache:"no-store"});
+    const r = await fetch(url, { cache: "no-store" });
     if (!r.ok) throw new Error(`HTTP ${r.status} em ${url}`);
     return r.json();
+  }
+
+  async function fetchJsonRetry(url, tries=3){
+    let last;
+    for (let i=0;i<tries;i++){
+      try { return await fetchJson(url); }
+      catch(e){ last=e; await new Promise(r=>setTimeout(r, 250*(i+1))); }
+    }
+    throw last;
   }
 
   function fmt2(v){
@@ -298,7 +60,7 @@
   });
   $("contrib").dispatchEvent(new Event("input"));
 
-  // ===== Telemetria (canvas) =====
+  // ===== Telemetria =====
   function drawTelemetry(values){
     const c = $("telCanvas");
     const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
@@ -310,12 +72,6 @@
 
     ctx.clearRect(0,0,w,h);
     if (!values || !values.length) return;
-
-    const grd = ctx.createLinearGradient(0,0,0,h);
-    grd.addColorStop(0, "rgba(0,0,0,.0)");
-    grd.addColorStop(1, "rgba(0,0,0,.25)");
-    ctx.fillStyle = grd;
-    ctx.fillRect(0,0,w,h);
 
     const minV = Math.min(...values);
     const maxV = Math.max(...values);
@@ -348,7 +104,7 @@
     }
   }
 
-  // ===== Mapa + Holograma =====
+  // ===== Map =====
   const baseCanvas = $("baseCanvas");
   const holoCanvas = $("holoCanvas");
   const mapWrap = $("mapWrap");
@@ -368,6 +124,15 @@
     const ctx = c.getContext("2d");
     ctx.setTransform(dpr,0,0,dpr,0,0);
     return {ctx, w, h};
+  }
+
+  async function loadImage(url){
+    return new Promise((resolve,reject)=>{
+      const img = new Image();
+      img.onload = ()=> resolve(img);
+      img.onerror = ()=> reject(new Error("Falha ao carregar imagem: " + url));
+      img.src = url;
+    });
   }
 
   function rgbToHsl(r,g,b){
@@ -405,15 +170,6 @@
     des:  [255, 80, 80],
   };
 
-  async function loadImage(url){
-    return new Promise((resolve,reject)=>{
-      const img = new Image();
-      img.onload = ()=> resolve(img);
-      img.onerror = ()=> reject(new Error("Falha ao carregar imagem: " + url));
-      img.src = url;
-    });
-  }
-
   function buildPointsFromMosaic(mosaicImg, sampleStep=3, maxPoints=18000){
     const oc = document.createElement("canvas");
     oc.width = mosaicImg.naturalWidth;
@@ -446,19 +202,8 @@
   function drawBase(baseImg){
     const {ctx,w,h} = resizeCanvasToWrap(baseCanvas);
     ctx.clearRect(0,0,w,h);
-
-    ctx.save();
     ctx.globalAlpha = 0.96;
     ctx.drawImage(baseImg, 0,0,w,h);
-
-    ctx.globalCompositeOperation = "screen";
-    ctx.globalAlpha = 0.35;
-    const g = ctx.createRadialGradient(w*0.5,h*0.45, 10, w*0.5,h*0.45, Math.max(w,h)*0.7);
-    g.addColorStop(0, "rgba(0,200,255,.18)");
-    g.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.fillStyle = g;
-    ctx.fillRect(0,0,w,h);
-    ctx.restore();
   }
 
   function startHologram(points, mosaicNatural, state){
@@ -480,7 +225,7 @@
       const sx = w / mosaicNatural.w;
       const sy = h / mosaicNatural.h;
 
-      const cnt = state.cntValue ?? 50;
+      const cnt = Number.isFinite(state.cntValue) ? state.cntValue : 50;
       const speed = 0.55 + (cnt/100)*1.65;
       const glow = 0.25 + (cnt/100)*0.45;
       const pulse = 0.55 + 0.45*Math.sin(t*0.001*speed);
@@ -511,14 +256,6 @@
         }
       }
 
-      ctx.globalCompositeOperation = "screen";
-      ctx.shadowBlur = 0;
-      const fog = ctx.createRadialGradient(w*0.55,h*0.5, 10, w*0.55,h*0.5, Math.max(w,h)*0.75);
-      fog.addColorStop(0, `rgba(0,220,255,${0.07 + glow*0.06})`);
-      fog.addColorStop(1, "rgba(0,0,0,0)");
-      ctx.fillStyle = fog;
-      ctx.fillRect(0,0,w,h);
-
       requestAnimationFrame(render);
     }
 
@@ -529,22 +266,13 @@
   // ===== State =====
   const state = { cntValue: null, baseUrl: null };
 
-  async function init(){
-    const base = detectBasePath();
-    state.baseUrl = base;
-    basePathEl.textContent = base;
-
-    statusEl.textContent = "Status: carregando dados…";
-
-    let dados;
-    try { dados = await fetchJson(ASSETS.dados); }
-    catch (e){ dados = await fetchJson(base + ASSETS.dados); }
-
+  function applyDados(dados){
     $("yearPill").textContent = dados?.meta?.year ?? "2025";
 
     state.cntValue = Number(dados?.cnt?.value);
     $("cntValue").textContent = fmt2(state.cntValue);
     $("rawValue").textContent = fmt2(Number(dados?.cnt?.raw));
+
     $("aEstado").textContent = fmt2(Number(dados?.indices?.A_estado));
     $("bTend").textContent = fmt2(Number(dados?.indices?.B_tendencia));
     $("cEstab").textContent = fmt2(Number(dados?.indices?.C_estabilidade));
@@ -561,20 +289,30 @@
     drawTelemetry(serie);
     $("telN").textContent = String(serie.length || 0);
     $("telLast").textContent = fmt2(serie.length ? serie[serie.length-1] : null);
+  }
+
+  async function init(){
+    const base = detectBasePath();
+    state.baseUrl = base;
+    basePathEl.textContent = base;
+
+    statusEl.textContent = "Status: carregando dados…";
+
+    // >>> AQUI é a correção: sempre pelo basePath real
+    const dadosUrl = abs(base, FILES.dados);
+
+    const dados = await fetchJsonRetry(dadosUrl, 3);
+    applyDados(dados);
 
     statusEl.textContent = "Status: carregando mapa…";
 
-    let baseImg, mosaicImg;
-    try { baseImg = await loadImage(ASSETS.baseImg); }
-    catch(e){ baseImg = await loadImage(base + ASSETS.baseImg); }
-
-    try { mosaicImg = await loadImage(ASSETS.mosaicImg); }
-    catch(e){ mosaicImg = await loadImage(base + ASSETS.mosaicImg); }
+    const baseImg = await loadImage(abs(base, FILES.baseImg));
+    const mosaicImg = await loadImage(abs(base, FILES.mosaicImg));
 
     setMapAspectFromImage(baseImg);
     drawBase(baseImg);
 
-    const cacheKey = `cnt_pts_v1_${mosaicImg.naturalWidth}x${mosaicImg.naturalHeight}`;
+    const cacheKey = `cnt_pts_v2_${mosaicImg.naturalWidth}x${mosaicImg.naturalHeight}`;
     let points = null;
     try {
       const cached = localStorage.getItem(cacheKey);
@@ -583,15 +321,8 @@
 
     if (!points){
       statusEl.textContent = "Status: gerando holograma…";
-      await new Promise((res)=>{
-        const job = () => {
-          points = buildPointsFromMosaic(mosaicImg, 3, 18000);
-          try { localStorage.setItem(cacheKey, JSON.stringify(points)); } catch(_){}
-          res();
-        };
-        if ("requestIdleCallback" in window) requestIdleCallback(job, {timeout: 1200});
-        else setTimeout(job, 10);
-      });
+      points = buildPointsFromMosaic(mosaicImg, 3, 18000);
+      try { localStorage.setItem(cacheKey, JSON.stringify(points)); } catch(_){}
     }
 
     ptsHint.textContent = `Pontos: ${points.length.toLocaleString("pt-BR")}`;
@@ -612,5 +343,3 @@
   });
 })();
 </script>
-</body>
-</html>
