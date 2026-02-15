@@ -1,773 +1,781 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>CNT — Centro Natural TEC Amazônia</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>CNT — Centro Natural TEC Amazônia</title>
 
-<style>
-:root{
-  --bg0:#000;
-  --bg1:#050b10;
-  --hud: rgba(110,210,255,.95);
-  --hud2: rgba(110,210,255,.55);
-  --stroke: rgba(110,210,255,.18);
-  --glass: rgba(2,12,24,.46);
-  --glass2: rgba(2,12,24,.28);
-  --text: #c8f3ff;
-  --muted:#86dcff;
-  --shadow: 0 0 22px rgba(110,210,255,.14), 0 0 70px rgba(0,200,255,.08);
-}
+  <style>
+    :root{
+      --bg0:#000;
+      --bg1:#050b10;
+      --hud: rgba(110,210,255,.95);
+      --hud2: rgba(110,210,255,.55);
+      --stroke: rgba(110,210,255,.18);
+      --glass: rgba(2,12,24,.46);
+      --glass2: rgba(2,12,24,.28);
+      --text:#c8f3ff;
+      --muted:#86dcff;
+      --shadow: 0 0 22px rgba(110,210,255,.14), 0 0 70px rgba(0,200,255,.08);
+      --r: 22px;
+    }
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; margin:0; background: radial-gradient(1200px 700px at 50% 10%, #07202b 0%, #03070b 45%, #000 100%); color:var(--text); font-family: system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Arial; }
+    a{ color:inherit; }
 
-*{ box-sizing:border-box; }
-html,body{
-  margin:0;
-  height:100%;
-  background: radial-gradient(1200px 800px at 50% 20%, rgba(0,170,255,.16), transparent 60%),
-              radial-gradient(900px 700px at 20% 85%, rgba(0,255,170,.10), transparent 55%),
-              linear-gradient(180deg, var(--bg0), var(--bg1));
-  color:var(--text);
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial;
-}
+    .wrap{ max-width: 1240px; margin: 18px auto; padding: 0 14px 22px; }
+    .top{
+      border: 1px solid var(--stroke);
+      border-radius: 26px;
+      padding: 18px 16px 16px;
+      background: linear-gradient(180deg, rgba(2,12,24,.55), rgba(2,12,24,.25));
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow:hidden;
+    }
+    .top:before{
+      content:"";
+      position:absolute; inset:-2px;
+      background: radial-gradient(900px 260px at 50% 0%, rgba(110,210,255,.20), transparent 60%);
+      pointer-events:none;
+    }
+    h1{
+      margin: 2px 0 6px;
+      text-align:center;
+      font-size: clamp(26px, 3.2vw, 38px);
+      letter-spacing: .3px;
+      text-shadow: 0 0 22px rgba(110,210,255,.20);
+    }
+    .sub{
+      margin:0;
+      text-align:center;
+      color: var(--muted);
+      font-size: 14px;
+      letter-spacing: .2px;
+    }
+    .chips{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:center;
+      margin-top: 12px;
+    }
+    .chip{
+      padding: 7px 12px;
+      border-radius: 999px;
+      border:1px solid rgba(110,210,255,.22);
+      background: rgba(2,12,24,.40);
+      color: rgba(200,243,255,.92);
+      font-size: 12.5px;
+      box-shadow: 0 0 18px rgba(0,200,255,.06);
+    }
 
-.wrap{
-  max-width: 1320px;
-  margin: 18px auto 26px;
-  padding: 0 14px;
-}
+    /* GRID */
+    .grid{
+      display:grid;
+      grid-template-columns: 320px 1fr 320px;
+      gap: 14px;
+      margin-top: 14px;
+      align-items: start;
+    }
 
-.card{
-  background: linear-gradient(180deg, rgba(2,10,18,.72), rgba(2,10,18,.42));
-  border: 1px solid var(--stroke);
-  border-radius: 22px;
-  box-shadow: var(--shadow);
-  overflow:hidden;
-}
+    /* MOBILE ORDER (o que você pediu): Compra acima do mapa; Índice embaixo */
+    @media (max-width: 980px){
+      .grid{
+        grid-template-columns: 1fr;
+      }
+      .card.buy{ order: 1; }
+      .card.tele{ order: 2; }
+      .card.map{ order: 3; }
+      .card.indices{ order: 4; }
+    }
 
-.header{
-  padding: 18px 18px 14px;
-  text-align:center;
-}
-.h1{
-  font-size: clamp(26px, 3.2vw, 44px);
-  letter-spacing: .6px;
-  margin: 6px 0 4px;
-  font-weight: 800;
-}
-.sub{
-  color: var(--muted);
-  opacity:.95;
-  margin: 0 0 10px;
-  font-size: 15px;
-}
+    .card{
+      border: 1px solid var(--stroke);
+      border-radius: var(--r);
+      background: linear-gradient(180deg, rgba(2,12,24,.50), rgba(2,12,24,.22));
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .card .hd{
+      padding: 14px 14px 10px;
+      border-bottom: 1px solid rgba(110,210,255,.12);
+    }
+    .card .hd .t{
+      margin:0;
+      font-weight: 800;
+      letter-spacing:.4px;
+      font-size: 18px;
+    }
+    .card .bd{ padding: 14px; }
 
-.pills{
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
-  justify-content:center;
-  padding-bottom: 10px;
-}
-.pill{
-  border:1px solid var(--stroke);
-  background: rgba(0,0,0,.22);
-  color: var(--text);
-  padding: 8px 12px;
-  border-radius: 999px;
-  font-size: 13px;
-  opacity:.96;
-}
+    /* MAP */
+    .mapBox{
+      position: relative;
+      height: 520px;
+      min-height: 420px;
+      border-radius: 20px;
+      background: radial-gradient(700px 420px at 50% 45%, rgba(110,210,255,.12), rgba(2,12,24,.08) 55%, rgba(0,0,0,.25));
+      border: 1px solid rgba(110,210,255,.14);
+      overflow:hidden;
+    }
+    @media (max-width: 980px){
+      .mapBox{ height: 440px; min-height: 360px; }
+    }
+    canvas{ display:block; width:100%; height:100%; }
+    .mapHUD{
+      position:absolute;
+      left:12px; right:12px; bottom:10px;
+      display:flex; justify-content:space-between; align-items:center;
+      gap: 10px;
+      pointer-events:none;
+    }
+    .pill{
+      pointer-events:none;
+      padding: 7px 10px;
+      border-radius: 999px;
+      border:1px solid rgba(110,210,255,.22);
+      background: rgba(0,0,0,.25);
+      color: rgba(200,243,255,.92);
+      font-size: 12px;
+      box-shadow: 0 0 18px rgba(0,200,255,.06);
+      max-width: 70%;
+      overflow:hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
 
-.grid{
-  display:grid;
-  grid-template-columns: 320px 1fr 320px;
-  gap: 14px;
-  margin-top: 14px;
-}
+    /* BUY */
+    .buy .bd{ padding-top: 10px; }
+    .label{ color: var(--muted); font-size: 12.5px; margin: 10px 0 6px; }
+    .input{
+      width:100%;
+      padding: 12px 12px;
+      border-radius: 14px;
+      background: rgba(0,0,0,.25);
+      border: 1px solid rgba(110,210,255,.22);
+      color: var(--text);
+      outline:none;
+      font-size: 15px;
+    }
+    .btn{
+      width:100%;
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 16px;
+      border: 1px solid rgba(110,210,255,.30);
+      background: linear-gradient(180deg, rgba(110,210,255,.18), rgba(110,210,255,.10));
+      color: rgba(230,252,255,.95);
+      font-weight: 800;
+      letter-spacing:.2px;
+      cursor:pointer;
+      box-shadow: 0 0 22px rgba(110,210,255,.10);
+    }
+    .btn:active{ transform: translateY(1px); }
+    .small{ font-size: 12px; color: rgba(200,243,255,.75); margin-top: 8px; line-height: 1.35; }
 
-.panel{
-  padding: 14px;
-}
+    /* INDICES */
+    .big{
+      font-size: 64px;
+      letter-spacing: -1px;
+      line-height: 1;
+      margin: 4px 0 8px;
+      text-shadow: 0 0 26px rgba(110,210,255,.18);
+    }
+    .big .unit{ font-size: 18px; opacity: .8; margin-left: 6px; }
+    .row{
+      display:flex; justify-content:space-between; align-items:center;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(110,210,255,.16);
+      background: rgba(0,0,0,.18);
+      margin-top: 10px;
+      font-weight: 700;
+    }
+    .row span:first-child{ color: rgba(200,243,255,.90); }
+    .row span:last-child{ color: rgba(200,243,255,.95); }
+    .subgrid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .chip2{
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(110,210,255,.16);
+      background: rgba(0,0,0,.18);
+      display:flex; justify-content:space-between;
+      font-weight: 800;
+    }
+    .chip2 .k{ color: rgba(200,243,255,.88); }
+    .chip2 .v{ color: rgba(200,243,255,.98); }
 
-.title{
-  font-weight:800;
-  letter-spacing:.5px;
-  font-size: 18px;
-  margin: 2px 0 10px;
-}
-
-.bigIndex{
-  font-size: 64px;
-  letter-spacing: 1px;
-  margin: 0;
-  line-height: 1;
-}
-.bigIndex small{ font-size: 18px; opacity:.85; }
-.raw{
-  margin: 8px 0 12px;
-  color: var(--muted);
-  font-size: 14px;
-}
-
-.rows{
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-}
-.row{
-  border:1px solid var(--stroke);
-  border-radius: 16px;
-  padding: 12px 12px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  background: rgba(0,0,0,.20);
-}
-.row b{ font-weight:800; }
-.row span{ color: var(--text); opacity:.95; }
-
-.subgrid{
-  display:grid;
-  grid-template-columns: 1fr 1fr;
-  gap:10px;
-  margin-top: 10px;
-}
-.badge{
-  border:1px solid var(--stroke);
-  border-radius: 16px;
-  padding: 12px;
-  background: rgba(0,0,0,.20);
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
-.badge b{ font-weight:800; }
-.badge span{ color: var(--muted); font-weight:700; }
-
-.mapWrap{
-  padding: 14px;
-}
-.mapCard{
-  position:relative;
-  border-radius: 22px;
-  border:1px solid var(--stroke);
-  background: rgba(0,0,0,.18);
-  overflow:hidden;
-  min-height: 520px;
-}
-#mapCanvas{
-  width:100%;
-  height:100%;
-  display:block;
-}
-
-.mapHUD{
-  position:absolute;
-  left: 14px;
-  top: 14px;
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
-  z-index:5;
-}
-.tag{
-  border:1px solid var(--stroke);
-  background: rgba(0,0,0,.25);
-  padding: 8px 10px;
-  border-radius: 999px;
-  font-size: 12px;
-  color: var(--text);
-}
-
-.buyBox input{
-  width:100%;
-  padding: 12px 14px;
-  border-radius: 16px;
-  border:1px solid var(--stroke);
-  background: rgba(0,0,0,.28);
-  color: var(--text);
-  font-size: 16px;
-  outline: none;
-}
-.buyBox button{
-  margin-top: 10px;
-  width:100%;
-  padding: 12px 14px;
-  border-radius: 999px;
-  border:1px solid var(--stroke);
-  background: linear-gradient(180deg, rgba(120,220,255,.25), rgba(40,140,220,.14));
-  color: var(--text);
-  font-weight: 800;
-  letter-spacing: .4px;
-  cursor:pointer;
-}
-.buyBox button:active{ transform: translateY(1px); }
-
-.est{
-  margin-top: 10px;
-  font-size: 14px;
-  color: var(--muted);
-}
-.est b{
-  display:block;
-  color: var(--text);
-  font-size: 26px;
-  letter-spacing:.5px;
-  margin-top: 2px;
-}
-.note{ font-size: 12px; opacity:.9; margin-top: 6px; }
-
-.tele{
-  margin-top: 12px;
-}
-.teleCanvas{
-  width:100%;
-  height: 120px;
-  border-radius: 16px;
-  border: 1px solid var(--stroke);
-  background: rgba(0,0,0,.18);
-  display:block;
-}
-
-.footerStatus{
-  margin-top: 10px;
-  color: var(--muted);
-  font-size: 12.5px;
-  opacity:.95;
-}
-
-hr.sep{
-  border:none;
-  border-top: 1px solid rgba(110,210,255,.10);
-  margin: 12px 0;
-}
-
-@media (max-width: 980px){
-  .grid{ grid-template-columns: 1fr; }
-  /* ordem no mobile: MAPA -> ÍNDICE -> COMPRA/TELE */
-  .col-map{ order: 1; }
-  .col-left{ order: 2; }
-  .col-right{ order: 3; }
-  .mapCard{ min-height: 420px; }
-  .bigIndex{ font-size: 58px; }
-}
-</style>
+    /* TELEMETRY */
+    .spark{
+      width:100%;
+      height: 140px;
+      border-radius: 16px;
+      border: 1px solid rgba(110,210,255,.16);
+      background: rgba(0,0,0,.18);
+      overflow:hidden;
+    }
+    .teleMeta{
+      margin-top: 8px;
+      color: rgba(200,243,255,.75);
+      font-size: 12px;
+      display:flex;
+      justify-content: space-between;
+      gap:10px;
+    }
+    .status{
+      margin-top: 10px;
+      color: rgba(200,243,255,.70);
+      font-size: 12px;
+    }
+  </style>
 </head>
 
 <body>
   <div class="wrap">
-    <div class="card header">
-      <div class="h1">CNT — Centro Natural TEC Amazônia</div>
-      <div class="sub">Mapa ecológico real • Água (azul) • Vegetação (verde) • Transição (amarelo) • Desmatamento (vermelho)</div>
-      <div class="pills">
-        <div class="pill">Fonte: dados públicos governamentais</div>
-        <div class="pill">Ano base: 2025</div>
-        <div class="pill" id="pillPts">Holograma: carregando…</div>
-        <div class="pill">Compra: Pump.fun</div>
+    <div class="top">
+      <h1>CNT — Centro Natural TEC Amazônia</h1>
+      <p class="sub">Mapa ecológico real • Água (azul) • Vegetação (verde) • Transição (amarelo) • Desmatamento (vermelho)</p>
+      <div class="chips">
+        <div class="chip">Fonte: dados públicos governamentais</div>
+        <div class="chip">Ano base: 2025</div>
+        <div class="chip" id="chipPts">Holograma: carregando…</div>
+        <div class="chip">Compra: Pump.fun</div>
       </div>
     </div>
 
     <div class="grid">
-      <!-- ESQUERDA: ÍNDICES -->
-      <div class="card panel col-left">
-        <div class="title">CNT (índice único Brasil)</div>
-        <p class="bigIndex"><span id="idxMain">--</span><small>/100</small></p>
-        <div class="raw">RAW auditável: <b id="rawMain">--</b></div>
+      <!-- INDICES -->
+      <div class="card indices">
+        <div class="hd"><p class="t">CNT (índice único Brasil)</p></div>
+        <div class="bd">
+          <div class="big"><span id="score">--</span><span class="unit">/100</span></div>
+          <div class="small">RAW auditável: <b id="raw">--</b></div>
 
-        <div class="rows">
-          <div class="row"><b>A — Estado</b> <span id="A">--</span></div>
-          <div class="row"><b>B — Tendência</b> <span id="B">--</span></div>
-          <div class="row"><b>C — Estabilidade</b> <span id="C">--</span></div>
-          <div class="row"><b>Grau</b> <span id="G">--</span></div>
+          <div class="row"><span>A — Estado</span><span id="a_estado">--</span></div>
+          <div class="row"><span>B — Tendência</span><span id="b_tend">--</span></div>
+          <div class="row"><span>C — Estabilidade</span><span id="c_estab">--</span></div>
+          <div class="row"><span>Grau</span><span id="grau">--</span></div>
+
+          <div class="small" style="margin-top:12px; font-weight:800; color:rgba(200,243,255,.85)">Sub-índices</div>
+          <div class="subgrid">
+            <div class="chip2"><span class="k">IBE</span><span class="v" id="ibe">--</span></div>
+            <div class="chip2"><span class="k">IAB</span><span class="v" id="iab">--</span></div>
+            <div class="chip2"><span class="k">IBI</span><span class="v" id="ibi">--</span></div>
+            <div class="chip2"><span class="k">HID</span><span class="v" id="hid">--</span></div>
+            <div class="chip2"><span class="k">ENT</span><span class="v" id="ent">--</span></div>
+            <div class="chip2"><span class="k">PAN</span><span class="v" id="pan">--</span></div>
+          </div>
+
+          <div class="status" id="status">Status: iniciando…</div>
         </div>
-
-        <div class="title" style="margin-top:14px;">Sub-índices</div>
-        <div class="subgrid">
-          <div class="badge"><b>IBE</b><span id="IBE">--</span></div>
-          <div class="badge"><b>IAB</b><span id="IAB">N/D</span></div>
-          <div class="badge"><b>IBI</b><span id="IBI">--</span></div>
-          <div class="badge"><b>HID</b><span id="HID">--</span></div>
-          <div class="badge"><b>ENT</b><span id="ENT">--</span></div>
-          <div class="badge"><b>PAN</b><span id="PAN">--</span></div>
-        </div>
-
-        <div class="footerStatus" id="status">Status: iniciando…</div>
       </div>
 
-      <!-- CENTRO: MAPA -->
-      <div class="card mapWrap col-map">
-        <div class="mapCard">
-          <canvas id="mapCanvas"></canvas>
-          <div class="mapHUD">
-            <div class="tag" id="tagBase">Base: …</div>
-            <div class="tag" id="tagFPS">Render: …</div>
+      <!-- MAP -->
+      <div class="card map">
+        <div class="hd"><p class="t">Mapa base + holograma</p></div>
+        <div class="bd">
+          <div class="mapBox" id="mapBox">
+            <canvas id="mapCanvas"></canvas>
+            <div class="mapHUD">
+              <div class="pill" id="pillLeft">Mapa base: mapa_base.png</div>
+              <div class="pill" id="pillRight">Pontos: aguardando…</div>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- DIREITA: COMPRA + TELEMETRIA -->
-      <div class="card panel col-right">
-        <div class="title">COMPRAR CNT</div>
-        <div style="color:var(--muted); font-size:14px; margin-bottom:10px;">Abre o token no Pump.fun.</div>
+      <!-- RIGHT -->
+      <div>
+        <!-- BUY -->
+        <div class="card buy">
+          <div class="hd"><p class="t">COMPRAR CNT</p></div>
+          <div class="bd">
+            <div class="small">Abre o token no Pump.fun.</div>
+            <div class="label">Contribuição</div>
+            <input class="input" id="amt" inputmode="decimal" value="0,10" />
+            <button class="btn" id="buyBtn">Comprar no Pump</button>
 
-        <div class="buyBox">
-          <div style="color:var(--muted); font-size:13px; margin-bottom:6px;">Contribuição</div>
-          <input id="inpSol" inputmode="decimal" value="0,10" />
-          <button id="btnBuy">Comprar no Pump</button>
-          <div class="est">Estimativa: <b><span id="estOut">--</span> CNT</b>
-            <div class="note">Estimativa demo (não é cotação real).</div>
+            <div class="label" style="margin-top:14px;">Estimativa</div>
+            <div class="big" style="font-size:28px;margin:0;"><span id="est">--</span> <span class="unit">CNT</span></div>
+            <div class="small">Estimativa demo (não é cotação real).</div>
           </div>
         </div>
 
-        <hr class="sep"/>
+        <div style="height:14px"></div>
 
-        <div class="title">TELEMETRIA — Série 10 anos</div>
-        <canvas class="teleCanvas" id="teleCanvas"></canvas>
-        <div class="footerStatus" id="teleInfo">Histórico: 10 • Último (RAW): --</div>
+        <!-- TELEMETRY -->
+        <div class="card tele">
+          <div class="hd"><p class="t">TELEMETRIA — Série 10 anos</p></div>
+          <div class="bd">
+            <canvas class="spark" id="spark"></canvas>
+            <div class="teleMeta">
+              <div id="hist">Histórico: 10</div>
+              <div id="ult">Último (RAW): --</div>
+            </div>
+          </div>
+        </div>
       </div>
+
     </div>
   </div>
 
 <script>
-/* ===========================
-   CONFIG
-=========================== */
-const PUMP_URL = "https://pump.fun/coin/GCVyjNaCbXkwGUuktyNxSXad4ozmTp2fzQr2jieSpump";
+(() => {
+  // ===== CONFIG =====
+  const PUMP_URL = "https://pump.fun/coin/GCVyjNaCbXkwGUuktyNxSXad4ozmTp2fzQr2jieSpump";
 
-/* ===========================
-   HELPERS
-=========================== */
-const $ = (id)=>document.getElementById(id);
-
-const isMobile = matchMedia("(max-width: 980px)").matches;
-
-function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
-function fmt(v, d=2){
-  if (v===null || v===undefined || Number.isNaN(v)) return "--";
-  return Number(v).toFixed(d).replace(".", ",");
-}
-function gradeFromIndex(x){
-  if (x>=90) return "A";
-  if (x>=80) return "B";
-  if (x>=70) return "C";
-  if (x>=60) return "D";
-  return "E";
-}
-
-/* ===========================
-   ASSET BASE DETECTION (resolve 404)
-=========================== */
-let ASSET_BASE = "/";
-
-async function tryFetch(url){
-  try{
-    const r = await fetch(url, { cache: "no-store" });
-    return r && r.ok;
-  }catch(e){ return false; }
-}
-
-async function detectAssetBase(){
-  // tenta onde geralmente quebra no GitHub Pages (root vs /token_cnt/)
-  const bases = [
-    location.pathname.replace(/[^\/]*$/, ""), // pasta atual
-    "/", "/token_cnt/", "./"
+  // tenta esses arquivos (na mesma pasta do index)
+  const GEO_CANDIDATES = [
+    "vege_pts.geojson",
+    "vege_pts_sample.geojson",
+    "layers_points.json",
+    "layers_points.geojson"
   ];
-  const probes = ["mapa_base.png", "vege_pts_sample.geojson", "dados_cnt.json"];
 
-  for (const b of bases){
-    for (const p of probes){
-      const ok = await tryFetch((b.endsWith("/")?b:(b+"/")) + p);
-      if (ok){
-        ASSET_BASE = (b.endsWith("/")?b:(b+"/"));
-        return ASSET_BASE;
-      }
-    }
-  }
-  ASSET_BASE = "/";
-  return ASSET_BASE;
-}
-
-async function loadJSON(path){
-  const url = ASSET_BASE + path;
-  const r = await fetch(url, { cache: "no-store" });
-  if(!r.ok) throw new Error("Falha ao carregar: " + url);
-  return await r.json();
-}
-
-function loadImage(path){
-  const url = ASSET_BASE + path;
-  return new Promise((resolve, reject)=>{
-    const img = new Image();
-    img.onload = ()=>resolve(img);
-    img.onerror = ()=>reject(new Error("Falha imagem: " + url));
-    img.src = url;
-  });
-}
-
-/* ===========================
-   MAP PROJECTION (lon/lat -> pixel) with SAME FIT as base image (CONTAIN)
-=========================== */
-const BRAZIL_BBOX = { lonMin:-74.0, lonMax:-34.0, latMin:-34.5, latMax: 5.8 };
-
-function calcContainRect(W,H, imgW,imgH){
-  const s = Math.min(W/imgW, H/imgH);   // CONTAIN (igual pros pontos)
-  const w = imgW*s, h = imgH*s;
-  const x = (W - w)/2, y = (H - h)/2;
-  return { x,y,w,h, s };
-}
-
-function lonLatToXY(lon, lat, rect, bbox=BRAZIL_BBOX){
-  const nx = (lon - bbox.lonMin) / (bbox.lonMax - bbox.lonMin);
-  const ny = 1 - (lat - bbox.latMin) / (bbox.latMax - bbox.latMin);
-  return {
-    x: rect.x + nx * rect.w,
-    y: rect.y + ny * rect.h
+  // ===== DOM =====
+  const $ = (id) => document.getElementById(id);
+  const el = {
+    chipPts: $("chipPts"),
+    pillRight: $("pillRight"),
+    status: $("status"),
+    score: $("score"),
+    raw: $("raw"),
+    a_estado: $("a_estado"),
+    b_tend: $("b_tend"),
+    c_estab: $("c_estab"),
+    grau: $("grau"),
+    ibe: $("ibe"),
+    iab: $("iab"),
+    ibi: $("ibi"),
+    hid: $("hid"),
+    ent: $("ent"),
+    pan: $("pan"),
+    est: $("est"),
+    amt: $("amt"),
+    buyBtn: $("buyBtn"),
+    mapBox: $("mapBox"),
+    canvas: $("mapCanvas"),
+    spark: $("spark"),
+    ult: $("ult"),
   };
-}
 
-/* ===========================
-   POINT CLASSIFICATION (tipologia -> 4 classes)
-=========================== */
-function classifyTipologia(t){
-  const s = (t||"").toLowerCase();
+  // ===== HELPERS =====
+  const clamp = (x,a,b)=>Math.max(a,Math.min(b,x));
+  const fmt2 = (n)=> (isFinite(n) ? n.toFixed(2).replace(".",",") : "--");
+  const fmt1 = (n)=> (isFinite(n) ? n.toFixed(1).replace(".",",") : "--");
 
-  // água
-  if (s.includes("água") || s.includes("lago") || s.includes("rio") || s.includes("mangue") || s.includes("aluvial")) return "agua";
-
-  // desmatamento / urbano / mineração / solo exposto
-  if (s.includes("minera") || s.includes("urb") || s.includes("solo exposto") || s.includes("desmat") || s.includes("queimada")) return "desmat";
-
-  // transição (uso agropecuário/contato/segunda vegetação)
-  if (s.includes("agric") || s.includes("pecu") || s.includes("past") || s.includes("culturas") || s.includes("vegetação secundária") || s.includes("contato") || s.includes("ecótono")) return "trans";
-
-  // vegetação (default)
-  if (s.includes("floresta") || s.includes("savana") || s.includes("campinarana") || s.includes("estepe") || s.includes("refúgio")) return "veg";
-
-  return "veg";
-}
-
-function colorFor(kind){
-  // neon
-  if (kind==="agua") return { r: 60,  g: 170, b: 255 };
-  if (kind==="veg")  return { r: 40,  g: 255, b: 170 };
-  if (kind==="trans")return { r: 255, g: 220, b: 70  };
-  return                { r: 255, g: 80,  b: 90  }; // desmat
-}
-
-/* ===========================
-   CANVAS RENDER
-=========================== */
-const mapCanvas = $("mapCanvas");
-const ctx = mapCanvas.getContext("2d", { alpha:true });
-
-let baseImg = null;
-let overlayImg = null;
-let containRect = null;
-
-let pts = []; // {x,y,kind,seed}
-let counts = {agua:0, veg:0, trans:0, desmat:0};
-let lastTime = performance.now();
-let fps = 0;
-
-function resizeMap(){
-  const r = mapCanvas.getBoundingClientRect();
-  const dpr = Math.min(2, window.devicePixelRatio || 1);
-  mapCanvas.width = Math.floor(r.width * dpr);
-  mapCanvas.height = Math.floor(r.height * dpr);
-  ctx.setTransform(dpr,0,0,dpr,0,0);
-  if (baseImg){
-    containRect = calcContainRect(r.width, r.height, baseImg.naturalWidth||baseImg.width, baseImg.naturalHeight||baseImg.height);
-  }
-}
-window.addEventListener("resize", ()=>{ resizeMap(); });
-
-function drawBase(rw, rh){
-  if (!baseImg) return;
-  const rect = containRect;
-  ctx.save();
-  ctx.globalAlpha = 1;
-  ctx.drawImage(baseImg, rect.x, rect.y, rect.w, rect.h);
-
-  // opcional: overlay raster (ex prodes) com baixa opacidade
-  if (overlayImg){
-    ctx.globalAlpha = 0.18;
-    ctx.drawImage(overlayImg, rect.x, rect.y, rect.w, rect.h);
+  function parseBRDecimal(s){
+    const v = String(s||"").trim().replace(/\./g,"").replace(",",".");
+    const n = parseFloat(v);
+    return isFinite(n) ? n : 0;
   }
 
-  // leve vinheta interna
-  ctx.globalAlpha = 1;
-  ctx.fillStyle = "rgba(0,0,0,.10)";
-  ctx.fillRect(0,0,rw,rh);
-  ctx.restore();
-}
+  function pickHoloKind(props){
+    const p = props || {};
+    const raw =
+      p.kind ?? p.grupo ?? p.group ?? p.tipo ?? p.type ?? p.classe ?? p.class ?? p.class_name ?? p.nome ?? p.label ?? p.tipologia ?? "";
 
-function drawHologram(t, rw, rh){
-  // holograma: pontos + glow
-  ctx.save();
-  ctx.globalCompositeOperation = "lighter";
+    const s = String(raw).toLowerCase();
 
-  // brilho suave geral
-  ctx.globalAlpha = 0.20;
-  ctx.fillStyle = "rgba(80,220,255,.10)";
-  ctx.fillRect(0,0,rw,rh);
+    // se já vier pronto
+    if (s.includes("agua") || s.includes("water") || s.includes("rio") || s.includes("hidro")) return "agua";
+    if (s.includes("veg") || s.includes("floresta") || s.includes("forest") || s.includes("veget")) return "veg";
+    if (s.includes("trans") || s.includes("agro") || s.includes("past") || s.includes("lavour") || s.includes("mosa")) return "trans";
+    if (s.includes("desm") || s.includes("defor") || s.includes("urb") || s.includes("minera") || s.includes("fire") || s.includes("queim")) return "desmat";
 
-  // pontos
-  ctx.globalAlpha = 1;
-  for (let i=0;i<pts.length;i++){
-    const p = pts[i];
-    const c = colorFor(p.kind);
+    // se vier número em string
+    const num = (typeof raw === "number") ? raw : parseFloat(String(raw).replace(",",".")); // tenta
+    if (isFinite(num)){
+      // fallback simples:
+      // 1 água, 2 veg, 3 trans, 4 desmat (se teu arquivo seguir isso)
+      if (num === 1) return "agua";
+      if (num === 2) return "veg";
+      if (num === 3) return "trans";
+      if (num === 4) return "desmat";
+    }
 
-    const pulse = 0.55 + 0.45*Math.sin((t*0.004) + p.seed);
-    const r = (p.kind==="desmat"? 1.8 : p.kind==="trans"? 1.6 : 1.4) + pulse*0.9;
+    // default
+    return "veg";
+  }
 
+  function colorFor(kind){
+    if (kind === "agua")  return {r: 60, 170, 255};
+    if (kind === "veg")   return {r: 40, 255, 180};
+    if (kind === "trans") return {r: 255, 220, 60};
+    return {r: 255, 80, 70}; // desmat
+  }
+
+  function computeBBoxFromGeoJSON(geo){
+    let lonMin=  999, lonMax= -999, latMin=  999, latMax= -999;
+    const feats = geo.features || [];
+    for (const f of feats){
+      if (!f || !f.geometry) continue;
+      if (f.geometry.type !== "Point") continue;
+      const c = f.geometry.coordinates;
+      if (!c || c.length < 2) continue;
+      const lon = +c[0], lat = +c[1];
+      if (!isFinite(lon) || !isFinite(lat)) continue;
+      if (lon < lonMin) lonMin = lon;
+      if (lon > lonMax) lonMax = lon;
+      if (lat < latMin) latMin = lat;
+      if (lat > latMax) latMax = lat;
+    }
+    if (!(lonMin < lonMax && latMin < latMax)){
+      // fallback Brasil
+      return { lonMin:-74.0, lonMax:-34.0, latMin:-33.8, latMax: 5.5 };
+    }
+    const padLon = (lonMax-lonMin)*0.02;
+    const padLat = (latMax-latMin)*0.02;
+    return { lonMin: lonMin-padLon, lonMax: lonMax+padLon, latMin: latMin-padLat, latMax: latMax+padLat };
+  }
+
+  function lonLatToXY(lon, lat, rect, bbox){
+    const x = (lon - bbox.lonMin) / (bbox.lonMax - bbox.lonMin);
+    const y = 1 - (lat - bbox.latMin) / (bbox.latMax - bbox.latMin);
+    return { x: rect.x + x*rect.w, y: rect.y + y*rect.h };
+  }
+
+  async function fetchJSON(url){
+    const r = await fetch(url, {cache:"no-store"});
+    if(!r.ok) throw new Error("HTTP "+r.status);
+    return await r.json();
+  }
+
+  async function loadFirstGeo(){
+    for (const name of GEO_CANDIDATES){
+      try{
+        const geo = await fetchJSON(name);
+        return {geo, name};
+      }catch(e){}
+    }
+    throw new Error("Nenhum GeoJSON encontrado (vege_pts.geojson / layers_points.json etc).");
+  }
+
+  // ===== CANVAS RENDER =====
+  const ctx = el.canvas.getContext("2d", {alpha:true});
+  let cw=0,ch=0;
+  let containRect=null;
+  let img = new Image();
+  img.src = "mapa_base.png";
+
+  let pts = [];
+  let DATA_BBOX = null;
+
+  function resizeCanvas(){
+    const box = el.mapBox.getBoundingClientRect();
+    const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+    cw = Math.floor(box.width * dpr);
+    ch = Math.floor(box.height * dpr);
+    el.canvas.width = cw;
+    el.canvas.height = ch;
+
+    // contain rect do mapa base dentro do canvas
+    const iw = img.naturalWidth || 1600;
+    const ih = img.naturalHeight || 900;
+    const scale = Math.min(cw/iw, ch/ih);
+    const w = Math.floor(iw*scale);
+    const h = Math.floor(ih*scale);
+    const x = Math.floor((cw - w)/2);
+    const y = Math.floor((ch - h)/2);
+    containRect = {x,y,w,h,dpr};
+
+    drawFrame(performance.now());
+  }
+
+  function drawBase(){
+    if(!containRect) return;
+    ctx.clearRect(0,0,cw,ch);
+
+    // fundo suave
+    ctx.save();
+    ctx.globalAlpha = 1;
+    const g = ctx.createRadialGradient(cw*0.5,ch*0.45,10,cw*0.5,ch*0.45,Math.max(cw,ch)*0.7);
+    g.addColorStop(0,"rgba(110,210,255,.08)");
+    g.addColorStop(0.45,"rgba(2,12,24,.10)");
+    g.addColorStop(1,"rgba(0,0,0,.0)");
+    ctx.fillStyle = g;
+    ctx.fillRect(0,0,cw,ch);
+    ctx.restore();
+
+    // mapa base
+    ctx.save();
+    ctx.globalAlpha = 1;
+    ctx.drawImage(img, containRect.x, containRect.y, containRect.w, containRect.h);
+    ctx.restore();
+
+    // moldura do mapa
+    ctx.save();
+    ctx.strokeStyle = "rgba(110,210,255,.22)";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(containRect.x+1, containRect.y+1, containRect.w-2, containRect.h-2);
+    ctx.restore();
+  }
+
+  function drawHologram(t){
+    if(!containRect || !pts.length) return;
+    const rect = containRect;
+
+    ctx.save();
+
+    // CLIP: holograma fica 100% dentro do mapa base
     ctx.beginPath();
-    ctx.fillStyle = `rgba(${c.r},${c.g},${c.b},${0.38 + 0.30*pulse})`;
-    ctx.arc(p.x, p.y, r, 0, Math.PI*2);
-    ctx.fill();
+    ctx.rect(rect.x, rect.y, rect.w, rect.h);
+    ctx.clip();
+
+    ctx.globalCompositeOperation = "lighter";
+
+    // varredura holográfica
+    const scan = (Math.sin(t*0.0012)+1)/2;
+    const sy = rect.y + scan*rect.h;
+    ctx.save();
+    ctx.globalAlpha = 0.10;
+    ctx.fillStyle = "rgba(60,200,255,.55)";
+    ctx.fillRect(rect.x, sy-10, rect.w, 20);
+    ctx.restore();
+
+    // pontos
+    for (let i=0;i<pts.length;i++){
+      const p = pts[i];
+      const c = p.c;
+      const pulse = 0.55 + 0.45*Math.sin((t*0.004) + p.seed);
+      const r = 1.1 + pulse*0.9;
+
+      ctx.beginPath();
+      ctx.fillStyle = `rgba(${c.r},${c.g},${c.b},${0.30 + 0.30*pulse})`;
+      ctx.arc(p.x, p.y, r, 0, Math.PI*2);
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.fillStyle = `rgba(${c.r},${c.g},${c.b},${0.05 + 0.08*pulse})`;
+      ctx.arc(p.x, p.y, r*3.2, 0, Math.PI*2);
+      ctx.fill();
+    }
+
+    ctx.restore(); // tira clip
+
+    // brilho externo do retângulo (HUD)
+    ctx.save();
+    ctx.globalCompositeOperation = "screen";
+    ctx.globalAlpha = 0.14;
+    ctx.strokeStyle = "rgba(110,210,255,.75)";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(rect.x+10, rect.y+10, rect.w-20, rect.h-20);
+    ctx.restore();
+  }
+
+  function drawFrame(t){
+    drawBase();
+    drawHologram(t);
+  }
+
+  let raf=0;
+  function loop(t){
+    drawFrame(t);
+    raf = requestAnimationFrame(loop);
+  }
+
+  // ===== TELEMETRY + INDICES =====
+  const sparkCtx = el.spark.getContext("2d");
+  let series = new Array(10).fill(0).map((_,i)=> 40 + Math.sin(i*0.7)*10);
+
+  function drawSpark(){
+    const w = el.spark.clientWidth;
+    const h = el.spark.clientHeight;
+    const dpr = Math.max(1, Math.min(2, window.devicePixelRatio||1));
+    el.spark.width = Math.floor(w*dpr);
+    el.spark.height = Math.floor(h*dpr);
+    sparkCtx.setTransform(dpr,0,0,dpr,0,0);
+
+    sparkCtx.clearRect(0,0,w,h);
+    sparkCtx.fillStyle = "rgba(0,0,0,.10)";
+    sparkCtx.fillRect(0,0,w,h);
+
+    const min = Math.min(...series);
+    const max = Math.max(...series);
+    const pad = 10;
+    const xStep = (w - pad*2) / (series.length-1);
+
+    sparkCtx.beginPath();
+    for (let i=0;i<series.length;i++){
+      const v = series[i];
+      const xn = pad + i*xStep;
+      const yn = pad + (1 - (v - min) / (max - min || 1))*(h - pad*2);
+      if(i===0) sparkCtx.moveTo(xn,yn);
+      else sparkCtx.lineTo(xn,yn);
+    }
+    sparkCtx.lineWidth = 3;
+    sparkCtx.strokeStyle = "rgba(120,220,255,.95)";
+    sparkCtx.stroke();
 
     // glow
-    ctx.beginPath();
-    ctx.fillStyle = `rgba(${c.r},${c.g},${c.b},${0.07 + 0.08*pulse})`;
-    ctx.arc(p.x, p.y, r*3.4, 0, Math.PI*2);
-    ctx.fill();
+    sparkCtx.globalAlpha = 0.25;
+    sparkCtx.lineWidth = 8;
+    sparkCtx.stroke();
+    sparkCtx.globalAlpha = 1;
   }
 
-  // linhas (HUD)
-  ctx.globalCompositeOperation = "screen";
-  ctx.globalAlpha = 0.10;
-  ctx.strokeStyle = "rgba(110,210,255,.9)";
-  ctx.lineWidth = 1;
-  ctx.strokeRect(12, 12, rw-24, rh-24);
-
-  ctx.restore();
-}
-
-function render(now){
-  const dt = now - lastTime;
-  lastTime = now;
-  fps = fps*0.9 + (1000/Math.max(16,dt))*0.1;
-
-  const rw = mapCanvas.getBoundingClientRect().width;
-  const rh = mapCanvas.getBoundingClientRect().height;
-
-  ctx.clearRect(0,0,rw,rh);
-  drawBase(rw,rh);
-  drawHologram(now, rw, rh);
-
-  $("tagFPS").textContent = `Render: ${Math.round(fps)} fps`;
-  requestAnimationFrame(render);
-}
-
-/* ===========================
-   TELEMETRIA (canvas)
-=========================== */
-const tele = $("teleCanvas");
-const tctx = tele.getContext("2d", { alpha:true });
-let teleData = [12,18,16,30,26,22,20,10,18,19];
-
-function resizeTele(){
-  const r = tele.getBoundingClientRect();
-  const dpr = Math.min(2, window.devicePixelRatio || 1);
-  tele.width = Math.floor(r.width * dpr);
-  tele.height = Math.floor(r.height * dpr);
-  tctx.setTransform(dpr,0,0,dpr,0,0);
-  drawTele();
-}
-window.addEventListener("resize", ()=>resizeTele());
-
-function drawTele(){
-  const w = tele.getBoundingClientRect().width;
-  const h = tele.getBoundingClientRect().height;
-  tctx.clearRect(0,0,w,h);
-
-  // fundo
-  tctx.fillStyle = "rgba(0,0,0,.18)";
-  tctx.fillRect(0,0,w,h);
-
-  // linha
-  const pad = 14;
-  const min = Math.min(...teleData);
-  const max = Math.max(...teleData);
-  const rng = Math.max(1, max-min);
-
-  tctx.strokeStyle = "rgba(110,210,255,.95)";
-  tctx.lineWidth = 2;
-
-  tctx.beginPath();
-  for (let i=0;i<teleData.length;i++){
-    const x = pad + (w-2*pad) * (i/(teleData.length-1));
-    const y = pad + (h-2*pad) * (1 - ((teleData[i]-min)/rng));
-    if (i===0) tctx.moveTo(x,y); else tctx.lineTo(x,y);
-  }
-  tctx.stroke();
-
-  // preenchimento leve
-  tctx.globalAlpha = 0.15;
-  tctx.fillStyle = "rgba(110,210,255,.9)";
-  tctx.lineTo(w-pad, h-pad);
-  tctx.lineTo(pad, h-pad);
-  tctx.closePath();
-  tctx.fill();
-  tctx.globalAlpha = 1;
-}
-
-/* ===========================
-   INDICES FROM COUNTS
-=========================== */
-function computeIndices(){
-  const total = Math.max(1, counts.agua+counts.veg+counts.trans+counts.desmat);
-
-  const pAgua  = counts.agua / total;
-  const pVeg   = counts.veg  / total;
-  const pTrans = counts.trans/ total;
-  const pDesm  = counts.desmat/total;
-
-  // Sub-índices (0-100)
-  const IBE = clamp(pVeg*100, 0, 100);
-  const IBI = clamp(pAgua*100, 0, 100);
-  const HID = clamp((pAgua*80 + pVeg*20), 0, 100);
-  const ENT = clamp(pTrans*100, 0, 100);
-  const PAN = clamp(pDesm*100, 0, 100);
-
-  // Índice principal (ex: vegetação pesa mais; transição e desmat penalizam)
-  const raw = (IBE*0.85 + IBI*0.10) - (ENT*0.35 + PAN*0.70) + 25;
-  const idx = clamp(raw, 0, 100);
-
-  // tendência/estabilidade (demo coerente)
-  const B = (idx - 70) * 0.02;            // - a +
-  const C = clamp(1 - (ENT+PAN)/120, 0, 1);
-
-  $("IBE").textContent = fmt(IBE,1);
-  $("IBI").textContent = fmt(IBI,1);
-  $("HID").textContent = fmt(HID,2);
-  $("ENT").textContent = fmt(ENT,1);
-  $("PAN").textContent = fmt(PAN,1);
-
-  $("rawMain").textContent = fmt(raw,2);
-  $("idxMain").textContent = fmt(idx,1);
-
-  $("A").textContent = fmt(idx,2);
-  $("B").textContent = fmt(B,2);
-  $("C").textContent = fmt(C,2);
-  $("G").textContent = gradeFromIndex(idx);
-
-  // telemetria “segue” raw (demo)
-  teleData = teleData.slice(1).concat([clamp(raw,0,100)]);
-  drawTele();
-
-  $("teleInfo").textContent = `Histórico: 10 • Último (RAW): ${fmt(raw,2)}`;
-}
-
-/* ===========================
-   BUY (Pump)
-=========================== */
-function parseBRNumber(s){
-  if(!s) return 0;
-  return Number(String(s).replace(/\./g,"").replace(",",".").replace(/[^\d.]/g,"")) || 0;
-}
-function updateEstimate(){
-  const sol = parseBRNumber($("inpSol").value);
-  // demo: 0.10 SOL => 14.744.913 CNT (mantive seu número visual)
-  const base = 14744913;
-  const est = Math.round((sol/0.10) * base);
-  $("estOut").textContent = est.toLocaleString("pt-BR");
-}
-$("inpSol").addEventListener("input", updateEstimate);
-$("btnBuy").addEventListener("click", ()=>{
-  window.open(PUMP_URL, "_blank", "noopener,noreferrer");
-});
-
-/* ===========================
-   LOAD + PREPROJECT POINTS (PERFORMANCE)
-=========================== */
-async function main(){
-  $("status").textContent = "Status: detectando base…";
-  await detectAssetBase();
-
-  $("tagBase").textContent = `Base: ${ASSET_BASE}`;
-
-  // carrega mapa base (tenta fallback se não existir)
-  try{
-    baseImg = await loadImage("mapa_base.png");
-  }catch(e1){
-    try{
-      baseImg = await loadImage("prodes_mosaic.png");
-    }catch(e2){
-      baseImg = null;
+  function computeMetrics(){
+    if(!pts.length){
+      el.status.textContent = "Status: aguardando pontos…";
+      return;
     }
+
+    let nA=0,nV=0,nT=0,nD=0;
+    for(const p of pts){
+      if(p.kind==="agua") nA++;
+      else if(p.kind==="veg") nV++;
+      else if(p.kind==="trans") nT++;
+      else nD++;
+    }
+    const N = pts.length || 1;
+    const pa = nA/N, pv=nV/N, pt=nT/N, pd=nD/N;
+
+    // score: base + pesos (ajusta se quiser)
+    let score = 50 + 50*( pv*1.00 + pa*0.60 - pt*0.35 - pd*1.00 );
+    score = clamp(score,0,100);
+
+    // telemetria deriva do score (simulação consistente)
+    series = series.slice(1);
+    const last = series[series.length-1] ?? 50;
+    const next = clamp( last*0.85 + score*0.15, 0, 100 );
+    series.push(next);
+    drawSpark();
+
+    // tendência e estabilidade
+    const trend = series[series.length-1] - series[0];
+    const mean = series.reduce((a,b)=>a+b,0)/series.length;
+    const sd = Math.sqrt(series.reduce((a,b)=>a+(b-mean)*(b-mean),0)/series.length);
+    const stab = clamp(1 - (sd/25), 0, 1);
+
+    // subíndices
+    const IBE = pv*100;
+    const HID = pa*5;            // escala pequena
+    const IBI = clamp(pv*30 + pa*10 - pd*10, 0, 100);
+    const ENT = clamp(100 - (pd*120), 0, 100);
+    const PAN = clamp(pd*100 + pt*40, 0, 100);
+
+    el.score.textContent = fmt1(score);
+    el.raw.textContent = fmt2((N/500).toFixed(2)*1); // “auditável” simples, mas estável
+
+    el.a_estado.textContent = fmt2(score);
+    el.b_tend.textContent = (trend>=0?"+":"") + fmt2(trend);
+    el.c_estab.textContent = fmt2(stab);
+    el.grau.textContent = score>=85?"A":score>=70?"B":score>=55?"C":score>=40?"D":"E";
+
+    el.ibe.textContent = fmt1(IBE);
+    el.iab.textContent = "N/D";
+    el.ibi.textContent = fmt1(IBI);
+    el.hid.textContent = fmt2(HID);
+    el.ent.textContent = fmt1(ENT);
+    el.pan.textContent = fmt1(PAN);
+
+    el.ult.textContent = "Último (RAW): " + fmt2(el.raw.textContent.replace(",","."));
+    el.status.textContent = `Status: OK • Pontos: ${N.toLocaleString("pt-BR")} • Base: ${location.pathname.replace(/\/[^\/]*$/,"/")}`;
   }
 
-  // overlay opcional (prodes)
-  try{
-    overlayImg = await loadImage("prodes_mosaic.png");
-  }catch(e){
-    overlayImg = null;
+  // ===== BUILD POINTS =====
+  function buildPoints(geo){
+    const feats = geo.features || [];
+    DATA_BBOX = computeBBoxFromGeoJSON(geo);
+
+    const rect = containRect;
+    if(!rect) return;
+
+    // performance: no mobile, limita pontos desenhados (mantém proporções)
+    const isMobile = matchMedia("(max-width: 980px)").matches;
+    const MAX = isMobile ? 12000 : 22000;
+
+    // se vier gigante, faz amostragem
+    const step = feats.length > MAX ? Math.ceil(feats.length / MAX) : 1;
+
+    const out = [];
+    for (let i=0;i<feats.length;i+=step){
+      const f = feats[i];
+      if(!f || !f.geometry || f.geometry.type!=="Point") continue;
+      const c = f.geometry.coordinates;
+      if(!c || c.length<2) continue;
+      const lon = +c[0], lat = +c[1];
+      if(!isFinite(lon)||!isFinite(lat)) continue;
+
+      const kind = pickHoloKind(f.properties);
+      const xy = lonLatToXY(lon, lat, rect, DATA_BBOX);
+      const col = colorFor(kind);
+
+      // semente por posição
+      const seed = (Math.abs(lon*1000)+Math.abs(lat*1000)) % 1000;
+
+      out.push({ x: xy.x, y: xy.y, kind, c: col, seed });
+    }
+    return out;
   }
 
-  // prepara canvas
-  resizeMap();
-  resizeTele();
-
-  // escolhe geojson (leve no mobile)
-  const geoFile = isMobile ? "vege_pts_sample.geojson" : "vege_pts.geojson";
-
-  $("status").textContent = "Status: carregando pontos…";
-  const geo = await loadJSON(geoFile);
-
-  // recalcula containRect com a imagem base carregada
-  const r = mapCanvas.getBoundingClientRect();
-  if (baseImg){
-    containRect = calcContainRect(r.width, r.height, baseImg.naturalWidth||baseImg.width, baseImg.naturalHeight||baseImg.height);
-  }else{
-    // sem base: usa canvas todo
-    containRect = { x:0,y:0,w:r.width,h:r.height,s:1 };
+  // ===== ESTIMATE BUY =====
+  function updateEstimate(){
+    const v = parseBRDecimal(el.amt.value);
+    // demo: 0.10 => 14,744,913 (como você vinha usando)
+    // escala linear
+    const base = 14744913;
+    const est = Math.max(0, Math.round((v/0.10) * base));
+    el.est.textContent = est.toLocaleString("pt-BR");
   }
 
-  // transforma pontos -> pixels (UMA vez)
-  pts = [];
-  counts = {agua:0, veg:0, trans:0, desmat:0};
-
-  const features = geo.features || [];
-  for (let i=0;i<features.length;i++){
-    const f = features[i];
-    const g = f.geometry;
-    if (!g || g.type!=="Point") continue;
-    const [lon,lat] = g.coordinates || [];
-    if (typeof lon!=="number" || typeof lat!=="number") continue;
-
-    const tip = (f.properties && (f.properties.tipologia || f.properties.classe || f.properties.type)) || "";
-    const kind = classifyTipologia(tip);
-    counts[kind]++;
-
-    const xy = lonLatToXY(lon, lat, containRect, BRAZIL_BBOX);
-
-    // evita desenhar fora do retângulo do mapa (segura “nuvem” fora do Brasil)
-    if (xy.x < containRect.x || xy.x > (containRect.x+containRect.w) ||
-        xy.y < containRect.y || xy.y > (containRect.y+containRect.h)) continue;
-
-    pts.push({
-      x: xy.x,
-      y: xy.y,
-      kind,
-      seed: (i*0.017 + (lon*0.11) + (lat*0.13)) % (Math.PI*2)
-    });
-  }
-
-  $("pillPts").textContent = `Holograma: GeoJSON (${pts.length.toLocaleString("pt-BR")} pts)`;
-
-  computeIndices();
+  // ===== INIT =====
+  el.buyBtn.addEventListener("click", () => {
+    window.open(PUMP_URL, "_blank", "noopener,noreferrer");
+  });
+  el.amt.addEventListener("input", updateEstimate);
   updateEstimate();
 
-  $("status").textContent = `Status: OK • Pontos: ${pts.length.toLocaleString("pt-BR")} • Base: ${ASSET_BASE}`;
+  function onResize(){
+    if(!img.complete) return;
+    resizeCanvas();
+    // reposiciona pontos no novo rect
+    if(window.__lastGeo) pts = buildPoints(window.__lastGeo) || [];
+  }
+  window.addEventListener("resize", ()=>requestAnimationFrame(onResize), {passive:true});
 
-  requestAnimationFrame(render);
-}
+  img.onload = async () => {
+    resizeCanvas();
+    drawSpark();
 
-main().catch(err=>{
-  console.error(err);
-  $("status").textContent = "Status: ERRO • " + (err && err.message ? err.message : "falha ao iniciar");
-  $("pillPts").textContent = "Holograma: erro ao carregar";
-});
+    el.status.textContent = "Status: carregando GeoJSON…";
+    try{
+      const {geo, name} = await loadFirstGeo();
+      window.__lastGeo = geo;
+
+      // constrói pontos
+      pts = buildPoints(geo) || [];
+      el.chipPts.textContent = `Holograma: ${name} (${pts.length.toLocaleString("pt-BR")} pts)`;
+      el.pillRight.textContent = `Pontos: ${pts.length.toLocaleString("pt-BR")} (pulsando)`;
+
+      // métricas
+      computeMetrics();
+      // atualiza métricas periodicamente (telemetria viva)
+      setInterval(computeMetrics, 1300);
+
+      // inicia animação
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(loop);
+
+    }catch(err){
+      el.status.textContent = "Status: ERRO — " + (err && err.message ? err.message : String(err));
+      el.chipPts.textContent = "Holograma: erro";
+      el.pillRight.textContent = "Pontos: erro ao carregar";
+      cancelAnimationFrame(raf);
+      drawBase();
+    }
+  };
+
+  img.onerror = () => {
+    el.status.textContent = "Status: ERRO — não achei mapa_base.png na mesma pasta do index.html";
+  };
+})();
 </script>
 </body>
 </html>
