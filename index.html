@@ -1,345 +1,826 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
+  <base href="./">
+  <title>CNT — Centro Natural TEC Amazônia</title>
+
+  <style>
+    :root{
+      --bg0:#000;
+      --bg1:#050b10;
+      --glass: rgba(2,12,24,.52);
+      --stroke: rgba(110,210,255,.22);
+      --hud: rgba(110,210,255,.95);
+      --hud2: rgba(110,210,255,.55);
+      --text:#c8f3ff;
+      --muted:#86dcff;
+      --shadow: 0 0 18px rgba(110,210,255,.18), 0 0 70px rgba(0,200,255,.08);
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; margin:0; background: radial-gradient(1200px 700px at 50% -10%, #0b2a33 0%, #000 55%, #000 100%); color:var(--text); font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+
+    .wrap{ max-width: 1300px; margin: 0 auto; padding: 16px; }
+
+    .card{
+      background: linear-gradient(180deg, rgba(2,12,24,.62), rgba(2,12,24,.38));
+      border: 1px solid var(--stroke);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    header.card{ padding: 18px 18px 14px; }
+    h1{ margin: 0; font-weight: 800; letter-spacing: .4px; text-align:center; font-size: 40px; }
+    .sub{ text-align:center; color: var(--muted); margin-top: 8px; font-size: 15px; line-height: 1.35; }
+    .chips{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top: 12px; }
+    .chip{
+      padding: 9px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--stroke);
+      background: rgba(0,0,0,.18);
+      color: var(--text);
+      font-size: 13px;
+      box-shadow: 0 0 12px rgba(110,210,255,.08);
+      user-select:none;
+    }
+    .chip strong{ color:#e9fbff; font-weight:700; }
+    .chip button, .chip a{
+      all: unset;
+      cursor: pointer;
+      color: var(--text);
+    }
+    .chip:hover{ border-color: rgba(110,210,255,.38); }
+
+    .grid{
+      margin-top: 14px;
+      display:grid;
+      grid-template-columns: 320px 1fr 320px;
+      gap: 14px;
+      align-items: start;
+    }
+
+    .panel{ padding: 14px; }
+    .panel h2{
+      margin: 0 0 10px;
+      font-size: 14px;
+      color: var(--muted);
+      font-weight: 700;
+      letter-spacing: .4px;
+      text-transform: none;
+    }
+
+    .big{
+      font-size: 64px;
+      line-height: 1;
+      margin: 10px 0 8px;
+      letter-spacing: .5px;
+    }
+    .big small{ font-size: 16px; color: var(--muted); }
+    .row{
+      display:flex; justify-content:space-between; align-items:center;
+      padding: 12px 14px;
+      border: 1px solid rgba(110,210,255,.18);
+      border-radius: 14px;
+      background: rgba(0,0,0,.18);
+      margin-top: 10px;
+    }
+    .row b{ font-size: 14px; }
+    .row span{ color:#eaffff; font-weight:700; }
+
+    .subgrid{
+      margin-top: 12px;
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .pill{
+      padding: 12px 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(110,210,255,.18);
+      background: rgba(0,0,0,.18);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      min-height: 46px;
+    }
+    .pill .k{ color: var(--muted); font-weight: 700; }
+    .pill .v{ color:#eaffff; font-weight: 800; }
+
+    .mapCard{ padding: 12px; }
+    .mapHead{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding: 6px 8px 10px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+    .mapBox{
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16/10;
+      border-radius: 18px;
+      overflow: hidden;
+      border: 1px solid rgba(110,210,255,.18);
+      background: radial-gradient(800px 480px at 50% 40%, rgba(0,200,255,.08), rgba(0,0,0,.35) 55%, rgba(0,0,0,.75));
+      box-shadow: inset 0 0 40px rgba(0,200,255,.06);
+    }
+    canvas#mapCanvas{
+      position:absolute; inset:0;
+      width:100%; height:100%;
+      display:block;
+    }
+    .mapOverlay{
+      position:absolute; inset:0;
+      pointer-events:none;
+      background:
+        radial-gradient(900px 500px at 50% 35%, rgba(110,210,255,.08), transparent 55%),
+        linear-gradient(180deg, rgba(0,0,0,.18), rgba(0,0,0,.35));
+      mix-blend-mode: screen;
+      opacity:.55;
+    }
+
+    .buyTitle{
+      font-size: 22px;
+      font-weight: 900;
+      margin: 0 0 4px;
+      letter-spacing:.3px;
+    }
+    .muted{ color: var(--muted); }
+
+    .input{
+      margin-top: 10px;
+      width:100%;
+      padding: 14px 14px;
+      border-radius: 18px;
+      border: 1px solid rgba(110,210,255,.22);
+      background: rgba(0,0,0,.18);
+      color: var(--text);
+      font-size: 16px;
+      outline: none;
+    }
+    .btn{
+      margin-top: 12px;
+      width:100%;
+      padding: 16px 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(110,210,255,.28);
+      background: rgba(0,0,0,.16);
+      color: #eaffff;
+      font-weight: 900;
+      font-size: 16px;
+      cursor:pointer;
+      box-shadow: 0 0 18px rgba(110,210,255,.10);
+    }
+    .btn:hover{ border-color: rgba(110,210,255,.55); box-shadow: 0 0 28px rgba(110,210,255,.16); }
+
+    .teleBox{
+      margin-top: 10px;
+      border-radius: 16px;
+      border: 1px solid rgba(110,210,255,.18);
+      background: rgba(0,0,0,.18);
+      overflow:hidden;
+    }
+    canvas#teleCanvas{ width:100%; height:120px; display:block; }
+
+    .status{
+      margin-top: 10px;
+      font-size: 12px;
+      color: rgba(200,243,255,.75);
+    }
+
+    .error{
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,80,80,.35);
+      background: rgba(255,80,80,.08);
+      color: rgba(255,220,220,.95);
+      font-size: 12px;
+      display:none;
+    }
+
+    /* Mobile */
+    @media (max-width: 980px){
+      h1{ font-size: 34px; }
+      .grid{ grid-template-columns: 1fr; }
+      .mapBox{ aspect-ratio: 4/3; }
+      header.card{ padding: 16px 14px 12px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+
+    <header class="card">
+      <h1>CNT — Centro Natural TEC Amazônia</h1>
+      <div class="sub">Mapa ecológico real • Água (azul) • Vegetação (verde) • Transição (amarelo) • Desmatamento (vermelho)</div>
+
+      <div class="chips">
+        <div class="chip">Fonte: <strong>dados públicos governamentais</strong></div>
+        <div class="chip">Ano base: <strong id="anoBase">2025</strong></div>
+
+        <div class="chip">
+          <button id="togglePts" title="Trocar pontos (sample/full)">
+            Pontos: <strong id="ptsMode">carregando…</strong>
+          </button>
+        </div>
+
+        <div class="chip">
+          <a id="pumpLink" target="_blank" rel="noopener">Compra: <strong>Pump.fun</strong></a>
+        </div>
+      </div>
+
+      <div class="error" id="errBox"></div>
+    </header>
+
+    <main class="grid">
+
+      <!-- LEFT: Índices -->
+      <section class="card panel" id="panelIndices">
+        <h2><strong>CNT</strong> (índice único Brasil)</h2>
+
+        <div class="big">
+          <span id="cntScore">--</span><small> /100</small>
+        </div>
+        <div class="muted">RAW auditável: <strong id="rawVal">--</strong></div>
+
+        <div class="row"><b>A — Estado</b><span id="A">--</span></div>
+        <div class="row"><b>B — Tendência</b><span id="B">--</span></div>
+        <div class="row"><b>C — Estabilidade</b><span id="C">--</span></div>
+        <div class="row"><b>Grau</b><span id="rating">--</span></div>
+
+        <h2 style="margin-top:14px;">Sub-índices</h2>
+        <div class="subgrid">
+          <div class="pill"><span class="k">IBE</span><span class="v" id="IBE">--</span></div>
+          <div class="pill"><span class="k">IAB</span><span class="v" id="IAB">N/D</span></div>
+          <div class="pill"><span class="k">IBI</span><span class="v" id="IBI">--</span></div>
+          <div class="pill"><span class="k">HID</span><span class="v" id="HID">--</span></div>
+          <div class="pill"><span class="k">ENT</span><span class="v" id="ENT">--</span></div>
+          <div class="pill"><span class="k">PAN</span><span class="v" id="PAN">--</span></div>
+        </div>
+
+        <div class="status" id="statusLeft">Status: iniciando…</div>
+      </section>
+
+      <!-- CENTER: Mapa -->
+      <section class="card mapCard">
+        <div class="mapHead">
+          <div><strong>Mapa base + holograma</strong></div>
+          <div>Pontos: <span id="ptsCount">0</span></div>
+        </div>
+
+        <div class="mapBox" id="mapBox">
+          <canvas id="mapCanvas"></canvas>
+          <div class="mapOverlay"></div>
+        </div>
+
+        <div class="status" id="statusMap">Status: carregando assets…</div>
+      </section>
+
+      <!-- RIGHT: Compra + Telemetria -->
+      <section class="card panel">
+        <div class="buyTitle">COMPRAR CNT</div>
+        <div class="muted">Abre o token no Pump.fun.</div>
+
+        <div style="margin-top:10px" class="muted">Contribuição</div>
+        <input class="input" id="contrib" type="number" step="0.01" min="0" value="0.10" inputmode="decimal" />
+
+        <button class="btn" id="buyBtn">Comprar no Pump</button>
+
+        <div style="margin-top:12px" class="muted">Estimativa: <strong id="estCnt" style="font-size:28px;color:#eaffff;">--</strong> <span class="muted">CNT</span></div>
+        <div class="muted" style="font-size:12px;margin-top:4px;">Estimativa demo (não é cotação real).</div>
+
+        <h2 style="margin-top:14px;">TELEMETRIA — Série 10 anos</h2>
+        <div class="teleBox">
+          <canvas id="teleCanvas"></canvas>
+        </div>
+        <div class="status" id="teleInfo">Histórico: -- • Último (RAW): --</div>
+      </section>
+
+    </main>
+
+  </div>
+
 <script>
-(() => {
-  // ===== Config =====
-  const TOKEN_URL = "https://pump.fun/coin/GCVyjNaCbXkwGUuktyNxSXad4ozmTp2fzQr2jieSpump";
-  const FILES = {
-    baseImg: "mapa_base.png",
-    mosaicImg: "prodes_mosaic.png",
-    dados: "dados_cnt.json",
-    // opcional (se tu tiver): "biomas.geojson"
-    biomas: "biomas.geojson",
-  };
+/* ===========================
+   CONFIG
+=========================== */
+const PUMP_URL = "https://pump.fun/coin/GCVyjNaCbXkwGUuktyNxSXad4ozmTp2fzQr2jieSpump";
 
-  // ===== Helpers =====
-  const $ = (id) => document.getElementById(id);
-  const clamp = (v,min,max)=>Math.max(min,Math.min(max,v));
+// Arquivos locais (mesma pasta do index.html)
+const FILES = {
+  baseImg: "mapa_base.png",
+  prodesImg: "prodes_mosaic.png",
+  brGeo: "BR_IBGE_simplificado.geojson",
+  dados: "dados_cnt.json",
+  ptsSample: "vege_pts_sample.geojson",
+  ptsFull: "vege_pts.geojson"
+};
 
-  function detectBasePath(){
-    // garante sempre /.../token_cnt/ (onde está o index.html)
-    let p = location.pathname;
-    if (p.endsWith("index.html")) p = p.slice(0, -"index.html".length);
-    if (!p.endsWith("/")) p += "/";
-    return location.origin + p;
-  }
+// Cache local para pontos (acelera no celular)
+const CACHE_KEY = "CNT_PTS_CACHE_V1";
 
-  function abs(base, file){ return base + file; }
+/* ===========================
+   HELPERS
+=========================== */
+const $ = (id)=>document.getElementById(id);
 
-  async function fetchJson(url){
-    const r = await fetch(url, { cache: "no-store" });
-    if (!r.ok) throw new Error(`HTTP ${r.status} em ${url}`);
-    return r.json();
-  }
+function showErr(msg){
+  const box = $("errBox");
+  box.style.display = "block";
+  box.textContent = msg;
+}
 
-  async function fetchJsonRetry(url, tries=3){
-    let last;
-    for (let i=0;i<tries;i++){
-      try { return await fetchJson(url); }
-      catch(e){ last=e; await new Promise(r=>setTimeout(r, 250*(i+1))); }
-    }
-    throw last;
-  }
+function fmt(v, d=2){
+  if(v === null || v === undefined || Number.isNaN(v)) return "--";
+  const n = Number(v);
+  return n.toLocaleString("pt-BR", {minimumFractionDigits:d, maximumFractionDigits:d});
+}
 
-  function fmt2(v){
-    if (v===null || v===undefined || Number.isNaN(v)) return "--";
-    return (Math.round(v*100)/100).toString().replace(".",",");
-  }
+async function fetchJSON(url){
+  const r = await fetch(url, {cache:"no-store"});
+  if(!r.ok) throw new Error(`Falha ao carregar ${url} (${r.status})`);
+  return r.json();
+}
 
-  // ===== UI =====
-  const statusEl = $("status");
-  const ptsHint = $("ptsHint");
-  const basePathEl = $("basePath");
-
-  $("buyBtn").addEventListener("click", () => {
-    window.open(TOKEN_URL, "_blank", "noopener,noreferrer");
+function loadImage(url){
+  return new Promise((res, rej)=>{
+    const img = new Image();
+    img.decoding = "async";
+    img.onload = ()=>res(img);
+    img.onerror = ()=>rej(new Error("Falha ao carregar imagem: " + url));
+    img.src = url;
   });
+}
 
-  $("contrib").addEventListener("input", () => {
-    const val = parseFloat(String($("contrib").value).replace(",","."));
-    const est = (!Number.isFinite(val) || val<=0) ? 0 : Math.floor(val * 147449130);
-    $("estCnt").textContent = est.toLocaleString("pt-BR");
-  });
-  $("contrib").dispatchEvent(new Event("input"));
+/* ===========================
+   CANVAS SIZING (HiDPI)
+=========================== */
+function resizeCanvasToBox(canvas, box){
+  const dpr = Math.min(2, window.devicePixelRatio || 1); // limita pra não travar
+  const rect = box.getBoundingClientRect();
+  const w = Math.max(320, Math.floor(rect.width));
+  const h = Math.max(240, Math.floor(rect.height));
+  canvas.width = Math.floor(w * dpr);
+  canvas.height = Math.floor(h * dpr);
+  canvas.style.width = w + "px";
+  canvas.style.height = h + "px";
+  const ctx = canvas.getContext("2d", {alpha:true, desynchronized:true});
+  ctx.setTransform(dpr,0,0,dpr,0,0); // desenha em CSS pixels
+  return {ctx, w, h, dpr};
+}
 
-  // ===== Telemetria =====
-  function drawTelemetry(values){
-    const c = $("telCanvas");
-    const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
-    const w = c.clientWidth, h = c.clientHeight;
-    c.width = Math.floor(w * dpr);
-    c.height = Math.floor(h * dpr);
-    const ctx = c.getContext("2d");
-    ctx.setTransform(dpr,0,0,dpr,0,0);
+/* ===========================
+   GEO / PROJECTION
+   - projeta lon/lat -> pixels
+   - usa bbox do Brasil
+=========================== */
+function bboxOfGeoJSON(geo){
+  let minX=+Infinity, minY=+Infinity, maxX=-Infinity, maxY=-Infinity;
 
-    ctx.clearRect(0,0,w,h);
-    if (!values || !values.length) return;
-
-    const minV = Math.min(...values);
-    const maxV = Math.max(...values);
-    const pad = 14;
-    const x0 = pad, y0 = pad;
-    const x1 = w-pad, y1 = h-pad;
-    const span = Math.max(1e-6, maxV-minV);
-
-    const pts = values.map((v,i)=>{
-      const t = values.length===1 ? 0 : i/(values.length-1);
-      const x = x0 + t*(x1-x0);
-      const y = y1 - ((v-minV)/span)*(y1-y0);
-      return [x,y];
-    });
-
-    ctx.lineWidth = 2.5;
-    ctx.strokeStyle = "rgba(140,220,255,.95)";
-    ctx.shadowColor = "rgba(110,210,255,.35)";
-    ctx.shadowBlur = 10;
-    ctx.beginPath();
-    pts.forEach(([x,y],i)=> i?ctx.lineTo(x,y):ctx.moveTo(x,y));
-    ctx.stroke();
-
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = "rgba(200,243,255,.9)";
-    for(const [x,y] of pts){
-      ctx.beginPath();
-      ctx.arc(x,y,2.2,0,Math.PI*2);
-      ctx.fill();
+  function scanCoords(coords){
+    if(typeof coords[0] === "number"){
+      const x=coords[0], y=coords[1];
+      if(x<minX) minX=x; if(x>maxX) maxX=x;
+      if(y<minY) minY=y; if(y>maxY) maxY=y;
+      return;
     }
+    for(const c of coords) scanCoords(c);
   }
 
-  // ===== Map =====
-  const baseCanvas = $("baseCanvas");
-  const holoCanvas = $("holoCanvas");
-  const mapWrap = $("mapWrap");
-
-  function setMapAspectFromImage(img){
-    const w = img.naturalWidth || 16;
-    const h = img.naturalHeight || 9;
-    mapWrap.style.aspectRatio = `${w} / ${h}`;
+  if(geo.type === "FeatureCollection"){
+    for(const f of geo.features) scanCoords(f.geometry.coordinates);
+  } else if(geo.type === "Feature"){
+    scanCoords(geo.geometry.coordinates);
+  } else {
+    scanCoords(geo.coordinates);
   }
+  return {minX, minY, maxX, maxY};
+}
 
-  function resizeCanvasToWrap(c){
-    const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
-    const w = mapWrap.clientWidth;
-    const h = mapWrap.clientHeight;
-    c.width = Math.floor(w * dpr);
-    c.height = Math.floor(h * dpr);
-    const ctx = c.getContext("2d");
-    ctx.setTransform(dpr,0,0,dpr,0,0);
-    return {ctx, w, h};
-  }
+function projectFactory(bbox, W, H, pad=0.06){
+  const dx = bbox.maxX - bbox.minX;
+  const dy = bbox.maxY - bbox.minY;
 
-  async function loadImage(url){
-    return new Promise((resolve,reject)=>{
-      const img = new Image();
-      img.onload = ()=> resolve(img);
-      img.onerror = ()=> reject(new Error("Falha ao carregar imagem: " + url));
-      img.src = url;
-    });
-  }
+  // Mantém proporção (contain) -> isso alinha com imagens “mapa do Brasil” quando elas também são contain
+  const usableW = W * (1 - pad*2);
+  const usableH = H * (1 - pad*2);
 
-  function rgbToHsl(r,g,b){
-    r/=255; g/=255; b/=255;
-    const max=Math.max(r,g,b), min=Math.min(r,g,b);
-    let h,s,l=(max+min)/2;
-    if(max===min){h=s=0;}
-    else{
-      const d=max-min;
-      s=l>0.5? d/(2-max-min) : d/(max+min);
-      switch(max){
-        case r: h=(g-b)/d + (g<b?6:0); break;
-        case g: h=(b-r)/d + 2; break;
-        case b: h=(r-g)/d + 4; break;
-      }
-      h/=6;
-    }
-    return [h*360, s, l];
-  }
+  const s = Math.min(usableW/dx, usableH/dy);
 
-  function classifyPixel(r,g,b){
-    const [h,s,l] = rgbToHsl(r,g,b);
-    if (l < 0.10) return null;
-    if (h > 175 && h < 250 && s > 0.25) return "agua";
-    if (h > 70 && h <= 170 && s > 0.18) return "veg";
-    if (h >= 25 && h <= 70 && s > 0.18) return "trans";
-    if ((h < 25 || h > 330) && s > 0.20) return "des";
-    return "trans";
-  }
+  const cx = (bbox.minX + bbox.maxX)/2;
+  const cy = (bbox.minY + bbox.maxY)/2;
 
-  const CLASS_COL = {
-    agua: [40, 170, 255],
-    veg:  [0, 255, 170],
-    trans:[255, 220, 0],
-    des:  [255, 80, 80],
+  const px0 = W/2;
+  const py0 = H/2;
+
+  return (lon, lat)=>{
+    const x = (lon - cx) * s + px0;
+    const y = (-(lat - cy)) * s + py0;
+    return [x,y];
   };
+}
 
-  function buildPointsFromMosaic(mosaicImg, sampleStep=3, maxPoints=18000){
-    const oc = document.createElement("canvas");
-    oc.width = mosaicImg.naturalWidth;
-    oc.height = mosaicImg.naturalHeight;
-    const octx = oc.getContext("2d", {willReadFrequently:true});
-    octx.drawImage(mosaicImg, 0,0);
-    const imgData = octx.getImageData(0,0,oc.width,oc.height).data;
+function pathFromGeo(ctx, geo, proj){
+  ctx.beginPath();
+  const feats = geo.type === "FeatureCollection" ? geo.features : [geo.type==="Feature"? geo : {geometry:geo}];
 
-    const pts = [];
-    for (let y=0; y<oc.height; y+=sampleStep){
-      for (let x=0; x<oc.width; x+=sampleStep){
-        const i = (y*oc.width + x) * 4;
-        const r = imgData[i], g = imgData[i+1], b = imgData[i+2], a = imgData[i+3];
-        if (a < 40) continue;
-        const cls = classifyPixel(r,g,b);
-        if (!cls) continue;
-        const rx = x + (Math.random() - 0.5) * sampleStep;
-        const ry = y + (Math.random() - 0.5) * sampleStep;
-        pts.push({x: rx, y: ry, cls, seed: Math.random()});
+  for(const f of feats){
+    const g = f.geometry;
+    if(!g) continue;
+
+    const drawRing = (ring)=>{
+      for(let i=0;i<ring.length;i++){
+        const [lon,lat]=ring[i];
+        const [x,y]=proj(lon,lat);
+        if(i===0) ctx.moveTo(x,y);
+        else ctx.lineTo(x,y);
       }
-    }
-
-    if (pts.length > maxPoints){
-      const step = Math.ceil(pts.length / maxPoints);
-      return pts.filter((_,i)=> i%step===0);
-    }
-    return pts;
-  }
-
-  function drawBase(baseImg){
-    const {ctx,w,h} = resizeCanvasToWrap(baseCanvas);
-    ctx.clearRect(0,0,w,h);
-    ctx.globalAlpha = 0.96;
-    ctx.drawImage(baseImg, 0,0,w,h);
-  }
-
-  function startHologram(points, mosaicNatural, state){
-    let running = true;
-
-    const groups = {
-      agua: points.filter(p=>p.cls==="agua"),
-      veg: points.filter(p=>p.cls==="veg"),
-      trans: points.filter(p=>p.cls==="trans"),
-      des: points.filter(p=>p.cls==="des"),
+      ctx.closePath();
     };
 
-    function render(t){
-      if (!running) return;
-
-      const {ctx,w,h} = resizeCanvasToWrap(holoCanvas);
-      ctx.clearRect(0,0,w,h);
-
-      const sx = w / mosaicNatural.w;
-      const sy = h / mosaicNatural.h;
-
-      const cnt = Number.isFinite(state.cntValue) ? state.cntValue : 50;
-      const speed = 0.55 + (cnt/100)*1.65;
-      const glow = 0.25 + (cnt/100)*0.45;
-      const pulse = 0.55 + 0.45*Math.sin(t*0.001*speed);
-
-      ctx.globalCompositeOperation = "lighter";
-
-      for (const [cls, arr] of Object.entries(groups)){
-        const col = CLASS_COL[cls] || [255,255,255];
-        const baseA = cls==="des" ? 0.22 : cls==="agua" ? 0.18 : 0.20;
-        const a = baseA + glow * 0.20;
-
-        ctx.fillStyle = `rgba(${col[0]},${col[1]},${col[2]},${a})`;
-        ctx.shadowColor = `rgba(${col[0]},${col[1]},${col[2]},${0.35 + glow*0.55})`;
-        ctx.shadowBlur = 10 + glow*22;
-
-        for (let i=0; i<arr.length; i++){
-          const p = arr[i];
-          const local = 0.6 + 0.4*Math.sin((t*0.001*speed) + p.seed*6.283);
-          const r = (1.0 + 1.6*pulse*local) * (cls==="des" ? 1.15 : 1.0);
-
-          const x = p.x*sx;
-          const y = p.y*sy;
-          if (x<0 || y<0 || x>w || y>h) continue;
-
-          ctx.beginPath();
-          ctx.arc(x,y,r,0,Math.PI*2);
-          ctx.fill();
-        }
+    if(g.type==="Polygon"){
+      for(const ring of g.coordinates) drawRing(ring);
+    } else if(g.type==="MultiPolygon"){
+      for(const poly of g.coordinates){
+        for(const ring of poly) drawRing(ring);
       }
-
-      requestAnimationFrame(render);
     }
+  }
+}
 
-    requestAnimationFrame(render);
-    return () => { running = false; };
+/* ===========================
+   HOLOGRAM POINTS
+   - cores misturadas
+   - pulso ligado ao CNT + RAW
+=========================== */
+function mulberry32(seed){
+  let t = seed >>> 0;
+  return function(){
+    t += 0x6D2B79F5;
+    let x = Math.imul(t ^ (t >>> 15), 1 | t);
+    x ^= x + Math.imul(x ^ (x >>> 7), 61 | x);
+    return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// Distribuição de cores influenciada pelo “estado” (A) e RAW (telemetria)
+function colorFromMix(r){
+  // r em [0,1]
+  if(r < 0.18) return {r:80,  g:170, b:255}; // água (azul)
+  if(r < 0.68) return {r: 80, g:255, b:170}; // vegetação (verde)
+  if(r < 0.88) return {r:255, g:230, b: 90}; // transição (amarelo)
+  return {r:255, g: 90, b: 90};              // desmatamento (vermelho)
+}
+
+function drawGlowDot(ctx, x, y, baseR, col, a){
+  // núcleo
+  ctx.globalAlpha = a;
+  ctx.fillStyle = `rgb(${col.r},${col.g},${col.b})`;
+  ctx.beginPath();
+  ctx.arc(x,y,baseR,0,Math.PI*2);
+  ctx.fill();
+
+  // glow
+  ctx.globalAlpha = a * 0.55;
+  ctx.beginPath();
+  ctx.arc(x,y,baseR*2.6,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.globalAlpha = a * 0.20;
+  ctx.beginPath();
+  ctx.arc(x,y,baseR*5.2,0,Math.PI*2);
+  ctx.fill();
+}
+
+/* ===========================
+   TELEMETRIA
+=========================== */
+function drawTelemetry(canvas, series){
+  const ctx = canvas.getContext("2d");
+  const box = canvas.getBoundingClientRect();
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  canvas.width = Math.floor(box.width * dpr);
+  canvas.height = Math.floor(box.height * dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+
+  const W = box.width, H = box.height;
+  ctx.clearRect(0,0,W,H);
+
+  // background
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = "rgba(0,0,0,.10)";
+  ctx.fillRect(0,0,W,H);
+
+  if(!series || series.length<2) return;
+
+  const min = Math.min(...series);
+  const max = Math.max(...series);
+  const pad = 12;
+  const dx = (W - pad*2) / (series.length - 1);
+
+  const yOf = (v)=>{
+    const t = (v - min) / (max - min || 1);
+    return (H - pad) - t * (H - pad*2);
+  };
+
+  // linha
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = "rgba(140,230,255,.92)";
+  ctx.shadowBlur = 18;
+  ctx.shadowColor = "rgba(110,210,255,.35)";
+
+  ctx.beginPath();
+  for(let i=0;i<series.length;i++){
+    const x = pad + i*dx;
+    const y = yOf(series[i]);
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+
+  // pontos
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = "rgba(200,245,255,.95)";
+  for(let i=0;i<series.length;i++){
+    const x = pad + i*dx;
+    const y = yOf(series[i]);
+    ctx.beginPath();
+    ctx.arc(x,y,3.2,0,Math.PI*2);
+    ctx.fill();
+  }
+}
+
+/* ===========================
+   MAIN
+=========================== */
+let state = {
+  dados: null,
+  brGeo: null,
+  ptsGeo: null,
+  baseImg: null,
+  prodesImg: null,
+  ptsMode: "sample",
+  pts: [],
+  proj: null,
+  view: null,
+  pulseK: 0.6,
+  speed: 1.2
+};
+
+function updateUI(){
+  const d = state.dados;
+  if(!d) return;
+
+  $("anoBase").textContent = "2025";
+
+  const A = d.cnt?.A ?? null;
+  const B = d.cnt?.B ?? null;
+  const C = d.cnt?.C ?? null;
+
+  const score = (A !== null && A !== undefined) ? Number(A) : null;
+  $("cntScore").textContent = score !== null ? fmt(score,1) : "--";
+  $("rawVal").textContent = d.telemetry_10y?.length ? fmt(d.telemetry_10y[d.telemetry_10y.length-1],2) : "--";
+
+  $("A").textContent = fmt(A,2);
+  $("B").textContent = fmt(B,2);
+  $("C").textContent = fmt(C,2);
+  $("rating").textContent = d.cnt?.rating ?? "--";
+
+  $("IBI").textContent = fmt(d.indices?.IBI,1);
+  $("IAB").textContent = (d.indices?.IAB==null) ? "N/D" : fmt(d.indices?.IAB,1);
+  $("HID").textContent = fmt(d.indices?.HID,2);
+  $("ENT").textContent = fmt(d.indices?.ENT,1);
+  $("PAN").textContent = fmt(d.indices?.PAN,1);
+  // IBE não existe no JSON atual -> mantém "--" (ou calcula)
+  $("IBE").textContent = (d.indices?.IBE==null) ? "--" : fmt(d.indices?.IBE,1);
+
+  // Telemetria
+  const serie = d.telemetry_10y || [];
+  drawTelemetry($("teleCanvas"), serie);
+  const ultimo = serie.length ? serie[serie.length-1] : null;
+  $("teleInfo").textContent = `Histórico: ${serie.length || "--"} • Último (RAW): ${ultimo!=null? fmt(ultimo,2): "--"}`;
+
+  // Pulso: ligado a score e RAW
+  const raw = (ultimo!=null)? Number(ultimo) : 0;
+  state.pulseK = Math.max(0.25, Math.min(1.2, (score||50)/100 + raw/40));
+  state.speed = Math.max(0.7, Math.min(2.2, 0.8 + raw/30));
+}
+
+function estimateCNT(){
+  const v = Number($("contrib").value || 0);
+  // Demo: contribuição * fator (ajusta como quiser)
+  const factor = 147449130; // pra bater com sua demo anterior ~0.10 -> 14.744.913
+  const est = Math.max(0, Math.round(v * factor));
+  $("estCnt").textContent = est.toLocaleString("pt-BR");
+}
+
+function computePointsArray(geo){
+  const feats = geo?.features || [];
+  // reduz densidade se vier pesado (mobile)
+  const MAX = 25000; // limite seguro p/ celular
+  let pts = feats.map(f=>f.geometry?.coordinates).filter(c=>Array.isArray(c) && c.length>=2);
+  if(pts.length > MAX){
+    const step = Math.ceil(pts.length / MAX);
+    pts = pts.filter((_,i)=> i%step===0);
+  }
+  return pts;
+}
+
+function drawFrame(t){
+  const canvas = $("mapCanvas");
+  const box = $("mapBox");
+  const {ctx, w:W, h:H} = state.view;
+
+  ctx.clearRect(0,0,W,H);
+
+  // Fundo leve
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = "rgba(0,0,0,.16)";
+  ctx.fillRect(0,0,W,H);
+
+  // ==== Raster base (contain) ====
+  function drawContain(img, alpha=1){
+    if(!img) return;
+    const iw = img.naturalWidth || img.width;
+    const ih = img.naturalHeight || img.height;
+    const s = Math.min(W/iw, H/ih);
+    const dw = iw*s, dh = ih*s;
+    const dx = (W-dw)/2, dy = (H-dh)/2;
+    ctx.globalAlpha = alpha;
+    ctx.drawImage(img, dx, dy, dw, dh);
+    return {dx,dy,dw,dh, s};
   }
 
-  // ===== State =====
-  const state = { cntValue: null, baseUrl: null };
+  const baseRect = drawContain(state.baseImg, 0.92);
 
-  function applyDados(dados){
-    $("yearPill").textContent = dados?.meta?.year ?? "2025";
+  // prodes overlay (bem sutil)
+  drawContain(state.prodesImg, 0.20);
 
-    state.cntValue = Number(dados?.cnt?.value);
-    $("cntValue").textContent = fmt2(state.cntValue);
-    $("rawValue").textContent = fmt2(Number(dados?.cnt?.raw));
+  // ==== Clip Brasil e contorno neon ====
+  if(state.brGeo && state.proj){
+    ctx.save();
+    pathFromGeo(ctx, state.brGeo, state.proj);
+    ctx.clip("evenodd");
 
-    $("aEstado").textContent = fmt2(Number(dados?.indices?.A_estado));
-    $("bTend").textContent = fmt2(Number(dados?.indices?.B_tendencia));
-    $("cEstab").textContent = fmt2(Number(dados?.indices?.C_estabilidade));
-    $("grau").textContent = String(dados?.indices?.grau ?? "--");
+    // ==== Holograma: pontos ====
+    const d = state.dados || {};
+    const A = Number(d.cnt?.A ?? 60);
+    const ultimo = (d.telemetry_10y && d.telemetry_10y.length) ? Number(d.telemetry_10y[d.telemetry_10y.length-1]) : 10;
 
-    $("ibe").textContent = fmt2(Number(dados?.indices?.IBE));
-    $("iab").textContent = String(dados?.indices?.IAB ?? "N/D");
-    $("ibi").textContent = fmt2(Number(dados?.indices?.IBI));
-    $("hid").textContent = fmt2(Number(dados?.indices?.HID));
-    $("ent").textContent = fmt2(Number(dados?.indices?.ENT));
-    $("pan").textContent = fmt2(Number(dados?.indices?.PAN));
+    const seed = Math.floor((A*1000) + (ultimo*100));
+    const rnd = mulberry32(seed);
 
-    const serie = dados?.telemetry_10y || [];
-    drawTelemetry(serie);
-    $("telN").textContent = String(serie.length || 0);
-    $("telLast").textContent = fmt2(serie.length ? serie[serie.length-1] : null);
-  }
+    const pulse = (Math.sin(t*0.001*state.speed)+1)/2; // 0..1
+    const intensity = 0.35 + pulse * 0.65 * state.pulseK;
 
-  async function init(){
-    const base = detectBasePath();
-    state.baseUrl = base;
-    basePathEl.textContent = base;
+    // Ajusta mix de cores: se A cair, aumenta vermelho um pouco
+    const redBoost = Math.max(0, Math.min(0.14, (70 - A)/400));
 
-    statusEl.textContent = "Status: carregando dados…";
+    const pts = state.pts;
+    const count = pts.length;
+    const step = count > 18000 ? 2 : 1;
 
-    // >>> AQUI é a correção: sempre pelo basePath real
-    const dadosUrl = abs(base, FILES.dados);
+    for(let i=0;i<count;i+=step){
+      const lon = pts[i][0], lat = pts[i][1];
+      const [x,y] = state.proj(lon,lat);
 
-    const dados = await fetchJsonRetry(dadosUrl, 3);
-    applyDados(dados);
+      // jitter mínimo para “vida”
+      const j = (rnd()-0.5) * 0.6;
+      const k = (rnd()-0.5) * 0.6;
 
-    statusEl.textContent = "Status: carregando mapa…";
+      // distribuição
+      let r = rnd();
+      r = Math.min(0.999, r + (r>0.88 ? redBoost : 0)); // reforça vermelho só na cauda
+      const col = colorFromMix(r);
 
-    const baseImg = await loadImage(abs(base, FILES.baseImg));
-    const mosaicImg = await loadImage(abs(base, FILES.mosaicImg));
+      const baseR = 0.75 + rnd()*0.9;
+      const a = (0.22 + rnd()*0.33) * intensity;
 
-    setMapAspectFromImage(baseImg);
-    drawBase(baseImg);
-
-    const cacheKey = `cnt_pts_v2_${mosaicImg.naturalWidth}x${mosaicImg.naturalHeight}`;
-    let points = null;
-    try {
-      const cached = localStorage.getItem(cacheKey);
-      if (cached) points = JSON.parse(cached);
-    } catch(_){}
-
-    if (!points){
-      statusEl.textContent = "Status: gerando holograma…";
-      points = buildPointsFromMosaic(mosaicImg, 3, 18000);
-      try { localStorage.setItem(cacheKey, JSON.stringify(points)); } catch(_){}
+      drawGlowDot(ctx, x+j, y+k, baseR, col, a);
     }
 
-    ptsHint.textContent = `Pontos: ${points.length.toLocaleString("pt-BR")}`;
-    startHologram(points, {w:mosaicImg.naturalWidth, h:mosaicImg.naturalHeight}, state);
+    ctx.restore();
 
-    statusEl.textContent = "Status: OK • Base e holograma alinhados • (cache local ativo)";
+    // contorno neon por cima
+    ctx.save();
+    ctx.lineWidth = 1.2;
+    ctx.strokeStyle = "rgba(110,210,255,.70)";
+    ctx.shadowBlur = 18;
+    ctx.shadowColor = "rgba(110,210,255,.28)";
+    pathFromGeo(ctx, state.brGeo, state.proj);
+    ctx.stroke();
+    ctx.restore();
+  }
 
-    let rto=null;
-    window.addEventListener("resize", ()=>{
-      clearTimeout(rto);
-      rto=setTimeout(()=>{ drawBase(baseImg); }, 120);
+  requestAnimationFrame(drawFrame);
+}
+
+async function loadPoints(mode){
+  $("statusMap").textContent = "Status: carregando pontos…";
+  $("ptsMode").textContent = mode === "full" ? "full" : "sample";
+
+  // tenta cache
+  try{
+    const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || "null");
+    if(cached && cached.mode===mode && Array.isArray(cached.pts) && cached.pts.length){
+      state.pts = cached.pts;
+      $("ptsCount").textContent = state.pts.length.toLocaleString("pt-BR");
+      $("statusMap").textContent = "Status: pontos carregados (cache local).";
+      return;
+    }
+  }catch(e){}
+
+  const url = mode==="full" ? FILES.ptsFull : FILES.ptsSample;
+  const geo = await fetchJSON(url);
+  state.ptsGeo = geo;
+  state.pts = computePointsArray(geo);
+
+  $("ptsCount").textContent = state.pts.length.toLocaleString("pt-BR");
+
+  // salva cache
+  try{
+    localStorage.setItem(CACHE_KEY, JSON.stringify({mode, pts: state.pts}));
+  }catch(e){}
+
+  $("statusMap").textContent = "Status: pontos carregados.";
+}
+
+async function boot(){
+  try{
+    $("pumpLink").href = PUMP_URL;
+
+    // UI
+    $("buyBtn").addEventListener("click", ()=>{
+      window.open(PUMP_URL, "_blank", "noopener");
     });
-  }
+    $("contrib").addEventListener("input", estimateCNT);
+    estimateCNT();
 
-  init().catch((err)=>{
+    // Toggle sample/full
+    $("togglePts").addEventListener("click", async ()=>{
+      state.ptsMode = (state.ptsMode==="sample") ? "full" : "sample";
+      await loadPoints(state.ptsMode);
+      $("statusLeft").textContent = `Status: OK • Pontos: ${state.pts.length.toLocaleString("pt-BR")} • Base: ${location.pathname}`;
+    });
+
+    // Load base data (paralelo)
+    $("statusLeft").textContent = "Status: carregando dados…";
+    $("statusMap").textContent = "Status: carregando imagens e geo…";
+
+    const [dados, brGeo, baseImg, prodesImg] = await Promise.all([
+      fetchJSON(FILES.dados),
+      fetchJSON(FILES.brGeo),
+      loadImage(FILES.baseImg),
+      loadImage(FILES.prodesImg)
+    ]);
+
+    state.dados = dados;
+    state.brGeo = brGeo;
+    state.baseImg = baseImg;
+    state.prodesImg = prodesImg;
+
+    updateUI();
+
+    // Canvas sizing + projection
+    const canvas = $("mapCanvas");
+    const box = $("mapBox");
+    state.view = resizeCanvasToBox(canvas, box);
+
+    const bbox = bboxOfGeoJSON(brGeo);
+    state.proj = projectFactory(bbox, state.view.w, state.view.h, 0.07);
+
+    window.addEventListener("resize", ()=>{
+      state.view = resizeCanvasToBox(canvas, box);
+      const bbox2 = bboxOfGeoJSON(state.brGeo);
+      state.proj = projectFactory(bbox2, state.view.w, state.view.h, 0.07);
+    }, {passive:true});
+
+    // load points (default sample)
+    state.ptsMode = "sample";
+    await loadPoints("sample");
+
+    $("statusLeft").textContent = `Status: OK • Pontos: ${state.pts.length.toLocaleString("pt-BR")} • Base: ${location.pathname}`;
+    $("statusMap").textContent = "Status: renderizando (holograma ativo).";
+
+    // start animation
+    requestAnimationFrame(drawFrame);
+
+  }catch(err){
     console.error(err);
-    statusEl.textContent = "Status: ERRO — " + (err?.message || String(err));
-  });
-})();
+    showErr("ERRO: " + (err?.message || String(err)) + " — confira se os arquivos estão na mesma pasta do index.html e se o GitHub Pages está apontando para a pasta certa.");
+    $("statusLeft").textContent = "Status: erro.";
+    $("statusMap").textContent = "Status: erro.";
+  }
+}
+
+boot();
 </script>
+</body>
+</html>
