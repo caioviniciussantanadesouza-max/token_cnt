@@ -21,12 +21,13 @@ html,body{
   background: radial-gradient(1200px 700px at 50% 35%, var(--bg1), var(--bg0) 70%);
   color:var(--text);
   font-family:"Segoe UI", Arial, sans-serif;
+  overflow:hidden;
 }
 #app{
   position:fixed; inset:0;
   display:grid;
   grid-template-columns: 300px 1fr 360px;
-  grid-template-rows: 120px minmax(0,1fr);
+  grid-template-rows: 130px minmax(0,1fr);
   gap:14px;
   padding:14px;
   align-items:stretch;
@@ -79,18 +80,23 @@ html,body{
   background: rgba(0,0,0,.20);
   color:#cfefff;
   opacity:.95;
+  user-select:none;
 }
 .chipBtn{
-  font-size:11px;
-  padding:7px 10px;
-  border-radius:999px;
-  border:1px solid rgba(110,210,255,.45);
-  background: linear-gradient(180deg,rgba(110,210,255,.18),rgba(0,0,0,.16));
-  color:#eafcff;
   cursor:pointer;
-  font-weight:900;
+  transition: transform .08s ease;
 }
-.chipBtn:hover{ box-shadow:0 0 18px rgba(110,210,255,.30); }
+.chipBtn:active{ transform: scale(.98); }
+.dot{
+  display:inline-block;
+  width:8px;height:8px;border-radius:99px;
+  margin:0 6px 0 2px;
+  box-shadow: 0 0 14px rgba(255,255,255,.15);
+}
+.dBlue{ background:#29b1ff; }
+.dGreen{ background:#35ffb4; }
+.dYellow{ background:#ffe85a; }
+.dRed{ background:#ff503c; }
 
 /* Left */
 #left{
@@ -156,7 +162,6 @@ html,body{
   color:rgba(180,245,255,.9);
   opacity:.88;
   line-height:1.25;
-  white-space:pre-wrap;
 }
 
 /* Center */
@@ -290,7 +295,6 @@ input:focus{
   opacity:.92;
 }
 
-/* Mobile */
 @media (max-width: 1100px){
   body{ overflow:auto; }
   #app{ position:relative; grid-template-columns: 1fr; grid-template-rows: auto auto auto auto; }
@@ -307,9 +311,13 @@ input:focus{
     <div id="chips">
       <div class="chip">Fonte: dados públicos governamentais</div>
       <div class="chip">Ano base: 2025</div>
-      <button class="chipBtn" id="btnRegen">Regenerar holograma</button>
+      <div class="chip chipBtn" id="btnRegen">Regenerar holograma</div>
       <div class="chip">Compra: Pump.fun</div>
       <div class="chip" id="chipPts">Pontos: --</div>
+      <div class="chip"><span class="dot dBlue"></span>Água</div>
+      <div class="chip"><span class="dot dGreen"></span>Veg</div>
+      <div class="chip"><span class="dot dYellow"></span>Trans</div>
+      <div class="chip"><span class="dot dRed"></span>Desm</div>
     </div>
   </div>
 
@@ -347,7 +355,6 @@ input:focus{
     <div id="mapWrap">
       <canvas id="cnvBase" class="layer"></canvas>
       <canvas id="cnvHolo" class="layer"></canvas>
-      <canvas id="cnvLines" class="layer"></canvas>
       <canvas id="cnvPoints" class="layer"></canvas>
       <div id="mapGlow"></div>
       <div id="scanlines"></div>
@@ -384,25 +391,24 @@ input:focus{
 const PUMP_URL = "https://pump.fun/coin/GCVyjNaCbXkwGUuktyNxSXad4ozmTp2fzQr2jieSpump";
 const rate = 147449130;
 
-// Imagens (camada REAL)
-const IMG_BASE = "mapa_base.png";
-const IMG_HOLO = "prodes_mosaic.png";
-
-// GeoJSON (opcionais, se existirem)
 const FILES = {
+  // rasters
+  basePng: "mapa_base.png",
+  holoPng: "prodes_mosaic.png",
+
+  // máscara BR (usa simplificado; se não tiver, tenta o full)
   br_simpl: "BR_IBGE_simplificado.geojson",
   br_full:  "BR_IBGE.geojson",
-  uf:       "uf.geojson",
-  macro:    "macro_rh.geojson",
-  micro:    "micro_rh.geojson",
-  cnt:      "CNT_FULL_10Y.geojson"
+
+  // índice CNT (se não tiver, só mantém placeholders)
+  cnt: "CNT_FULL_10Y.geojson"
 };
 
 /* =========================
    HELPERS
 ========================= */
 const statusEl = document.getElementById("status");
-const chipPts = document.getElementById("chipPts");
+const chipPts  = document.getElementById("chipPts");
 
 function fmt(n, d=2){
   if(n === null || n === undefined || !Number.isFinite(Number(n))) return "--";
@@ -412,21 +418,36 @@ function fmt1(n){ return fmt(n,1); }
 function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
 
 async function loadJSON(name){
-  const url = "./" + name + "?v=" + Date.now();
+  const url = "./" + name;
   const res = await fetch(url, { cache:"no-store" });
   if(!res.ok) throw new Error(`${name} HTTP ${res.status}`);
   const txt = await res.text();
-  return JSON.parse(txt);
+  try{ return JSON.parse(txt); }
+  catch(e){ throw new Error(`${name}: JSON inválido`); }
 }
 async function loadEither(a,b){
-  try{ return await loadJSON(a); }
-  catch(e1){ return await loadJSON(b); }
+  try{ return await loadJSON(a); } catch(e1){
+    return await loadJSON(b);
+  }
 }
-async function tryLoad(name){
-  try { return await loadJSON(name); } catch(e){ return null; }
+function loadImg(src){
+  return new Promise((resolve, reject)=>{
+    const img = new Image();
+    img.onload = ()=> resolve(img);
+    img.onerror = ()=> reject(new Error("Falha ao carregar imagem: "+src));
+    img.src = "./" + src;
+  });
 }
-function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
 
+function computeContain(iw, ih, W, H){
+  const s = Math.min(W/iw, H/ih);
+  const w = iw*s, h = ih*s;
+  return { s, w, h, x:(W-w)/2, y:(H-h)/2 };
+}
+
+/* =========================
+   MASK (GeoJSON BR)
+========================= */
 function walkCoords(arr, cb){
   if(!arr) return;
   if(typeof arr[0] === "number") cb(arr);
@@ -443,7 +464,43 @@ function calcBBox(fc){
       if(x>maxx)maxx=x; if(y>maxy)maxy=y;
     });
   }
-  return [minx, miny, maxx, maxy];
+  return [minx,miny,maxx,maxy];
+}
+let bbox = null;
+function proj(lon,lat,W,H){
+  const [minx,miny,maxx,maxy] = bbox;
+  return [
+    (lon-minx)/(maxx-minx)*W,
+    (maxy-lat)/(maxy-miny)*H
+  ];
+}
+function buildBrasilPath(ctx, fc, W, H){
+  ctx.beginPath();
+  for(const f of (fc.features||[])){
+    const g = f.geometry;
+    if(!g) continue;
+    const polys = (g.type==="Polygon") ? [g.coordinates] : (g.type==="MultiPolygon" ? g.coordinates : []);
+    for(const poly of polys){
+      const outer = poly[0];
+      if(!outer || outer.length<3) continue;
+      for(let i=0;i<outer.length;i++){
+        const [x,y] = proj(outer[i][0], outer[i][1], W, H);
+        if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      }
+      ctx.closePath();
+    }
+  }
+}
+function applyBrasilMask(ctx, fc){
+  const W = cnvBase.getBoundingClientRect().width;
+  const H = cnvBase.getBoundingClientRect().height;
+  ctx.save();
+  ctx.globalCompositeOperation = "destination-in";
+  ctx.fillStyle = "#fff";
+  buildBrasilPath(ctx, fc, W, H);
+  ctx.fill();
+  ctx.restore();
+  ctx.globalCompositeOperation = "source-over";
 }
 
 /* =========================
@@ -451,13 +508,11 @@ function calcBBox(fc){
 ========================= */
 const cnvBase   = document.getElementById("cnvBase");
 const cnvHolo   = document.getElementById("cnvHolo");
-const cnvLines  = document.getElementById("cnvLines");
 const cnvPoints = document.getElementById("cnvPoints");
 
-const ctxBase = cnvBase.getContext("2d");
-const ctxH    = cnvHolo.getContext("2d");
-const ctxL    = cnvLines.getContext("2d");
-const ctxP    = cnvPoints.getContext("2d");
+const ctxBase = cnvBase.getContext("2d", { willReadFrequently:true });
+const ctxH    = cnvHolo.getContext("2d", { willReadFrequently:true });
+const ctxP    = cnvPoints.getContext("2d", { willReadFrequently:true });
 
 function resizeCanvas(cnv, ctx){
   const dpr = Math.max(1, window.devicePixelRatio || 1);
@@ -469,12 +524,14 @@ function resizeCanvas(cnv, ctx){
 function resizeAll(){
   resizeCanvas(cnvBase, ctxBase);
   resizeCanvas(cnvHolo, ctxH);
-  resizeCanvas(cnvLines, ctxL);
   resizeCanvas(cnvPoints, ctxP);
   resizeWave();
-  if(state.ready) redrawStatic();
+  if(state.ready){
+    drawAll();
+    regenPointsFromHolo();
+  }
 }
-window.addEventListener("resize", ()=>{ resizeAll(); regenPointsFromHolo(); });
+window.addEventListener("resize", resizeAll);
 
 /* =========================
    STATE
@@ -482,190 +539,155 @@ window.addEventListener("resize", ()=>{ resizeAll(); regenPointsFromHolo(); });
 const state = {
   ready:false,
   brasilMask:null,
-  uf:null,
-  macro:null,
-  micro:null,
-  cnt:null,
-  // images
+  tf:null,
   imgBase:null,
   imgHolo:null,
-  // transform contain
-  tf:null, // {x,y,w,h}
-  // points
+  holoProcessed:null,
   pts:[],
   t:0,
-  anim:false
+  animStarted:false
 };
 
 /* =========================
-   DRAW GEOJSON LINES (opcional)
+   HOLO PROCESS + DRAW
 ========================= */
-let bbox = null;
-function proj(lon,lat,w,h){
-  const [minx,miny,maxx,maxy] = bbox;
-  return [(lon-minx)/(maxx-minx)*w, (maxy-lat)/(maxy-miny)*h];
-}
-function strokeLines(ctx, fc, strokeStyle, width, alpha){
-  if(!fc) return;
+function processHoloToOffscreen(){
   const W = cnvBase.getBoundingClientRect().width;
   const H = cnvBase.getBoundingClientRect().height;
+  if(!state.imgHolo || !state.tf) return null;
 
-  ctx.save();
-  ctx.globalAlpha = alpha;
-  ctx.strokeStyle = strokeStyle;
-  ctx.lineWidth = width;
-  ctx.lineJoin="round";
-  ctx.lineCap="round";
+  const off = document.createElement("canvas");
+  off.width  = Math.max(1, Math.floor(state.tf.w));
+  off.height = Math.max(1, Math.floor(state.tf.h));
+  const o = off.getContext("2d", { willReadFrequently:true });
 
-  const drawLine = (line)=>{
-    if(!line || line.length<2) return;
-    ctx.beginPath();
-    for(let i=0;i<line.length;i++){
-      const [x,y]=proj(line[i][0], line[i][1], W, H);
-      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  // desenha holo
+  o.clearRect(0,0,off.width,off.height);
+  o.drawImage(state.imgHolo, 0, 0, off.width, off.height);
+
+  // remove branco/cinza claro -> alpha 0
+  const img = o.getImageData(0,0,off.width,off.height);
+  const d = img.data;
+
+  for(let i=0;i<d.length;i+=4){
+    const r=d[i], g=d[i+1], b=d[i+2], a=d[i+3];
+    const bright = (r+g+b)/3;
+    const sat = Math.max(r,g,b) - Math.min(r,g,b);
+
+    if(a < 10 || (bright > 235 && sat < 18)){
+      d[i+3] = 0;
+      continue;
     }
-    ctx.stroke();
-  };
 
-  for(const f of (fc.features||[])){
-    const g = f.geometry;
-    if(!g) continue;
-    if(g.type==="LineString") drawLine(g.coordinates);
-    else if(g.type==="MultiLineString") for(const ln of g.coordinates) drawLine(ln);
-    else if(g.type==="Polygon") drawLine(g.coordinates[0]);
-    else if(g.type==="MultiPolygon") for(const poly of g.coordinates) drawLine(poly[0]);
+    // empurra levemente pra neon
+    d[i]   = Math.min(255, r * 1.08);
+    d[i+1] = Math.min(255, g * 1.08);
+    d[i+2] = Math.min(255, b * 1.08);
   }
-
-  ctx.restore();
+  o.putImageData(img,0,0);
+  return off;
 }
-function strokeBrasilGlow(ctx, fc){
-  if(!fc) return;
+
+function drawAll(){
   const W = cnvBase.getBoundingClientRect().width;
   const H = cnvBase.getBoundingClientRect().height;
 
-  ctx.save();
-  ctx.lineJoin="round";
-  ctx.lineCap="round";
-
-  const drawOuter = ()=>{
-    for(const f of (fc.features||[])){
-      const g = f.geometry;
-      if(!g) continue;
-      const polys = (g.type==="Polygon") ? [g.coordinates] : (g.type==="MultiPolygon" ? g.coordinates : []);
-      for(const poly of polys){
-        const outer = poly[0];
-        if(!outer || outer.length<3) continue;
-        ctx.beginPath();
-        for(let i=0;i<outer.length;i++){
-          const [x,y] = proj(outer[i][0], outer[i][1], W, H);
-          if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-        }
-        ctx.closePath();
-        ctx.stroke();
-      }
-    }
-  };
-
-  ctx.shadowColor = "rgba(0,255,220,0.95)";
-  ctx.shadowBlur  = 28;
-  ctx.lineWidth   = 4.8;
-  ctx.strokeStyle = "rgba(0,255,220,0.55)";
-  drawOuter();
-
-  ctx.shadowBlur  = 12;
-  ctx.lineWidth   = 2.2;
-  ctx.strokeStyle = "rgba(0,255,220,0.95)";
-  drawOuter();
-
-  ctx.restore();
-}
-
-/* =========================
-   IMAGES: contain transform (base + holograma MESMO tamanho)
-========================= */
-function computeContain(imgW, imgH, boxW, boxH){
-  const s = Math.min(boxW/imgW, boxH/imgH);
-  const w = imgW*s;
-  const h = imgH*s;
-  const x = (boxW - w)/2;
-  const y = (boxH - h)/2;
-  return {x,y,w,h,scale:s};
-}
-function drawImages(){
-  const W = cnvBase.getBoundingClientRect().width;
-  const H = cnvBase.getBoundingClientRect().height;
-
+  // fundo preto real
   ctxBase.clearRect(0,0,W,H);
   ctxH.clearRect(0,0,W,H);
+  ctxP.clearRect(0,0,W,H);
+
+  ctxBase.fillStyle = "#000";
+  ctxBase.fillRect(0,0,W,H);
+  ctxH.fillStyle = "#000";
+  ctxH.fillRect(0,0,W,H);
 
   if(!state.imgBase || !state.imgHolo) return;
 
-  state.tf = computeContain(state.imgBase.naturalWidth, state.imgBase.naturalHeight, W, H);
+  state.tf = computeContain(
+    state.imgBase.naturalWidth,
+    state.imgBase.naturalHeight,
+    W,H
+  );
 
-  // Base
-  ctxBase.globalCompositeOperation = "source-over";
-  ctxBase.imageSmoothingEnabled = true;
+  // BASE (mapa_base.png)
+  ctxBase.save();
+  ctxBase.globalCompositeOperation = "screen";
+  ctxBase.globalAlpha = 0.95;
+  ctxBase.filter = "contrast(1.25) saturate(1.6)";
   ctxBase.drawImage(state.imgBase, state.tf.x, state.tf.y, state.tf.w, state.tf.h);
 
-  // Holograma por cima (blend + glow)
-  ctxH.imageSmoothingEnabled = true;
-  ctxH.globalCompositeOperation = "screen";
-  ctxH.globalAlpha = 0.95;
-  ctxH.drawImage(state.imgHolo, state.tf.x, state.tf.y, state.tf.w, state.tf.h);
+  // glow base
+  ctxBase.globalAlpha = 0.28;
+  ctxBase.filter = "blur(10px) contrast(1.2) saturate(1.9)";
+  ctxBase.drawImage(state.imgBase, state.tf.x, state.tf.y, state.tf.w, state.tf.h);
+  ctxBase.restore();
 
-  // brilho extra suave
-  ctxH.globalAlpha = 0.30;
-  ctxH.filter = "blur(6px)";
-  ctxH.drawImage(state.imgHolo, state.tf.x, state.tf.y, state.tf.w, state.tf.h);
-  ctxH.filter = "none";
-  ctxH.globalAlpha = 1;
-  ctxH.globalCompositeOperation = "source-over";
+  // HOLO processado
+  state.holoProcessed = processHoloToOffscreen();
+  if(state.holoProcessed){
+    ctxH.save();
+    ctxH.globalCompositeOperation = "screen";
+    ctxH.globalAlpha = 0.85;
+    ctxH.filter = "contrast(1.35) saturate(2.2)";
+    ctxH.drawImage(state.holoProcessed, state.tf.x, state.tf.y, state.tf.w, state.tf.h);
+
+    // glow holo
+    ctxH.globalAlpha = 0.30;
+    ctxH.filter = "blur(12px) contrast(1.25) saturate(2.4)";
+    ctxH.drawImage(state.holoProcessed, state.tf.x, state.tf.y, state.tf.w, state.tf.h);
+    ctxH.restore();
+  }
+
+  // máscara BR (mantém tudo dentro)
+  if(state.brasilMask && bbox){
+    applyBrasilMask(ctxBase, state.brasilMask);
+    applyBrasilMask(ctxH, state.brasilMask);
+  }
 }
 
 /* =========================
-   PONTOS “REAIS” a partir do prodes_mosaic.png (cores)
+   CLASSIFY COLOR -> 4 classes
 ========================= */
 function classifyColor(r,g,b,a){
-  if(a < 40) return null;
+  if(a < 35) return null;
+
   const max = Math.max(r,g,b);
   const min = Math.min(r,g,b);
   const sat = max - min;
   const bright = (r+g+b)/3;
 
-  // descarta quase-preto
-  if(bright < 20 || (max < 35 && sat < 15)) return null;
+  if(bright < 18 || sat < 12) return null;
 
-  // regra simples por dominância (funciona bem pra azul/verde/amarelo/vermelho)
-  if(b > r+25 && b > g+25) return {r:40,g:170,b:255, tag:"Água"};
-  if(g > r+20 && g > b+10) return {r:60,g:255,b:180, tag:"Veg"};
-  if(r > 170 && g > 140 && b < 120) return {r:255,g:235,b:90, tag:"Trans"};
-  if(r > g+35 && r > b+35) return {r:255,g:80,b:60, tag:"Desm"};
+  // azul
+  if(b > g + 22 && b > r + 22) return {r:40,g:170,b:255};
 
-  // fallback: usa cor original mas puxando pro neon
-  return {r:Math.min(255,r+30), g:Math.min(255,g+30), b:Math.min(255,b+30), tag:"Mix"};
+  // vermelho
+  if(r > g + 28 && r > b + 28) return {r:255,g:80,b:60};
+
+  // amarelo
+  if(r > 160 && g > 140 && b < 140) return {r:255,g:235,b:90};
+
+  // verde
+  if(g > r + 10 && g > b + 10) return {r:60,g:255,b:180};
+
+  return null;
 }
 
+/* =========================
+   POINTS from processed HOLO
+========================= */
 function regenPointsFromHolo(){
-  if(!state.imgHolo || !state.tf) return;
+  if(!state.holoProcessed || !state.tf) return;
 
-  const W = cnvBase.getBoundingClientRect().width;
-  const H = cnvBase.getBoundingClientRect().height;
-
-  // lê pixels do HOLO numa offscreen
-  const off = document.createElement("canvas");
-  off.width = Math.max(1, Math.floor(state.tf.w));
-  off.height= Math.max(1, Math.floor(state.tf.h));
+  const off = state.holoProcessed;
   const o = off.getContext("2d", { willReadFrequently:true });
-  o.drawImage(state.imgHolo, 0,0, off.width, off.height);
   const img = o.getImageData(0,0, off.width, off.height);
   const d = img.data;
 
   const pts = [];
-
-  // stride define densidade/leveza
-  // (se quiser mais denso: 3; se quiser mais leve: 6/7)
-  const stride = Math.max(3, Math.round(off.width / 320)); // adapta à resolução
-  const jitter = 0.6;
+  const stride = Math.max(3, Math.round(off.width / 380)); // densidade estilo HUD
+  const jitter = 0.7;
 
   for(let y=0; y<off.height; y+=stride){
     for(let x=0; x<off.width; x+=stride){
@@ -674,13 +696,12 @@ function regenPointsFromHolo(){
       const c = classifyColor(r,g,b,a);
       if(!c) continue;
 
-      // posição na tela (mesma transform contain)
       const px = state.tf.x + x*(state.tf.w/off.width) + (Math.random()-0.5)*jitter;
-      const py = state.tf.y + y*(state.tf.h/off.height) + (Math.random()-0.5)*jitter;
+      const py = state.tf.y + y*(state.tf.h/off.height)+ (Math.random()-0.5)*jitter;
 
       pts.push({
-        x:px, y:py,
-        r:c.r, g:c.g, b:c.b,
+        x:px,y:py,
+        r:c.r,g:c.g,b:c.b,
         ph:Math.random()*Math.PI*2,
         sp:0.8+Math.random()*1.8,
         base:0.55+Math.random()*0.9
@@ -688,8 +709,8 @@ function regenPointsFromHolo(){
     }
   }
 
-  // cap para performance
-  const MAX = 85000;
+  // cap performance
+  const MAX = 90000;
   if(pts.length > MAX){
     const step = Math.ceil(pts.length / MAX);
     const slim = [];
@@ -700,77 +721,62 @@ function regenPointsFromHolo(){
   }
 
   chipPts.textContent = "Pontos: " + state.pts.length.toLocaleString("pt-BR");
-  statusEl.textContent = (statusEl.textContent || "").split("\n")[0] + "\n" + "Pontos (raster): " + state.pts.length.toLocaleString("pt-BR");
-}
-
-function drawPoints(){
-  const W = cnvPoints.getBoundingClientRect().width;
-  const H = cnvPoints.getBoundingClientRect().height;
-  ctxP.clearRect(0,0,W,H);
-  if(!state.pts.length) return;
-
-  ctxP.globalCompositeOperation = "lighter";
-
-  // micro-pontos
-  for(const p of state.pts){
-    const pulse = 0.55 + 0.45*Math.sin(p.ph + state.t*p.sp*0.03);
-    const alpha = 0.08 + 0.28*pulse;
-    const rad   = 0.35 + p.base*0.40;
-
-    ctxP.beginPath();
-    ctxP.fillStyle = `rgba(${p.r},${p.g},${p.b},${alpha})`;
-    ctxP.arc(p.x, p.y, rad, 0, Math.PI*2);
-    ctxP.fill();
-  }
-
-  // sparkles
-  const glowCount = Math.min(1800, Math.max(700, (state.pts.length/18)|0));
-  ctxP.save();
-  ctxP.shadowBlur = 10;
-  for(let i=0;i<glowCount;i++){
-    const p = state.pts[(Math.random()*state.pts.length)|0];
-    if(!p) continue;
-    const pulse = 0.55 + 0.45*Math.sin(p.ph + state.t*0.04);
-    const alpha = 0.06 + 0.18*pulse;
-    ctxP.shadowColor = `rgba(${p.r},${p.g},${p.b},0.60)`;
-    ctxP.fillStyle   = `rgba(${p.r},${p.g},${p.b},${alpha})`;
-    ctxP.beginPath();
-    ctxP.arc(p.x, p.y, 1.1 + pulse*1.6, 0, Math.PI*2);
-    ctxP.fill();
-  }
-  ctxP.restore();
-
-  ctxP.globalCompositeOperation = "source-over";
 }
 
 /* =========================
-   STATIC REDRAW
-========================= */
-function redrawStatic(){
-  drawImages();
-
-  // linhas (se tiver geojson)
-  ctxL.clearRect(0,0, cnvLines.getBoundingClientRect().width, cnvLines.getBoundingClientRect().height);
-  if(bbox && state.brasilMask){
-    strokeBrasilGlow(ctxL, state.brasilMask);
-  }
-  if(bbox){
-    strokeLines(ctxL, state.macro, "rgba(0,234,255,0.90)", 1.15, 1);
-    strokeLines(ctxL, state.micro, "rgba(0,120,255,0.60)", 0.55, 1);
-    strokeLines(ctxL, state.uf,    "rgba(160,245,255,0.70)", 1.05, 1);
-  }
-
-  regenPointsFromHolo();
-}
-
-/* =========================
-   ANIM LOOP
+   ANIMATION LOOP (pulsar neon)
 ========================= */
 function startAnim(){
-  if(state.anim) return;
-  state.anim = true;
+  if(state.animStarted) return;
+  state.animStarted = true;
+
   const loop = ()=>{
-    drawPoints();
+    const W = cnvPoints.getBoundingClientRect().width;
+    const H = cnvPoints.getBoundingClientRect().height;
+    ctxP.clearRect(0,0,W,H);
+
+    if(state.pts.length){
+      ctxP.globalCompositeOperation = "lighter";
+
+      // micro pontos
+      for(const p of state.pts){
+        const pulse = 0.55 + 0.45*Math.sin(p.ph + state.t*p.sp*0.025);
+        const alpha = (0.06 + 0.22*pulse);
+        const rad   = 0.28 + p.base*0.35;
+
+        ctxP.beginPath();
+        ctxP.fillStyle = `rgba(${p.r},${p.g},${p.b},${alpha})`;
+        ctxP.arc(p.x, p.y, rad, 0, Math.PI*2);
+        ctxP.fill();
+      }
+
+      // sparkles (brilho vivo)
+      const glowCount = Math.min(1800, Math.max(500, (state.pts.length/14)|0));
+      ctxP.save();
+      ctxP.shadowBlur = 10;
+
+      for(let i=0;i<glowCount;i++){
+        const p = state.pts[(Math.random()*state.pts.length)|0];
+        const pulse = 0.55 + 0.45*Math.sin(p.ph + state.t*0.03);
+        const alpha = 0.05 + 0.16*pulse;
+
+        ctxP.shadowColor = `rgba(${p.r},${p.g},${p.b},${0.55})`;
+        ctxP.fillStyle   = `rgba(${p.r},${p.g},${p.b},${alpha})`;
+
+        ctxP.beginPath();
+        ctxP.arc(p.x, p.y, 1.0 + pulse*1.4, 0, Math.PI*2);
+        ctxP.fill();
+      }
+      ctxP.restore();
+
+      // máscara BR para pontos também
+      if(state.brasilMask && bbox){
+        applyBrasilMask(ctxP, state.brasilMask);
+      }
+
+      ctxP.globalCompositeOperation = "source-over";
+    }
+
     state.t++;
     requestAnimationFrame(loop);
   };
@@ -778,7 +784,7 @@ function startAnim(){
 }
 
 /* =========================
-   TELEMETRY
+   TELEMETRY (wave)
 ========================= */
 const wave = document.getElementById("wave");
 const wctx = wave.getContext("2d");
@@ -857,47 +863,42 @@ function updateOut(){
 }
 solInput.addEventListener("input", updateOut);
 updateOut();
-document.getElementById("btnBuy").addEventListener("click", ()=> {
+
+document.getElementById("btnBuy").addEventListener("click", ()=>{
   window.open(PUMP_URL, "_blank", "noopener,noreferrer");
 });
 
 /* =========================
-   IMAGES LOADER
+   BUTTONS
 ========================= */
-function loadImg(src){
-  return new Promise((resolve,reject)=>{
-    const img = new Image();
-    img.onload = ()=>resolve(img);
-    img.onerror = ()=>reject(new Error("Falha ao carregar " + src));
-    img.src = "./" + src + "?v=" + Date.now();
-  });
-}
+document.getElementById("btnRegen").addEventListener("click", ()=>{
+  statusEl.textContent = "Status: regenerando holograma + pontos…";
+  drawAll();
+  regenPointsFromHolo();
+  statusEl.textContent = "Status: OK • Base + Holograma alinhados • Pontos pulsando (raster real)";
+});
 
 /* =========================
    BOOT
 ========================= */
 async function boot(){
   try{
-    statusEl.textContent = "Status: carregando…";
+    statusEl.textContent = "Status: carregando arquivos…";
 
-    // tenta geojson (se tiver)
-    state.brasilMask = await (async()=>{
-      try { return await loadEither(FILES.br_simpl, FILES.br_full); }
-      catch(e){ return null; }
-    })();
+    // máscara BR
+    state.brasilMask = await loadEither(FILES.br_simpl, FILES.br_full);
+    bbox = calcBBox(state.brasilMask);
 
-    state.uf    = await tryLoad(FILES.uf);
-    state.macro = await tryLoad(FILES.macro);
-    state.micro = await tryLoad(FILES.micro);
-    state.cnt   = await tryLoad(FILES.cnt);
+    // rasters
+    state.imgBase = await loadImg(FILES.basePng);
+    state.imgHolo = await loadImg(FILES.holoPng);
 
-    if(state.brasilMask){
-      bbox = calcBBox(state.brasilMask);
-    }
+    // tenta CNT (opcional)
+    let series = [];
+    try{
+      const cnt = await loadJSON(FILES.cnt);
+      const props = cnt?.features?.[0]?.properties || {};
 
-    // HUD CNT
-    if(state.cnt?.features?.[0]?.properties){
-      const props = state.cnt.features[0].properties || {};
       const rawA = Number(props.cnt_A);
       const A100 = Number.isFinite(rawA) ? clamp(rawA * 4, 0, 100) : NaN;
 
@@ -917,41 +918,36 @@ async function boot(){
       document.getElementById("ent").textContent = Number.isFinite(Number(props.ENT))  ? fmt(props.ENT,1)  : "--";
       document.getElementById("pan").textContent = Number.isFinite(Number(props.PAN))  ? fmt(props.PAN,1)  : "--";
 
-      const series = Array.isArray(props.series_10y) ? props.series_10y.map(Number).filter(Number.isFinite) : [];
+      series = Array.isArray(props.series_10y) ? props.series_10y.map(Number).filter(Number.isFinite) : [];
       document.getElementById("telemetryHint").textContent = series.length
         ? ("Histórico: " + series.length + " • Último (RAW): " + fmt(rawA,2))
-        : "Sem série 10y no GeoJSON.";
-      startWave(series);
-    } else {
-      document.getElementById("telemetryHint").textContent = "CNT_FULL_10Y.geojson não carregou (ok).";
-      startWave([]);
+        : "Série 10y não encontrada no CNT_FULL_10Y.geojson.";
+    }catch(e){
+      document.getElementById("telemetryHint").textContent = "CNT_FULL_10Y.geojson não carregou (opcional).";
     }
-
-    // imagens
-    statusEl.textContent = "Status: carregando mapa_base + prodes_mosaic…";
-    [state.imgBase, state.imgHolo] = await Promise.all([loadImg(IMG_BASE), loadImg(IMG_HOLO)]);
 
     resizeAll();
     state.ready = true;
 
-    redrawStatic();
+    // desenha e gera pontos
+    drawAll();
+    regenPointsFromHolo();
+
+    // wave sempre roda
+    startWave(series);
+
+    // anima pontos
     startAnim();
 
-    statusEl.textContent = "Status: OK • Base + Holograma alinhados • Pontos pulsando (raster real).";
-
+    statusEl.textContent = "Status: OK • Base + Holograma alinhados • Pontos pulsando (raster real)";
   }catch(err){
     console.error(err);
     statusEl.textContent = "Status: ERRO • " + (err?.message || err);
-    document.getElementById("telemetryHint").textContent = "Erro: veja o Console (F12).";
+    document.getElementById("telemetryHint").textContent = "Erro: arquivos não carregaram. Abra o Console (F12).";
   }
 }
-
-document.getElementById("btnRegen").addEventListener("click", ()=>{
-  regenPointsFromHolo();
-  statusEl.textContent = "Status: OK • holograma regenerado (re-sample).";
-});
-
 boot();
 </script>
+
 </body>
 </html>
