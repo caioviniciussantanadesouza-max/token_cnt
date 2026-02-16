@@ -489,26 +489,15 @@ const state = {
   macro:null,
   micro:null,
   cnt:null,
-
-  // VEGETAÇÃO (teus points)
   ptsFC:null,
   ptsXY:[],
-
-  // ÁGUA (novos pontos gerados das linhas)
-  waterXY:[],
-
-  // grid densidade (pra verde/amarelo/vermelho)
   grid:null,
   gridSize:22,
   R:22,
-
-  // >>> AJUSTE IMPORTANTE:
-  // target menor = mais chance de amarelo/vermelho aparecer
-  // (antes 11 podia deixar tudo verde dependendo do dataset)
-  target:6,
-
+  target:11,
   t:0,
-  animStarted:false
+  animStarted:false,
+  statsKinds:{ agua:0, veg:0, trans:0, desm:0, unknown:0 }
 };
 
 /* =========================
@@ -541,12 +530,12 @@ function fillPolygons(ctx, fc, fillStyle, alpha){
 }
 
 function strokePolygonsGlow(ctx, fc){
+  const W = cnvBorder.getBoundingClientRect().width;
+  const H = cnvBorder.getBoundingClientRect().height;
+
   ctx.save();
   ctx.lineJoin="round";
   ctx.lineCap="round";
-
-  const W = cnvBorder.getBoundingClientRect().width;
-  const H = cnvBorder.getBoundingClientRect().height;
 
   const drawOuter = ()=>{
     for(const f of (fc.features||[])){
@@ -644,94 +633,72 @@ function maskCanvasToBrasil(ctx){
 }
 
 /* =========================
-   POINTS + GRID (densidade)
+   PONTOS: CLASSE REAL (AZUL/VERDE/AMARELO/VERMELHO)
+   - Usa feature.properties.class|classe|tipo|category|layer|mapbiomas
+   - Se não achar, cai no modo densidade antigo
 ========================= */
-function buildProjectedPoints(fc){
-  const W = cnvBase.getBoundingClientRect().width;
-  const H = cnvBase.getBoundingClientRect().height;
+function normStr(v){
+  return String(v ?? "").trim().toLowerCase();
+}
+function detectKind(props){
+  const s =
+    normStr(props.class) ||
+    normStr(props.classe) ||
+    normStr(props.tipo) ||
+    normStr(props.category) ||
+    normStr(props.layer) ||
+    normStr(props.mapbiomas) ||
+    normStr(props.name) ||
+    "";
 
-  const pts = [];
-  for(const f of (fc.features||[])){
-    const g = f.geometry;
-    if(!g || g.type!=="Point") continue;
-    const [x,y] = proj(g.coordinates[0], g.coordinates[1], W, H);
-    pts.push({
-      x,y,
-      ph: Math.random()*Math.PI*2,
-      sp: 0.7+Math.random()*1.3,
-      base: 0.6+Math.random()*0.8
-    });
-  }
+  // Água
+  if(
+    s.includes("agua") || s.includes("água") ||
+    s.includes("water") || s.includes("rio") || s.includes("lago") ||
+    s.includes("corpo d") || s.includes("corpo d’") || s.includes("oceano") ||
+    s === "5" || s.includes("5.") // caso venham códigos
+  ) return "agua";
 
-  const MAX = 140000;
-  if(pts.length > MAX){
-    const step = Math.ceil(pts.length / MAX);
-    const slim = [];
-    for(let i=0;i<pts.length;i+=step) slim.push(pts[i]);
-    state.ptsXY = slim;
-  } else {
-    state.ptsXY = pts;
-  }
+  // Desmatamento / não vegetado / pressão
+  if(
+    s.includes("desm") || s.includes("desmat") ||
+    s.includes("degrad") ||
+    s.includes("minera") ||
+    s.includes("urb") || s.includes("urban") ||
+    s.includes("nao veget") || s.includes("não veget") ||
+    s === "4" || s.includes("4.")
+  ) return "desm";
 
-  buildGrid();
+  // Transição / agro / mosaico / pastagem
+  if(
+    s.includes("trans") ||
+    s.includes("agro") || s.includes("past") || s.includes("lavour") ||
+    s.includes("mosa") || s.includes("silvic") ||
+    s === "3" || s.includes("3.")
+  ) return "trans";
+
+  // Vegetação / floresta
+  if(
+    s.includes("veg") || s.includes("veget") ||
+    s.includes("flor") || s.includes("mata") ||
+    s.includes("sav") || s.includes("mang") ||
+    s === "1" || s.includes("1.") ||
+    s === "2" || s.includes("2.")
+  ) return "veg";
+
+  return "unknown";
 }
 
-/* >>> NOVO: pontos AZUIS a partir das linhas de água */
-function buildWaterPointsFromLines(){
-  const W = cnvBase.getBoundingClientRect().width;
-  const H = cnvBase.getBoundingClientRect().height;
-
-  const out = [];
-  const pushPoint = (lon,lat)=>{
-    const [x,y] = proj(lon,lat,W,H);
-    out.push({
-      x,y,
-      ph: Math.random()*Math.PI*2,
-      sp: 0.7+Math.random()*1.3,
-      base: 0.6+Math.random()*0.8
-    });
-  };
-
-  const sampleLine = (coords, step)=>{
-    if(!coords || coords.length<2) return;
-    for(let i=0;i<coords.length;i+=step){
-      const c = coords[i];
-      pushPoint(c[0], c[1]);
-    }
-  };
-
-  function feedFC(fc, step){
-    if(!fc || !fc.features) return;
-    for(const f of fc.features){
-      const g = f.geometry;
-      if(!g) continue;
-      if(g.type==="LineString") sampleLine(g.coordinates, step);
-      else if(g.type==="MultiLineString"){
-        for(const ln of g.coordinates) sampleLine(ln, step);
-      }
-      else if(g.type==="Polygon") sampleLine(g.coordinates[0], step);
-      else if(g.type==="MultiPolygon"){
-        for(const poly of g.coordinates) sampleLine(poly[0], step);
-      }
-    }
-  }
-
-  // macro: menos denso, micro: mais denso
-  feedFC(state.macro, 6);
-  feedFC(state.micro, 4);
-
-  // cap pra não travar
-  const MAXW = 45000;
-  if(out.length > MAXW){
-    const step = Math.ceil(out.length / MAXW);
-    const slim = [];
-    for(let i=0;i<out.length;i+=step) slim.push(out[i]);
-    state.waterXY = slim;
-  } else {
-    state.waterXY = out;
-  }
+function colorForKind(kind){
+  // Água (azul), Vegetação (verde), Transição (amarelo), Desmatamento (vermelho)
+  if(kind==="agua") return [0, 200, 255];
+  if(kind==="veg")  return [60, 255, 180];
+  if(kind==="trans")return [255, 235, 90];
+  if(kind==="desm") return [255, 80, 60];
+  return null;
 }
 
+/* seu modo antigo por densidade (fallback) */
 function buildGrid(){
   const W = cnvBase.getBoundingClientRect().width;
   const H = cnvBase.getBoundingClientRect().height;
@@ -782,16 +749,50 @@ function densityAt(x,y){
   return count;
 }
 
-/* >>> Ajuste: garante VERDE/AMARELO/VERMELHO (sem sumir amarelo/vermelho) */
-function colorForPressure(count){
+function colorForDensity(count){
   const norm = Math.min(1, count / state.target);
+  if(norm >= 0.70) return [60, 255, 180];
+  if(norm >= 0.40) return [255, 235, 90];
+  return [255, 80, 60];
+}
 
-  // pressão baixa = verde
-  // média = amarelo
-  // alta = vermelho
-  if(norm >= 0.80) return [255, 80, 60];    // vermelho
-  if(norm >= 0.45) return [255, 235, 90];   // amarelo
-  return [60, 255, 180];                    // verde
+function buildProjectedPoints(fc){
+  const W = cnvBase.getBoundingClientRect().width;
+  const H = cnvBase.getBoundingClientRect().height;
+
+  const pts = [];
+  state.statsKinds = { agua:0, veg:0, trans:0, desm:0, unknown:0 };
+
+  for(const f of (fc.features||[])){
+    const g = f.geometry;
+    if(!g || g.type!=="Point") continue;
+
+    const props = f.properties || {};
+    const kind = detectKind(props);
+
+    const [x,y] = proj(g.coordinates[0], g.coordinates[1], W, H);
+    pts.push({
+      x,y,
+      kind,
+      ph: Math.random()*Math.PI*2,
+      sp: 0.7+Math.random()*1.3,
+      base: 0.6+Math.random()*0.8
+    });
+
+    if(kind in state.statsKinds) state.statsKinds[kind]++; else state.statsKinds.unknown++;
+  }
+
+  const MAX = 140000;
+  if(pts.length > MAX){
+    const step = Math.ceil(pts.length / MAX);
+    const slim = [];
+    for(let i=0;i<pts.length;i+=step) slim.push(pts[i]);
+    state.ptsXY = slim;
+  } else {
+    state.ptsXY = pts;
+  }
+
+  buildGrid(); // mantém seu fallback de densidade
 }
 
 /* =========================
@@ -801,11 +802,14 @@ function redrawStatic(){
   if(!bbox) return;
   clearAll();
 
+  // base leve
   fillPolygons(ctxBase, state.biomas, "rgba(0,255,200,1)", 0.035);
   maskCanvasToBrasil(ctxBase);
 
+  // borda
   strokePolygonsGlow(ctxB, state.brasilMask);
 
+  // linhas (água e limites)
   strokeLines(ctxL, state.macro, "rgba(0,234,255,0.90)", 1.15, 1);
   strokeLines(ctxL, state.micro, "rgba(0,120,255,0.60)", 0.55, 1);
   strokeLines(ctxL, state.uf,    "rgba(160,245,255,0.70)", 1.05, 1);
@@ -813,15 +817,8 @@ function redrawStatic(){
 }
 
 /* =========================
-   ANIMAÇÃO (4 cores)
+   ANIMAÇÃO (pontos)
 ========================= */
-function drawPoint(ctx, p, r,g,b, alpha, rad){
-  ctx.beginPath();
-  ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
-  ctx.arc(p.x, p.y, rad, 0, Math.PI*2);
-  ctx.fill();
-}
-
 function startAnim(){
   if(state.animStarted) return;
   state.animStarted = true;
@@ -831,54 +828,58 @@ function startAnim(){
     const H = cnvPoints.getBoundingClientRect().height;
     ctxP.clearRect(0,0,W,H);
 
-    ctxP.globalCompositeOperation = "lighter";
-
-    /* 1) ÁGUA (AZUL) — pontos gerados das linhas */
-    if(state.waterXY.length){
-      for(const p of state.waterXY){
-        const pulse = 0.55 + 0.45*Math.sin(p.ph + state.t*p.sp*0.025);
-        const alpha = (0.05 + 0.20*pulse);
-        const rad   = 0.30 + p.base*0.35;
-        drawPoint(ctxP, p, 60, 180, 255, alpha, rad);
-      }
-    }
-
-    /* 2) VEGETAÇÃO + TRANSIÇÃO + DESMATAMENTO (VERDE/AMARELO/VERMELHO) */
     if(state.ptsXY.length){
+      ctxP.globalCompositeOperation = "lighter";
+
+      // 1) micro pontos (bem pequenos)
       for(const p of state.ptsXY){
-        const count = densityAt(p.x, p.y);
-        const [r,g,b] = colorForPressure(count);
+        let rgb = colorForKind(p.kind);
+
+        // fallback (se não tiver classe real)
+        if(!rgb){
+          const count = densityAt(p.x, p.y);
+          rgb = colorForDensity(count);
+        }
 
         const pulse = 0.55 + 0.45*Math.sin(p.ph + state.t*p.sp*0.025);
-        const alpha = (0.07 + 0.26*pulse);
-        const rad   = 0.34 + p.base*0.40;
+        const alpha = (0.08 + 0.28*pulse);
+        const rad   = 0.38 + p.base*0.42;
 
-        drawPoint(ctxP, p, r,g,b, alpha, rad);
+        ctxP.beginPath();
+        ctxP.fillStyle = `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${alpha})`;
+        ctxP.arc(p.x, p.y, rad, 0, Math.PI*2);
+        ctxP.fill();
       }
 
-      // sparkles (com a cor certa)
-      const glowCount = Math.min(2000, Math.max(700, (state.ptsXY.length/14)|0));
+      // 2) sparkles
+      const glowCount = Math.min(1800, Math.max(500, (state.ptsXY.length/14)|0));
       ctxP.save();
       ctxP.shadowBlur = 10;
       for(let i=0;i<glowCount;i++){
         const p = state.ptsXY[(Math.random()*state.ptsXY.length)|0];
         if(!p) continue;
 
-        const count = densityAt(p.x, p.y);
-        const [r,g,b] = colorForPressure(count);
+        let rgb = colorForKind(p.kind);
+        if(!rgb){
+          const count = densityAt(p.x, p.y);
+          rgb = colorForDensity(count);
+        }
 
         const pulse = 0.55 + 0.45*Math.sin(p.ph + state.t*0.03);
-        const alpha = 0.05 + 0.16*pulse;
+        const alpha = 0.06 + 0.18*pulse;
 
-        ctxP.shadowColor = `rgba(${r},${g},${b},${0.55})`;
-        drawPoint(ctxP, p, r,g,b, alpha, 1.1 + pulse*1.4);
+        ctxP.shadowColor = `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${0.55})`;
+        ctxP.fillStyle   = `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${alpha})`;
+
+        ctxP.beginPath();
+        ctxP.arc(p.x, p.y, 1.2 + pulse*1.5, 0, Math.PI*2);
+        ctxP.fill();
       }
       ctxP.restore();
-    }
 
-    // recorte BR
-    maskCanvasToBrasil(ctxP);
-    ctxP.globalCompositeOperation = "source-over";
+      maskCanvasToBrasil(ctxP);
+      ctxP.globalCompositeOperation = "source-over";
+    }
 
     state.t++;
     requestAnimationFrame(loop);
@@ -1015,38 +1016,37 @@ async function boot(){
     resizeAll();
     state.ready = true;
 
-    // desenha mapa base SEM pontos
     redrawStatic();
     startWave(series);
 
-    // >>> NOVO: monta pontos de água (azul) a partir das linhas
-    buildWaterPointsFromLines();
-
-    // carrega pontos sample primeiro
+    // sample
     statusEl.textContent = "Status: mapa base OK • carregando pontos (sample)…";
     const ptsSample = await loadJSON(FILES.pts_sample);
     state.ptsFC = ptsSample;
     buildProjectedPoints(ptsSample);
     startAnim();
 
+    const s = state.statsKinds;
     statusEl.textContent =
-      `Status: sample OK • veg ${state.ptsXY.length.toLocaleString("pt-BR")} pts • água ${state.waterXY.length.toLocaleString("pt-BR")} pts • tentando FULL…`;
+      `Status: sample OK • pts=${state.ptsXY.length.toLocaleString("pt-BR")} `
+      + `| água=${s.agua.toLocaleString("pt-BR")} veg=${s.veg.toLocaleString("pt-BR")} `
+      + `trans=${s.trans.toLocaleString("pt-BR")} desm=${s.desm.toLocaleString("pt-BR")} `
+      + `| tentando FULL…`;
 
-    // tenta FULL
+    // full
     setTimeout(async ()=>{
       try{
         const ptsFull = await loadJSON(FILES.pts_full);
         state.ptsFC = ptsFull;
         buildProjectedPoints(ptsFull);
 
-        // rebuild água (pra manter proporção após resize/reproj)
-        buildWaterPointsFromLines();
-
+        const f = state.statsKinds;
         statusEl.textContent =
-          `Status: FULL OK • veg ${state.ptsXY.length.toLocaleString("pt-BR")} pts • água ${state.waterXY.length.toLocaleString("pt-BR")} pts`;
+          `Status: FULL OK • pts=${state.ptsXY.length.toLocaleString("pt-BR")} (cap) `
+          + `| água=${f.agua.toLocaleString("pt-BR")} veg=${f.veg.toLocaleString("pt-BR")} `
+          + `trans=${f.trans.toLocaleString("pt-BR")} desm=${f.desm.toLocaleString("pt-BR")}`;
       }catch(e){
-        statusEl.textContent =
-          `Status: FULL indisponível • mantendo sample • veg ${state.ptsXY.length.toLocaleString("pt-BR")} pts • água ${state.waterXY.length.toLocaleString("pt-BR")} pts`;
+        statusEl.textContent = `Status: FULL indisponível • mantendo sample (${state.ptsXY.length.toLocaleString("pt-BR")} pts)`;
       }
     }, 250);
 
@@ -1058,6 +1058,5 @@ async function boot(){
 }
 boot();
 </script>
-
 </body>
 </html>
