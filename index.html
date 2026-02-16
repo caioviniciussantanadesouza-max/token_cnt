@@ -159,7 +159,7 @@ html,body{
   display:flex;
   align-items:center;
   justify-content:center;
-  background: radial-gradient(900px 600px at 50% 40%, rgba(20,60,80,.35), rgba(0,0,0,1) 70%);
+  background: radial-gradient(900px 600px at 50% 40%, rgba(20,60,80,.28), rgba(0,0,0,1) 72%);
 }
 .layer{
   position:absolute; inset:0;
@@ -167,23 +167,41 @@ html,body{
   height:100%;
   pointer-events:none;
 }
+
+/* HOLOGRAFIA: camada de pontos (ALINHADA) */
+#cnvHolo{
+  mix-blend-mode: screen;
+  opacity: .92;
+  filter: saturate(1.35) contrast(1.18);
+  transform-origin: 50% 50%;
+  animation: holoFloat 3.8s ease-in-out infinite;
+}
+@keyframes holoFloat{
+  0%{ transform: translateY(-6px) scale(1.000); }
+  50%{ transform: translateY(-10px) scale(1.004); }
+  100%{ transform: translateY(-6px) scale(1.000); }
+}
+
+/* glow geral por cima */
 #mapGlow{
   position:absolute; inset:-10%;
   pointer-events:none;
   mix-blend-mode: screen;
-  opacity:.22;
-  filter: blur(12px);
+  opacity:.18;
+  filter: blur(14px);
   background:
-    radial-gradient(circle at 42% 55%, rgba(120,220,255,.22), transparent 52%),
-    radial-gradient(circle at 70% 45%, rgba(120,220,255,.16), transparent 60%),
+    radial-gradient(circle at 42% 55%, rgba(120,220,255,.20), transparent 52%),
+    radial-gradient(circle at 70% 45%, rgba(120,220,255,.14), transparent 60%),
     radial-gradient(circle at 35% 70%, rgba(120,220,255,.10), transparent 60%);
   animation: glowPulse 6s ease-in-out infinite;
 }
 @keyframes glowPulse{
-  0%{ opacity:.16; transform:scale(1); }
-  50%{ opacity:.30; transform:scale(1.02); }
-  100%{ opacity:.16; transform:scale(1); }
+  0%{ opacity:.12; transform:scale(1); }
+  50%{ opacity:.22; transform:scale(1.02); }
+  100%{ opacity:.12; transform:scale(1); }
 }
+
+/* scanlines */
 #scanlines{
   position:absolute; inset:0;
   pointer-events:none;
@@ -200,28 +218,6 @@ html,body{
   animation: scan 3.2s linear infinite;
 }
 @keyframes scan{ 0%{ transform:translateY(-22px);} 100%{ transform:translateY(22px);} }
-
-/* holo sheen (bem sutil) */
-#holoSheen{
-  position:absolute; inset:-30%;
-  pointer-events:none;
-  mix-blend-mode: screen;
-  opacity:.14;
-  filter: blur(16px);
-  background:
-    linear-gradient(120deg,
-      transparent 0%,
-      rgba(120,220,255,.00) 35%,
-      rgba(120,220,255,.18) 45%,
-      rgba(120,220,255,.00) 58%,
-      transparent 100%);
-  animation: sheen 5.2s ease-in-out infinite;
-}
-@keyframes sheen{
-  0%{ transform:translateX(-12%) translateY(0) rotate(2deg); opacity:.09; }
-  50%{ transform:translateX(12%) translateY(-2%) rotate(-2deg); opacity:.18; }
-  100%{ transform:translateX(-12%) translateY(0) rotate(2deg); opacity:.09; }
-}
 
 /* Right */
 #right{
@@ -316,7 +312,7 @@ input:focus{
     <div id="chips">
       <div class="chip">Fonte: dados públicos governamentais</div>
       <div class="chip">Ano base: 2025</div>
-      <div class="chip">Pontos reais (classes)</div>
+      <div class="chip">Pontos reais (sample → full)</div>
       <div class="chip">Compra: Pump.fun</div>
     </div>
   </div>
@@ -353,16 +349,15 @@ input:focus{
 
   <div id="center" class="glass">
     <div id="mapWrap">
-      <!-- MAPA BASE -->
+      <!-- BASE (sempre alinhado) -->
       <canvas id="cnvBase" class="layer"></canvas>
       <canvas id="cnvBorder" class="layer"></canvas>
       <canvas id="cnvLines" class="layer"></canvas>
 
-      <!-- CAMADA HOLOGRÁFICA (pontos por classe) -->
+      <!-- HOLOGRAMA (mesmo tamanho do base, “flutua”) -->
       <canvas id="cnvHolo" class="layer"></canvas>
 
       <div id="mapGlow"></div>
-      <div id="holoSheen"></div>
       <div id="scanlines"></div>
     </div>
   </div>
@@ -409,17 +404,6 @@ const FILES = {
   pts_full: "vege_pts.geojson"
 };
 
-// Ajuste fino do HOLOGRAMA (não mexe no mapa base)
-const HOLO = {
-  maxPoints: 140000,      // cap pra não travar
-  baseRadius: 0.55,       // tamanho ponto
-  glowRadius: 1.8,        // raio do brilho (passo blur)
-  alphaMin: 0.06,
-  alphaMax: 0.32,
-  glowAlpha: 0.18,
-  shimmerSpeed: 0.018
-};
-
 /* =========================
    HELPERS
 ========================= */
@@ -434,7 +418,7 @@ function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
 async function loadJSON(name){
   const url = "./" + name + "?v=" + Date.now();
   const res = await fetch(url, { cache:"no-store" });
-  if(!res.ok) throw new Error(`${name} HTTP ${res.status}`);
+  if(!res.ok) throw new Error(`${name} HTTP ${res.status} (${url})`);
   const txt = await res.text();
   try{ return JSON.parse(txt); }
   catch(e){ throw new Error(`${name}: JSON inválido / truncado`); }
@@ -446,7 +430,6 @@ async function loadEither(a,b){
     catch(e2){ throw e1; }
   }
 }
-
 function walkCoords(arr, cb){
   if(!arr) return;
   if(typeof arr[0] === "number") cb(arr);
@@ -466,7 +449,7 @@ function calcBBox(fc){
   return [minx, miny, maxx, maxy];
 }
 
-/* proj (mesma base pra todos os layers -> alinhamento perfeito) */
+/* proj */
 let bbox = null;
 function proj(lon,lat,w,h){
   const [minx,miny,maxx,maxy] = bbox;
@@ -489,10 +472,6 @@ const ctxB    = cnvBorder.getContext("2d");
 const ctxL    = cnvLines.getContext("2d");
 const ctxH    = cnvHolo.getContext("2d");
 
-// offscreen pra glow (evita “fundo”)
-const off = document.createElement("canvas");
-const offCtx = off.getContext("2d");
-
 function resizeCanvas(cnv, ctx){
   const dpr = Math.max(1, window.devicePixelRatio || 1);
   const r = cnv.getBoundingClientRect();
@@ -505,15 +484,6 @@ function resizeAll(){
   resizeCanvas(cnvBorder, ctxB);
   resizeCanvas(cnvLines, ctxL);
   resizeCanvas(cnvHolo, ctxH);
-
-  // offscreen com mesmo tamanho “CSS”
-  const W = cnvHolo.getBoundingClientRect().width;
-  const H = cnvHolo.getBoundingClientRect().height;
-  const dpr = Math.max(1, window.devicePixelRatio || 1);
-  off.width = Math.floor(W * dpr);
-  off.height = Math.floor(H * dpr);
-  offCtx.setTransform(dpr,0,0,dpr,0,0);
-
   resizeWave();
   if(state.ready) redrawStatic();
 }
@@ -526,7 +496,6 @@ function clearAll(){
   ctxB.clearRect(0,0,W,H);
   ctxL.clearRect(0,0,W,H);
   ctxH.clearRect(0,0,W,H);
-  offCtx.clearRect(0,0,W,H);
 }
 
 /* =========================
@@ -541,15 +510,17 @@ const state = {
   micro:null,
   cnt:null,
   ptsXY:[],
+  grid:null,
+  waterXY:[],   // pontos azuis de rios (gerados)
+  gridSize:22,
+  R:22,
+  target:11,
   t:0,
-  animStarted:false,
-
-  // contagem por classe (pra status)
-  stat:{water:0, veg:0, trans:0, desm:0, unk:0}
+  animStarted:false
 };
 
 /* =========================
-   DRAW SHAPES (MAPA BASE)
+   DRAW SHAPES
 ========================= */
 function fillPolygons(ctx, fc, fillStyle, alpha){
   const W = cnvBase.getBoundingClientRect().width;
@@ -607,7 +578,7 @@ function strokePolygonsGlow(ctx, fc){
   ctx.shadowColor = "rgba(0,255,220,0.95)";
   ctx.shadowBlur  = 28;
   ctx.lineWidth   = 4.8;
-  ctx.strokeStyle = "rgba(0,255,220,0.55)";
+  ctx.strokeStyle = "rgba(0,255,220,0.50)";
   drawOuter();
 
   ctx.shadowBlur  = 12;
@@ -681,117 +652,21 @@ function maskCanvasToBrasil(ctx){
 }
 
 /* =========================
-   MAPA BASE (sempre)
+   PONTOS VEGETAÇÃO (verdes) + GRID (para amarelo/vermelho)
 ========================= */
-function redrawStatic(){
-  if(!bbox) return;
-  clearAll();
-
-  // base (bem leve só pra dar “profundidade”, NÃO muda o mapa)
-  fillPolygons(ctxBase, state.biomas, "rgba(0,255,200,1)", 0.028);
-  maskCanvasToBrasil(ctxBase);
-
-  // borda BR
-  strokePolygonsGlow(ctxB, state.brasilMask);
-
-  // linhas (água e limites)
-  strokeLines(ctxL, state.macro, "rgba(0,234,255,0.90)", 1.15, 1); // água
-  strokeLines(ctxL, state.micro, "rgba(0,120,255,0.60)", 0.55, 1); // água fina
-  strokeLines(ctxL, state.uf,    "rgba(160,245,255,0.70)", 1.05, 1); // limites
-  maskCanvasToBrasil(ctxL);
-}
-
-/* =========================
-   PONTOS HOLOGRÁFICOS (4 classes)
-========================= */
-function guessClassKey(props){
-  if(!props) return null;
-  const keys = Object.keys(props);
-  const wanted = ["class","classe","type","tipo","cat","category","legend","legenda","cover","cobertura","label","name"];
-  for(const w of wanted){
-    const hit = keys.find(k => k.toLowerCase() === w);
-    if(hit) return hit;
-  }
-  // fallback: tenta achar algo com “class”
-  const loose = keys.find(k => k.toLowerCase().includes("class"));
-  return loose || null;
-}
-
-function normalizeClassValue(v){
-  if(v === null || v === undefined) return "";
-  return String(v).trim().toLowerCase();
-}
-
-function classifyPoint(props){
-  const key = guessClassKey(props);
-  const raw = key ? props[key] : null;
-  const v = normalizeClassValue(raw);
-
-  // água
-  if(v.includes("agua") || v.includes("water") || v.includes("hidro") || v.includes("rio") || v.includes("river") || v.includes("mar") || v.includes("lago"))
-    return "water";
-
-  // vegetação / floresta
-  if(v.includes("flore") || v.includes("forest") || v.includes("veget") || v.includes("mataa") || v.includes("mato") || v.includes("native") || v.includes("natural"))
-    return "veg";
-
-  // transição / agro / pasto
-  if(v.includes("agro") || v.includes("past") || v.includes("crop") || v.includes("lavour") || v.includes("trans") || v.includes("campo") || v.includes("mosaico"))
-    return "trans";
-
-  // desmatamento / não vegetado / urbano / mineração
-  if(v.includes("desmat") || v.includes("defor") || v.includes("urb") || v.includes("min") || v.includes("bare") || v.includes("nao veg") || v.includes("não veg") || v.includes("soil"))
-    return "desm";
-
-  // se for numérico (alguns datasets usam ids)
-  if(Number.isFinite(Number(raw))){
-    const n = Number(raw);
-    // ajuste se você tiver a tabela de ids do seu geojson:
-    // aqui só um fallback razoável:
-    if(n === 1) return "water";
-    if(n >= 2 && n <= 49) return "veg";
-    if(n >= 50 && n <= 89) return "trans";
-    if(n >= 90) return "desm";
-  }
-
-  return "unk";
-}
-
-function colorForClass(cls){
-  // [r,g,b]
-  if(cls==="water") return [0, 190, 255];   // azul água
-  if(cls==="veg")   return [60, 255, 180];  // verde
-  if(cls==="trans") return [255, 235, 90];  // amarelo
-  if(cls==="desm")  return [255, 80, 60];   // vermelho
-  return [180, 230, 255];                  // fallback
-}
-
-function buildProjectedPoints(fc){
+function buildProjectedPointsFromGeoJSON(fc){
   const W = cnvBase.getBoundingClientRect().width;
   const H = cnvBase.getBoundingClientRect().height;
-
-  state.stat = {water:0, veg:0, trans:0, desm:0, unk:0};
 
   const pts = [];
   for(const f of (fc.features||[])){
     const g = f.geometry;
     if(!g || g.type!=="Point") continue;
-
-    const cls = classifyPoint(f.properties || {});
-    state.stat[cls] = (state.stat[cls]||0) + 1;
-
     const [x,y] = proj(g.coordinates[0], g.coordinates[1], W, H);
-    pts.push({
-      x, y,
-      cls,
-      ph: Math.random()*Math.PI*2,
-      sp: 0.7+Math.random()*1.3,
-      base: 0.6+Math.random()*0.8
-    });
+    pts.push({ x,y, ph: Math.random()*Math.PI*2, sp: 0.7+Math.random()*1.3, base: 0.6+Math.random()*0.8 });
   }
 
-  // CAP para FULL não travar
-  const MAX = HOLO.maxPoints;
+  const MAX = 140000;
   if(pts.length > MAX){
     const step = Math.ceil(pts.length / MAX);
     const slim = [];
@@ -800,10 +675,138 @@ function buildProjectedPoints(fc){
   } else {
     state.ptsXY = pts;
   }
+
+  buildGrid();
+}
+
+function buildGrid(){
+  const W = cnvBase.getBoundingClientRect().width;
+  const H = cnvBase.getBoundingClientRect().height;
+  const s = state.gridSize;
+
+  const cols = Math.ceil(W/s);
+  const rows = Math.ceil(H/s);
+  const grid = new Array(cols*rows);
+  for(let i=0;i<grid.length;i++) grid[i]=[];
+
+  const idxOf = (x,y)=>{
+    const cx = Math.max(0, Math.min(cols-1, (x/s)|0));
+    const cy = Math.max(0, Math.min(rows-1, (y/s)|0));
+    return cy*cols + cx;
+  };
+
+  for(let i=0;i<state.ptsXY.length;i++){
+    const p = state.ptsXY[i];
+    grid[idxOf(p.x,p.y)].push(i);
+  }
+
+  state.grid = {grid, cols, rows, s};
+}
+
+function densityAt(x,y){
+  const g = state.grid;
+  if(!g) return 0;
+
+  const R = state.R;
+  const R2 = R*R;
+
+  const cx = (x/g.s)|0;
+  const cy = (y/g.s)|0;
+
+  let count = 0;
+  for(let oy=-1; oy<=1; oy++){
+    for(let ox=-1; ox<=1; ox++){
+      const nx = cx+ox, ny = cy+oy;
+      if(nx<0 || ny<0 || nx>=g.cols || ny>=g.rows) continue;
+      const bucket = g.grid[ny*g.cols + nx];
+      for(const pi of bucket){
+        const p = state.ptsXY[pi];
+        const dx = x - p.x, dy = y - p.y;
+        if(dx*dx + dy*dy <= R2) count++;
+      }
+    }
+  }
+  return count;
+}
+
+/* Classe por densidade:
+   - alta densidade => verde (vegetação)
+   - média => amarelo (transição)
+   - baixa => vermelho (pressão/desmatamento)
+*/
+function colorForDensity(count){
+  const norm = Math.min(1, count / state.target);
+  if(norm >= 0.66) return [40, 255, 160];   // VERDE
+  if(norm >= 0.33) return [255, 235, 90];   // AMARELO
+  return [255, 70, 60];                    // VERMELHO
 }
 
 /* =========================
-   ANIMAÇÃO HOLO (sem fundo)
+   PONTOS ÁGUA (AZUL) a partir das linhas de rios (macro/micro)
+   (gera uma “nuvem” de pontos ao longo das linhas)
+========================= */
+function buildWaterPointsFromLines(fc, step=10){
+  const W = cnvBase.getBoundingClientRect().width;
+  const H = cnvBase.getBoundingClientRect().height;
+  const out = [];
+
+  const pushLine = (line)=>{
+    if(!line || line.length<2) return;
+    for(let i=0; i<line.length; i+=step){
+      const lon = line[i][0], lat = line[i][1];
+      const [x,y] = proj(lon,lat,W,H);
+      // jitter leve p/ ficar orgânico
+      out.push({
+        x: x + (Math.random()-0.5)*1.2,
+        y: y + (Math.random()-0.5)*1.2,
+        ph: Math.random()*Math.PI*2,
+        sp: 0.8 + Math.random()*1.4,
+        base: 0.4 + Math.random()*0.9
+      });
+    }
+  };
+
+  for(const f of (fc.features||[])){
+    const g = f.geometry;
+    if(!g) continue;
+    if(g.type==="LineString") pushLine(g.coordinates);
+    else if(g.type==="MultiLineString") for(const ln of g.coordinates) pushLine(ln);
+  }
+
+  // limita para não travar
+  const MAX = 90000;
+  if(out.length > MAX){
+    const step2 = Math.ceil(out.length / MAX);
+    const slim=[];
+    for(let i=0;i<out.length;i+=step2) slim.push(out[i]);
+    return slim;
+  }
+  return out;
+}
+
+/* =========================
+   STATIC REDRAW (MAPA BASE)
+========================= */
+function redrawStatic(){
+  if(!bbox) return;
+  clearAll();
+
+  // base MUITO leve (sem “fundo turquesa”)
+  fillPolygons(ctxBase, state.biomas, "rgba(0,255,200,1)", 0.018);
+  maskCanvasToBrasil(ctxBase);
+
+  // borda glow
+  strokePolygonsGlow(ctxB, state.brasilMask);
+
+  // linhas base (água/limites)
+  strokeLines(ctxL, state.macro, "rgba(0,234,255,0.85)", 1.15, 1);
+  strokeLines(ctxL, state.micro, "rgba(0,120,255,0.55)", 0.55, 1);
+  strokeLines(ctxL, state.uf,    "rgba(160,245,255,0.65)", 1.05, 1);
+  maskCanvasToBrasil(ctxL);
+}
+
+/* =========================
+   ANIMAÇÃO (HOLOGRAMA ALINHADO)
 ========================= */
 function startHoloAnim(){
   if(state.animStarted) return;
@@ -812,70 +815,82 @@ function startHoloAnim(){
   const loop = ()=>{
     const W = cnvHolo.getBoundingClientRect().width;
     const H = cnvHolo.getBoundingClientRect().height;
-
     ctxH.clearRect(0,0,W,H);
-    offCtx.clearRect(0,0,W,H);
 
-    if(state.ptsXY.length){
-      // PASSO 1: pontos (nítidos)
-      ctxH.save();
+    if(state.waterXY.length || state.ptsXY.length){
       ctxH.globalCompositeOperation = "lighter";
 
-      for(const p of state.ptsXY){
-        const [r,g,b] = colorForClass(p.cls);
+      // 1) ÁGUA (AZUL) — pontos nos rios
+      if(state.waterXY.length){
+        ctxH.save();
+        ctxH.shadowBlur = 14;
+        for(const p of state.waterXY){
+          const pulse = 0.55 + 0.45*Math.sin(p.ph + state.t*p.sp*0.03);
+          const alpha = 0.05 + 0.18*pulse;
+          const rad   = 0.55 + p.base*0.55;
 
-        // shimmer/pulso holográfico
-        const pulse = 0.55 + 0.45*Math.sin(p.ph + state.t*(p.sp*HOLO.shimmerSpeed));
-        const alpha = HOLO.alphaMin + (HOLO.alphaMax - HOLO.alphaMin) * pulse;
-        const rad   = HOLO.baseRadius + p.base*0.35;
-
-        ctxH.beginPath();
-        ctxH.fillStyle = `rgba(${r},${g},${b},${alpha})`;
-        ctxH.arc(p.x, p.y, rad, 0, Math.PI*2);
-        ctxH.fill();
+          ctxH.shadowColor = `rgba(0,200,255,${0.35 + 0.35*pulse})`;
+          ctxH.fillStyle   = `rgba(0,210,255,${alpha})`;
+          ctxH.beginPath();
+          ctxH.arc(p.x, p.y, rad, 0, Math.PI*2);
+          ctxH.fill();
+        }
+        ctxH.restore();
       }
 
-      // recorte BR (mantém alinhado e limpo)
-      maskCanvasToBrasil(ctxH);
-      ctxH.restore();
+      // 2) VEGETAÇÃO/TRANSIÇÃO/DESMATAMENTO (verde/amarelo/vermelho) — a partir dos seus pontos
+      if(state.ptsXY.length){
+        // micro pontos
+        for(const p of state.ptsXY){
+          const count = densityAt(p.x, p.y);
+          const [r,g,b] = colorForDensity(count);
 
-      // PASSO 2: glow (blur) usando offscreen
-      offCtx.save();
-      offCtx.globalCompositeOperation = "source-over";
-      offCtx.filter = `blur(${HOLO.glowRadius}px)`;
-      offCtx.drawImage(cnvHolo, 0, 0, W, H);
-      offCtx.restore();
+          const pulse = 0.55 + 0.45*Math.sin(p.ph + state.t*p.sp*0.025);
+          const alpha = (0.06 + 0.22*pulse);
+          const rad   = 0.36 + p.base*0.42;
 
-      // aplica glow no canvas principal (sem pintar fundo)
-      ctxH.save();
-      ctxH.globalCompositeOperation = "lighter";
-      ctxH.globalAlpha = HOLO.glowAlpha;
-      ctxH.drawImage(off, 0, 0, W, H);
-      ctxH.restore();
+          ctxH.fillStyle = `rgba(${r},${g},${b},${alpha})`;
+          ctxH.beginPath();
+          ctxH.arc(p.x, p.y, rad, 0, Math.PI*2);
+          ctxH.fill();
+        }
 
-      // PASSO 3: “pontos quentes” aleatórios (sparkles)
-      ctxH.save();
-      ctxH.globalCompositeOperation = "lighter";
-      ctxH.shadowBlur = 10;
+        // “sparkles” (brilho holográfico)
+        const glowCount = Math.min(2200, Math.max(700, (state.ptsXY.length/12)|0));
+        ctxH.save();
+        ctxH.shadowBlur = 12;
+        for(let i=0;i<glowCount;i++){
+          const p = state.ptsXY[(Math.random()*state.ptsXY.length)|0];
+          if(!p) continue;
 
-      const sparkleN = Math.min(1100, Math.max(380, (state.ptsXY.length/18)|0));
-      for(let i=0;i<sparkleN;i++){
-        const p = state.ptsXY[(Math.random()*state.ptsXY.length)|0];
-        if(!p) continue;
+          const count = densityAt(p.x, p.y);
+          const [r,g,b] = colorForDensity(count);
 
-        const [r,g,b] = colorForClass(p.cls);
-        const pulse = 0.55 + 0.45*Math.sin(p.ph + state.t*0.03);
-        const alpha = 0.05 + 0.16*pulse;
+          const pulse = 0.55 + 0.45*Math.sin(p.ph + state.t*0.03);
+          const alpha = 0.05 + 0.16*pulse;
 
-        ctxH.shadowColor = `rgba(${r},${g},${b},0.55)`;
-        ctxH.fillStyle   = `rgba(${r},${g},${b},${alpha})`;
+          ctxH.shadowColor = `rgba(${r},${g},${b},${0.55})`;
+          ctxH.fillStyle   = `rgba(${r},${g},${b},${alpha})`;
 
-        ctxH.beginPath();
-        ctxH.arc(p.x, p.y, 1.0 + pulse*1.35, 0, Math.PI*2);
-        ctxH.fill();
+          ctxH.beginPath();
+          ctxH.arc(p.x, p.y, 1.0 + pulse*1.6, 0, Math.PI*2);
+          ctxH.fill();
+        }
+        ctxH.restore();
       }
+
+      // recorte BR (mantém alinhado)
       maskCanvasToBrasil(ctxH);
+
+      // leve “fumaça” holográfica por cima (sem colorir fundo)
+      ctxH.save();
+      ctxH.globalCompositeOperation = "screen";
+      ctxH.globalAlpha = 0.10;
+      ctxH.fillStyle = "rgba(0,255,220,0.06)";
+      ctxH.fillRect(0,0,W,H);
       ctxH.restore();
+
+      ctxH.globalCompositeOperation = "source-over";
     }
 
     state.t++;
@@ -885,7 +900,7 @@ function startHoloAnim(){
 }
 
 /* =========================
-   TELEMETRY (onda)
+   TELEMETRY
 ========================= */
 const wave = document.getElementById("wave");
 const wctx = wave.getContext("2d");
@@ -975,7 +990,6 @@ async function boot(){
   try{
     statusEl.textContent = "Status: carregando camadas base…";
 
-    // base
     state.biomas = await loadJSON(FILES.biomas);
     state.brasilMask = await loadEither(FILES.br_simpl, FILES.br_full);
     state.uf = await loadJSON(FILES.uf);
@@ -1014,35 +1028,34 @@ async function boot(){
     resizeAll();
     state.ready = true;
 
-    // mapa base primeiro (sempre)
+    // desenha base (linhas/limites) imediatamente
     redrawStatic();
     startWave(series);
 
-    // pontos sample (rápido)
+    // gera pontos de ÁGUA (AZUL) dos rios
+    state.waterXY = [
+      ...buildWaterPointsFromLines(state.macro, 10),
+      ...buildWaterPointsFromLines(state.micro, 18)
+    ];
+
+    // carrega pontos de vegetação (rápido: sample)
     statusEl.textContent = "Status: mapa base OK • carregando pontos (sample)…";
     const ptsSample = await loadJSON(FILES.pts_sample);
-    buildProjectedPoints(ptsSample);
-
+    buildProjectedPointsFromGeoJSON(ptsSample);
     startHoloAnim();
-
-    const s = state.stat;
     statusEl.textContent =
-      `Status: HOLOGRAMA OK • pts ${state.ptsXY.length.toLocaleString("pt-BR")} • ` +
-      `água ${s.water||0} • veg ${s.veg||0} • trans ${s.trans||0} • desm ${s.desm||0}` +
-      ((s.unk||0) ? ` • unk ${s.unk}` : "");
+      `Status: HOLOGRAMA OK • água ${state.waterXY.length.toLocaleString("pt-BR")} pts • vegetação ${state.ptsXY.length.toLocaleString("pt-BR")} pts • tentando FULL…`;
 
-    // tenta FULL (se existir)
+    // tenta FULL
     setTimeout(async ()=>{
       try{
         const ptsFull = await loadJSON(FILES.pts_full);
-        buildProjectedPoints(ptsFull);
-        const s2 = state.stat;
+        buildProjectedPointsFromGeoJSON(ptsFull);
         statusEl.textContent =
-          `Status: FULL OK • pts ${state.ptsXY.length.toLocaleString("pt-BR")} (cap) • ` +
-          `água ${s2.water||0} • veg ${s2.veg||0} • trans ${s2.trans||0} • desm ${s2.desm||0}` +
-          ((s2.unk||0) ? ` • unk ${s2.unk}` : "");
+          `Status: FULL OK • água ${state.waterXY.length.toLocaleString("pt-BR")} pts • vegetação ${state.ptsXY.length.toLocaleString("pt-BR")} pts (cap)`;
       }catch(e){
-        // mantém sample
+        statusEl.textContent =
+          `Status: FULL indisponível • mantendo sample • água ${state.waterXY.length.toLocaleString("pt-BR")} pts • vegetação ${state.ptsXY.length.toLocaleString("pt-BR")} pts`;
       }
     }, 250);
 
