@@ -294,7 +294,7 @@ input:focus{
     <div id="chips">
       <div class="chip">Fonte: dados públicos governamentais</div>
       <div class="chip">Ano base: 2025</div>
-      <div class="chip">Pontos reais (sample → full)</div>
+      <div class="chip">Pontos reais (classes)</div>
       <div class="chip">Compra: Pump.fun</div>
     </div>
   </div>
@@ -370,6 +370,7 @@ input:focus{
 const PUMP_URL = "https://pump.fun/coin/GCVyjNaCbXkwGUuktyNxSXad4ozmTp2fzQr2jieSpump";
 const rate = 147449130;
 
+// Base layers (você já tem)
 const FILES = {
   biomas: "biomas.geojson",
   br_simpl: "BR_IBGE_simplificado.geojson",
@@ -379,30 +380,16 @@ const FILES = {
   micro: "micro_rh.geojson",
   cnt: "CNT_FULL_10Y.geojson",
 
-  // (fallback antigo)
-  pts_sample: "vege_pts_sample.geojson",
-  pts_full: "vege_pts.geojson",
-
-  // (NOVO) opção recomendada: um arquivo único com as 4 camadas
-  layers_points: "layers_points.json",
-
-  // (NOVO) opção alternativa: GeoJSON por camada
+  // PONTOS POR CLASSE (adicione estes arquivos na pasta)
   agua_sample: "agua_pts_sample.geojson",
-  agua_full: "agua_pts.geojson",
-  veg_sample: "vege_pts_sample.geojson",
-  veg_full: "vege_pts.geojson",
-  trans_sample: "trans_pts_sample.geojson",
-  trans_full: "trans_pts.geojson",
+  veg_sample:  "vege_pts_sample.geojson",
+  trans_sample:"trans_pts_sample.geojson",
   desm_sample: "desm_pts_sample.geojson",
-  desm_full: "desm_pts.geojson"
-};
 
-// cores fixas da legenda (holografia)
-const LAYER_STYLE = {
-  agua: { rgb:[0,210,255],  pulseA:[0.08,0.30], r:[0.40,0.95], glowR:[1.2,2.8] }, // azul
-  veg:  { rgb:[60,255,180], pulseA:[0.08,0.30], r:[0.40,0.95], glowR:[1.2,2.8] }, // verde
-  trans:{ rgb:[255,235,90], pulseA:[0.08,0.30], r:[0.40,0.95], glowR:[1.2,2.8] }, // amarelo
-  desm: { rgb:[255,80,60],  pulseA:[0.08,0.30], r:[0.40,0.95], glowR:[1.2,2.8] }  // vermelho
+  agua_full: "agua_pts.geojson",
+  veg_full:  "vege_pts.geojson",
+  trans_full:"trans_pts.geojson",
+  desm_full: "desm_pts.geojson"
 };
 
 /* =========================
@@ -426,16 +413,16 @@ async function loadJSON(name){
   catch(e){ throw new Error(`${name}: JSON inválido / truncado`); }
 }
 
+async function tryLoadJSON(name){
+  try{ return await loadJSON(name); }catch(e){ return null; }
+}
+
 async function loadEither(a,b){
   try{ return await loadJSON(a); }
   catch(e1){
     try{ return await loadJSON(b); }
     catch(e2){ throw e1; }
   }
-}
-
-async function tryLoad(name){
-  try{ return await loadJSON(name); } catch(e){ return null; }
 }
 
 function walkCoords(arr, cb){
@@ -494,7 +481,6 @@ function resizeAll(){
   resizeCanvas(cnvPoints, ctxP);
   resizeWave();
   if(state.ready) redrawStatic();
-  if(state.ready && state.pointsReady) rebuildProjectedPointsAll();
 }
 window.addEventListener("resize", resizeAll);
 
@@ -512,8 +498,6 @@ function clearAll(){
 ========================= */
 const state = {
   ready:false,
-  pointsReady:false,
-
   biomas:null,
   brasilMask:null,
   uf:null,
@@ -521,16 +505,11 @@ const state = {
   micro:null,
   cnt:null,
 
-  // (NOVO) pontos por camada
-  pointsFC: { agua:null, veg:null, trans:null, desm:null },
-  pointsXY: { agua:[], veg:[], trans:[], desm:[] },
-
-  // tuning visual
+  // pontos agregados (todas as classes aqui)
+  ptsXY: [],
+  counts: {agua:0, veg:0, trans:0, desm:0},
   t:0,
-  animStarted:false,
-
-  // cap (pra não travar)
-  MAX_POINTS_PER_LAYER: 80000
+  animStarted:false
 };
 
 /* =========================
@@ -672,11 +651,14 @@ function redrawStatic(){
   if(!bbox) return;
   clearAll();
 
+  // base leve
   fillPolygons(ctxBase, state.biomas, "rgba(0,255,200,1)", 0.035);
   maskCanvasToBrasil(ctxBase);
 
+  // borda
   strokePolygonsGlow(ctxB, state.brasilMask);
 
+  // linhas (água e limites)
   strokeLines(ctxL, state.macro, "rgba(0,234,255,0.90)", 1.15, 1);
   strokeLines(ctxL, state.micro, "rgba(0,120,255,0.60)", 0.55, 1);
   strokeLines(ctxL, state.uf,    "rgba(160,245,255,0.70)", 1.05, 1);
@@ -684,48 +666,53 @@ function redrawStatic(){
 }
 
 /* =========================
-   POINTS (4 CORES)
+   PONTOS POR CLASSE
 ========================= */
-function projectLayerPoints(fc){
+function colorForType(type){
+  switch(type){
+    case "agua": return [70, 170, 255];   // azul
+    case "veg":  return [60, 255, 180];   // verde
+    case "trans":return [255, 235, 90];   // amarelo
+    case "desm": return [255, 80, 60];    // vermelho
+  }
+  return [240,240,240];
+}
+
+function addProjectedPoints(fc, type){
   const W = cnvBase.getBoundingClientRect().width;
   const H = cnvBase.getBoundingClientRect().height;
 
-  if(!fc || !Array.isArray(fc.features)) return [];
+  if(!fc || !Array.isArray(fc.features)) return 0;
 
-  const pts = [];
-  for(const f of fc.features){
-    const g = f.geometry;
-    if(!g || g.type !== "Point") continue;
+  // limitador por camada (pra não travar)
+  const MAX_LAYER = 90000;
+
+  const feats = fc.features;
+  const step = feats.length > MAX_LAYER ? Math.ceil(feats.length / MAX_LAYER) : 1;
+
+  let added = 0;
+  for(let i=0;i<feats.length;i+=step){
+    const f = feats[i];
+    const g = f && f.geometry;
+    if(!g || g.type!=="Point") continue;
+
     const [x,y] = proj(g.coordinates[0], g.coordinates[1], W, H);
-    pts.push({ x,y, ph: Math.random()*Math.PI*2, sp: 0.7+Math.random()*1.3, base: 0.6+Math.random()*0.8 });
+
+    state.ptsXY.push({
+      x,y,type,
+      ph: Math.random()*Math.PI*2,
+      sp: 0.7+Math.random()*1.3,
+      base: 0.6+Math.random()*0.8
+    });
+    added++;
   }
-
-  // cap por camada
-  const MAX = state.MAX_POINTS_PER_LAYER;
-  if(pts.length > MAX){
-    const step = Math.ceil(pts.length / MAX);
-    const slim = [];
-    for(let i=0;i<pts.length;i+=step) slim.push(pts[i]);
-    return slim;
-  }
-  return pts;
+  state.counts[type] = (state.counts[type]||0) + added;
+  return added;
 }
 
-function rebuildProjectedPointsAll(){
-  state.pointsXY.agua  = projectLayerPoints(state.pointsFC.agua);
-  state.pointsXY.veg   = projectLayerPoints(state.pointsFC.veg);
-  state.pointsXY.trans = projectLayerPoints(state.pointsFC.trans);
-  state.pointsXY.desm  = projectLayerPoints(state.pointsFC.desm);
-}
-
-function totalPts(){
-  const a = state.pointsXY.agua.length;
-  const v = state.pointsXY.veg.length;
-  const t = state.pointsXY.trans.length;
-  const d = state.pointsXY.desm.length;
-  return {a,v,t,d, sum:(a+v+t+d)};
-}
-
+/* =========================
+   ANIMAÇÃO (pontos + brilho)
+========================= */
 function startAnim(){
   if(state.animStarted) return;
   state.animStarted = true;
@@ -735,20 +722,16 @@ function startAnim(){
     const H = cnvPoints.getBoundingClientRect().height;
     ctxP.clearRect(0,0,W,H);
 
-    ctxP.globalCompositeOperation = "lighter";
+    if(state.ptsXY.length){
+      ctxP.globalCompositeOperation = "lighter";
 
-    const drawLayer = (layerKey)=>{
-      const pts = state.pointsXY[layerKey] || [];
-      if(!pts.length) return;
+      // 1) micro pontos
+      for(const p of state.ptsXY){
+        const [r,g,b] = colorForType(p.type);
 
-      const st = LAYER_STYLE[layerKey];
-      const [r,g,b] = st.rgb;
-
-      // micro pontos
-      for(const p of pts){
         const pulse = 0.55 + 0.45*Math.sin(p.ph + state.t*p.sp*0.025);
-        const alpha = st.pulseA[0] + (st.pulseA[1]-st.pulseA[0]) * pulse;
-        const rad   = st.r[0] + (st.r[1]-st.r[0]) * (0.25 + 0.75*p.base);
+        const alpha = (0.06 + 0.26*pulse);
+        const rad   = 0.35 + p.base*0.45;
 
         ctxP.beginPath();
         ctxP.fillStyle = `rgba(${r},${g},${b},${alpha})`;
@@ -756,114 +739,37 @@ function startAnim(){
         ctxP.fill();
       }
 
-      // sparkles por camada (pra “holografia”)
-      const glowCount = Math.min(1200, Math.max(240, (pts.length/18)|0));
+      // 2) sparkles (poucos, bem brilhantes)
+      const glowCount = Math.min(2200, Math.max(700, (state.ptsXY.length/18)|0));
       ctxP.save();
-      ctxP.shadowBlur = 10;
+      ctxP.shadowBlur = 12;
 
       for(let i=0;i<glowCount;i++){
-        const p = pts[(Math.random()*pts.length)|0];
+        const p = state.ptsXY[(Math.random()*state.ptsXY.length)|0];
         if(!p) continue;
 
+        const [r,g,b] = colorForType(p.type);
         const pulse = 0.55 + 0.45*Math.sin(p.ph + state.t*0.03);
-        const alpha = 0.06 + 0.18*pulse;
+        const alpha = 0.05 + 0.16*pulse;
 
-        ctxP.shadowColor = `rgba(${r},${g},${b},${0.55})`;
+        ctxP.shadowColor = `rgba(${r},${g},${b},${0.60})`;
         ctxP.fillStyle   = `rgba(${r},${g},${b},${alpha})`;
 
         ctxP.beginPath();
-        ctxP.arc(p.x, p.y, st.glowR[0] + pulse*st.glowR[1], 0, Math.PI*2);
+        ctxP.arc(p.x, p.y, 1.0 + pulse*1.7, 0, Math.PI*2);
         ctxP.fill();
       }
       ctxP.restore();
-    };
 
-    // ordem: água -> veg -> trans -> desm
-    drawLayer("agua");
-    drawLayer("veg");
-    drawLayer("trans");
-    drawLayer("desm");
+      // recorte BR
+      maskCanvasToBrasil(ctxP);
+      ctxP.globalCompositeOperation = "source-over";
+    }
 
-    // recorte Brasil
-    maskCanvasToBrasil(ctxP);
-
-    ctxP.globalCompositeOperation = "source-over";
     state.t++;
     requestAnimationFrame(loop);
   };
   loop();
-}
-
-/* =========================
-   LOAD POINT LAYERS (fallback inteligente)
-========================= */
-function normalizeToFC(x){
-  // aceita FeatureCollection já pronto
-  if(x && x.type === "FeatureCollection") return x;
-
-  // aceita array de {lon,lat} ou [lon,lat]
-  if(Array.isArray(x)){
-    return {
-      type:"FeatureCollection",
-      features: x.map(p=>{
-        const lon = Array.isArray(p) ? p[0] : (p.lon ?? p.lng ?? p[0]);
-        const lat = Array.isArray(p) ? p[1] : (p.lat ?? p[1]);
-        return {
-          type:"Feature",
-          geometry:{ type:"Point", coordinates:[Number(lon), Number(lat)] },
-          properties:{}
-        };
-      }).filter(f=>Number.isFinite(f.geometry.coordinates[0]) && Number.isFinite(f.geometry.coordinates[1]))
-    };
-  }
-
-  // aceita objeto {features:[...]}
-  if(x && Array.isArray(x.features)) return { type:"FeatureCollection", features:x.features };
-
-  return null;
-}
-
-async function loadPointsFromLayersJson(){
-  const obj = await tryLoad(FILES.layers_points);
-  if(!obj) return false;
-
-  // formatos aceitos:
-  // 1) {agua: FeatureCollection/array, veg:..., trans:..., desm:...}
-  // 2) {layers:{agua:..., veg:...}}
-  const root = obj.layers && typeof obj.layers === "object" ? obj.layers : obj;
-
-  const agua  = normalizeToFC(root.agua  || root.water);
-  const veg   = normalizeToFC(root.veg   || root.vegetacao || root.vegetation);
-  const trans = normalizeToFC(root.trans || root.transicao  || root.transition);
-  const desm  = normalizeToFC(root.desm  || root.desmatamento || root.deforestation);
-
-  // pelo menos 1 camada precisa existir
-  if(!(agua||veg||trans||desm)) return false;
-
-  state.pointsFC.agua  = agua  || null;
-  state.pointsFC.veg   = veg   || null;
-  state.pointsFC.trans = trans || null;
-  state.pointsFC.desm  = desm  || null;
-  return true;
-}
-
-async function loadPointsByGeojsonFiles(useFull){
-  // tenta carregar por camada; se não existir, fica null (sem travar)
-  const agua  = await tryLoad(useFull ? FILES.agua_full  : FILES.agua_sample);
-  const veg   = await tryLoad(useFull ? FILES.veg_full   : FILES.veg_sample);
-  const trans = await tryLoad(useFull ? FILES.trans_full : FILES.trans_sample);
-  const desm  = await tryLoad(useFull ? FILES.desm_full  : FILES.desm_sample);
-
-  state.pointsFC.agua  = agua  || null;
-  state.pointsFC.veg   = veg   || null;
-  state.pointsFC.trans = trans || null;
-  state.pointsFC.desm  = desm  || null;
-
-  // se nada carregou, tenta fallback antigo (veg)
-  if(!agua && !veg && !trans && !desm){
-    const old = await tryLoad(useFull ? FILES.pts_full : FILES.pts_sample);
-    state.pointsFC.veg = old || null;
-  }
 }
 
 /* =========================
@@ -996,52 +902,47 @@ async function boot(){
     resizeAll();
     state.ready = true;
 
-    // desenha mapa imediatamente
+    // mapa base aparece SEMPRE
     redrawStatic();
     startWave(series);
 
-    // ===== pontos (4 cores) =====
-    statusEl.textContent = "Status: mapa base OK • carregando pontos (4 camadas)…";
+    // ===== PONTOS POR CLASSE =====
+    statusEl.textContent = "Status: mapa base OK • carregando pontos por classe…";
 
-    // 1) tenta layers_points.json
-    const okLayers = await loadPointsFromLayersJson();
+    state.ptsXY = [];
+    state.counts = {agua:0, veg:0, trans:0, desm:0};
 
-    // 2) se não tiver, carrega por geojson files (sample)
-    if(!okLayers){
-      await loadPointsByGeojsonFiles(false);
+    // Primeiro tenta FULL, se não existir cai no SAMPLE
+    async function loadLayer(type, fullName, sampleName){
+      let fc = await tryLoadJSON(fullName);
+      if(!fc) fc = await tryLoadJSON(sampleName);
+      if(!fc) return {ok:false, added:0, used:null};
+      const added = addProjectedPoints(fc, type);
+      return {ok:true, added, used: (fc ? (fullName) : null)};
     }
 
-    // projeta
-    rebuildProjectedPointsAll();
-    state.pointsReady = true;
+    const rAgua  = await loadLayer("agua", FILES.agua_full,  FILES.agua_sample);
+    const rVeg   = await loadLayer("veg",  FILES.veg_full,   FILES.veg_sample);
+    const rTrans = await loadLayer("trans",FILES.trans_full, FILES.trans_sample);
+    const rDesm  = await loadLayer("desm", FILES.desm_full,  FILES.desm_sample);
+
     startAnim();
 
-    let c = totalPts();
-    statusEl.textContent =
-      `Status: pontos OK • água ${c.a.toLocaleString("pt-BR")} • veg ${c.v.toLocaleString("pt-BR")} • trans ${c.t.toLocaleString("pt-BR")} • desm ${c.d.toLocaleString("pt-BR")} • total ${c.sum.toLocaleString("pt-BR")} • tentando FULL…`;
+    const missing = [];
+    if(!rAgua.ok)  missing.push("água");
+    if(!rVeg.ok)   missing.push("veg");
+    if(!rTrans.ok) missing.push("trans");
+    if(!rDesm.ok)  missing.push("desm");
 
-    // tenta FULL depois (se existir)
-    setTimeout(async ()=>{
-      try{
-        // se tem layers_points.json, ele já pode vir “full”; aqui tentamos atualizar por arquivos full também
-        if(!okLayers){
-          await loadPointsByGeojsonFiles(true);
-          rebuildProjectedPointsAll();
-          let cc = totalPts();
-          statusEl.textContent =
-            `Status: FULL OK • água ${cc.a.toLocaleString("pt-BR")} • veg ${cc.v.toLocaleString("pt-BR")} • trans ${cc.t.toLocaleString("pt-BR")} • desm ${cc.d.toLocaleString("pt-BR")} • total ${cc.sum.toLocaleString("pt-BR")} (cap)`;
-        } else {
-          // layers_points.json presente: só atualiza status
-          let cc = totalPts();
-          statusEl.textContent =
-            `Status: layers_points.json OK • água ${cc.a.toLocaleString("pt-BR")} • veg ${cc.v.toLocaleString("pt-BR")} • trans ${cc.t.toLocaleString("pt-BR")} • desm ${cc.d.toLocaleString("pt-BR")} • total ${cc.sum.toLocaleString("pt-BR")}`;
-        }
-      }catch(e){
-        let cc = totalPts();
-        statusEl.textContent =
-          `Status: FULL indisponível • mantendo sample • água ${cc.a.toLocaleString("pt-BR")} • veg ${cc.v.toLocaleString("pt-BR")} • trans ${cc.t.toLocaleString("pt-BR")} • desm ${cc.d.toLocaleString("pt-BR")}`;
-      }
-    }, 250);
+    const total = state.ptsXY.length.toLocaleString("pt-BR");
+    const a = state.counts.agua.toLocaleString("pt-BR");
+    const v = state.counts.veg.toLocaleString("pt-BR");
+    const t = state.counts.trans.toLocaleString("pt-BR");
+    const d = state.counts.desm.toLocaleString("pt-BR");
+
+    statusEl.textContent = missing.length
+      ? `Status: OK (parcial) • total ${total} • água ${a} • veg ${v} • trans ${t} • desm ${d} • faltando: ${missing.join(", ")}`
+      : `Status: FULL OK • total ${total} • água ${a} • veg ${v} • trans ${t} • desm ${d}`;
 
   }catch(err){
     console.error(err);
