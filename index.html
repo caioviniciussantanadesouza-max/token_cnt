@@ -167,11 +167,13 @@ html,body{
   height:100%;
   pointer-events:none;
 }
+
+/* glow + scanlines gerais */
 #mapGlow{
   position:absolute; inset:-10%;
   pointer-events:none;
   mix-blend-mode: screen;
-  opacity:.22;
+  opacity:.18;
   filter: blur(12px);
   background:
     radial-gradient(circle at 42% 55%, rgba(120,220,255,.22), transparent 52%),
@@ -180,14 +182,14 @@ html,body{
   animation: glowPulse 6s ease-in-out infinite;
 }
 @keyframes glowPulse{
-  0%{ opacity:.16; transform:scale(1); }
-  50%{ opacity:.30; transform:scale(1.02); }
-  100%{ opacity:.16; transform:scale(1); }
+  0%{ opacity:.14; transform:scale(1); }
+  50%{ opacity:.22; transform:scale(1.02); }
+  100%{ opacity:.14; transform:scale(1); }
 }
 #scanlines{
   position:absolute; inset:0;
   pointer-events:none;
-  opacity:.14;
+  opacity:.12;
   background:
     repeating-linear-gradient(
       to bottom,
@@ -202,32 +204,18 @@ html,body{
 @keyframes scan{ 0%{ transform:translateY(-22px);} 100%{ transform:translateY(22px);} }
 
 /* Right */
-#right{
-  display:flex;
-  flex-direction:column;
-  gap:14px;
-  min-height:0;
-}
+#right{ display:flex; flex-direction:column; gap:14px; min-height:0; }
 #buy, #telemetry{ padding:14px; }
 #buy h2{
-  margin:0;
-  font-size:18px;
-  font-weight:900;
-  letter-spacing:.4px;
-  color:#e9fdff;
+  margin:0; font-size:18px; font-weight:900; letter-spacing:.4px; color:#e9fdff;
 }
 #buy .mut{
-  margin:8px 0 10px;
-  font-size:12px;
-  color:var(--muted);
-  opacity:.95;
-  line-height:1.35;
+  margin:8px 0 10px; font-size:12px; color:var(--muted); opacity:.95; line-height:1.35;
 }
 label{ display:block; font-size:12px; color:var(--muted); margin:10px 0 6px; }
 .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
 input{
-  width:170px;
-  padding:10px 12px;
+  width:170px; padding:10px 12px;
   border-radius:14px;
   border:1px solid rgba(110,210,255,.35);
   background:rgba(0,0,0,.18);
@@ -256,27 +244,16 @@ input:focus{
 .smallnote{ margin-top:6px; font-size:11px; color:var(--muted); opacity:.95; }
 
 #telemetryTitle{
-  font-size:12px;
-  letter-spacing:.8px;
-  color:#d4fbff;
-  opacity:.95;
-  margin-bottom:8px;
-  font-weight:900;
+  font-size:12px; letter-spacing:.8px; color:#d4fbff; opacity:.95;
+  margin-bottom:8px; font-weight:900;
 }
 #wave{
-  width:100%;
-  height:74px;
-  display:block;
+  width:100%; height:74px; display:block;
   background: rgba(0,0,0,.22);
   border:1px solid rgba(110,210,255,.14);
   border-radius:14px;
 }
-#telemetryHint{
-  margin-top:8px;
-  font-size:11px;
-  color:var(--muted);
-  opacity:.92;
-}
+#telemetryHint{ margin-top:8px; font-size:11px; color:var(--muted); opacity:.92; }
 
 @media (max-width: 1100px){
   body{ overflow:auto; }
@@ -301,7 +278,6 @@ input:focus{
 
   <div id="left" class="glass">
     <div class="small"><b>CNT</b> (índice único Brasil)</div>
-
     <div class="big"><span id="eco">--</span><span style="font-size:16px; opacity:.9;">/100</span></div>
     <div class="small">RAW auditável: <b id="raw">--</b></div>
 
@@ -331,11 +307,12 @@ input:focus{
 
   <div id="center" class="glass">
     <div id="mapWrap">
+      <!-- MAPA 2 (base real) -->
       <canvas id="cnvBase" class="layer"></canvas>
       <canvas id="cnvBorder" class="layer"></canvas>
       <canvas id="cnvLines" class="layer"></canvas>
 
-      <!-- MAPA 1: HOLOGRAMA (imagem) -->
+      <!-- MAPA 1 (holografia) = EFEITO por cima do mapa 2 -->
       <canvas id="cnvHolo" class="layer"></canvas>
 
       <!-- pontos (classes/densidade) -->
@@ -385,15 +362,13 @@ const FILES = {
   micro: "micro_rh.geojson",
   cnt: "CNT_FULL_10Y.geojson",
   pts_sample: "vege_pts_sample.geojson",
-  pts_full: "vege_pts.geojson",
-  holo_img: "mapa_base.png"   // <-- MAPA 1 (imagem do holograma)
+  pts_full: "vege_pts.geojson"
 };
 
 /* =========================
    HELPERS
 ========================= */
 const statusEl = document.getElementById("status");
-
 function fmt(n, d=2){
   if(n === null || n === undefined || !Number.isFinite(Number(n))) return "--";
   return Number(n).toFixed(d).replace(".", ",");
@@ -415,13 +390,6 @@ async function loadEither(a,b){
     try{ return await loadJSON(b); }
     catch(e2){ throw e1; }
   }
-}
-
-function fitContain(imgW, imgH, boxW, boxH){
-  const s = Math.min(boxW/imgW, boxH/imgH);
-  const w = imgW*s, h = imgH*s;
-  const x = (boxW-w)/2, y = (boxH-h)/2;
-  return {x,y,w,h, s};
 }
 
 function walkCoords(arr, cb){
@@ -465,8 +433,12 @@ const cnvPoints = document.getElementById("cnvPoints");
 const ctxBase = cnvBase.getContext("2d");
 const ctxB    = cnvBorder.getContext("2d");
 const ctxL    = cnvLines.getContext("2d");
-const ctxH    = cnvHolo.getContext("2d", { willReadFrequently:true });
+const ctxH    = cnvHolo.getContext("2d");
 const ctxP    = cnvPoints.getContext("2d");
+
+// offscreen do holograma (pós-processo)
+const holoOff = document.createElement("canvas");
+const holoCtx = holoOff.getContext("2d", { willReadFrequently:true });
 
 function resizeCanvas(cnv, ctx){
   const dpr = Math.max(1, window.devicePixelRatio || 1);
@@ -482,9 +454,15 @@ function resizeAll(){
   resizeCanvas(cnvHolo, ctxH);
   resizeCanvas(cnvPoints, ctxP);
   resizeWave();
+
+  const W = cnvHolo.getBoundingClientRect().width;
+  const H = cnvHolo.getBoundingClientRect().height;
+  holoOff.width = Math.max(2, Math.floor(W));
+  holoOff.height = Math.max(2, Math.floor(H));
+
   if(state.ready){
     redrawStatic();
-    rebuildHoloKeyed(); // <- refaz recorte/alpha com o tamanho novo
+    if(state.ptsFC) buildProjectedPoints(state.ptsFC);
   }
 }
 window.addEventListener("resize", resizeAll);
@@ -514,17 +492,11 @@ const state = {
   ptsXY:[],
   grid:null,
 
-  // tuning visual
   gridSize:22,
   R:22,
   target:11,
+
   t:0,
-
-  // holograma
-  holoImg:null,
-  holoKeyed:null,
-  holoCrop:null,
-
   animStarted:false
 };
 
@@ -554,6 +526,39 @@ function fillPolygons(ctx, fc, fillStyle, alpha){
       ctx.fill();
     }
   }
+  ctx.restore();
+}
+
+function strokeLines(ctx, fc, strokeStyle, width, alpha){
+  const W = cnvBase.getBoundingClientRect().width;
+  const H = cnvBase.getBoundingClientRect().height;
+
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.strokeStyle = strokeStyle;
+  ctx.lineWidth = width;
+  ctx.lineJoin="round";
+  ctx.lineCap="round";
+
+  const drawLine = (line)=>{
+    if(!line || line.length<2) return;
+    ctx.beginPath();
+    for(let i=0;i<line.length;i++){
+      const [x,y]=proj(line[i][0], line[i][1], W, H);
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+  };
+
+  for(const f of (fc.features||[])){
+    const g = f.geometry;
+    if(!g) continue;
+    if(g.type==="LineString") drawLine(g.coordinates);
+    else if(g.type==="MultiLineString") for(const ln of g.coordinates) drawLine(ln);
+    else if(g.type==="Polygon") drawLine(g.coordinates[0]);
+    else if(g.type==="MultiPolygon") for(const poly of g.coordinates) drawLine(poly[0]);
+  }
+
   ctx.restore();
 }
 
@@ -598,39 +603,6 @@ function strokePolygonsGlow(ctx, fc){
   ctx.restore();
 }
 
-function strokeLines(ctx, fc, strokeStyle, width, alpha){
-  const W = cnvBase.getBoundingClientRect().width;
-  const H = cnvBase.getBoundingClientRect().height;
-
-  ctx.save();
-  ctx.globalAlpha = alpha;
-  ctx.strokeStyle = strokeStyle;
-  ctx.lineWidth = width;
-  ctx.lineJoin="round";
-  ctx.lineCap="round";
-
-  const drawLine = (line)=>{
-    if(!line || line.length<2) return;
-    ctx.beginPath();
-    for(let i=0;i<line.length;i++){
-      const [x,y]=proj(line[i][0], line[i][1], W, H);
-      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-    }
-    ctx.stroke();
-  };
-
-  for(const f of (fc.features||[])){
-    const g = f.geometry;
-    if(!g) continue;
-    if(g.type==="LineString") drawLine(g.coordinates);
-    else if(g.type==="MultiLineString") for(const ln of g.coordinates) drawLine(ln);
-    else if(g.type==="Polygon") drawLine(g.coordinates[0]);
-    else if(g.type==="MultiPolygon") for(const poly of g.coordinates) drawLine(poly[0]);
-  }
-
-  ctx.restore();
-}
-
 function maskCanvasToBrasil(ctx){
   const W = cnvBase.getBoundingClientRect().width;
   const H = cnvBase.getBoundingClientRect().height;
@@ -661,20 +633,20 @@ function maskCanvasToBrasil(ctx){
 }
 
 /* =========================
-   MAPA BASE (sempre)
+   MAPA 2 (base real)
 ========================= */
 function redrawStatic(){
   if(!bbox) return;
   clearAll();
 
-  // base leve (não pinta o fundo)
-  fillPolygons(ctxBase, state.biomas, "rgba(0,255,200,1)", 0.035);
+  // base BEM leve (sem pintar fundo)
+  fillPolygons(ctxBase, state.biomas, "rgba(0,255,200,1)", 0.030);
   maskCanvasToBrasil(ctxBase);
 
-  // borda Brasil (neon)
+  // borda Brasil
   strokePolygonsGlow(ctxB, state.brasilMask);
 
-  // linhas (água e limites)
+  // linhas (rios e limites)
   strokeLines(ctxL, state.macro, "rgba(0,234,255,0.90)", 1.15, 1);
   strokeLines(ctxL, state.micro, "rgba(0,120,255,0.60)", 0.55, 1);
   strokeLines(ctxL, state.uf,    "rgba(160,245,255,0.70)", 1.05, 1);
@@ -682,7 +654,7 @@ function redrawStatic(){
 }
 
 /* =========================
-   POINTS + GRID (densidade -> cores)
+   POINTS + GRID
 ========================= */
 function buildProjectedPoints(fc){
   const W = cnvBase.getBoundingClientRect().width;
@@ -702,9 +674,7 @@ function buildProjectedPoints(fc){
     const slim = [];
     for(let i=0;i<pts.length;i+=step) slim.push(pts[i]);
     state.ptsXY = slim;
-  } else {
-    state.ptsXY = pts;
-  }
+  } else state.ptsXY = pts;
 
   buildGrid();
 }
@@ -736,7 +706,6 @@ function buildGrid(){
 function densityAt(x,y){
   const g = state.grid;
   if(!g) return 0;
-
   const R = state.R;
   const R2 = R*R;
 
@@ -761,136 +730,93 @@ function densityAt(x,y){
 
 function colorForDensity(count){
   const norm = Math.min(1, count / state.target);
-  // verde -> amarelo -> vermelho
   if(norm >= 0.70) return [60, 255, 180];   // verde
   if(norm >= 0.40) return [255, 235, 90];   // amarelo
   return [255, 80, 60];                     // vermelho
 }
 
 /* =========================
-   MAPA 1 (holograma) — FIX REAL
-   remove fundo turquesa/branco, recorta conteúdo e estica p/ mesmo tamanho do mapa base
+   MAPA 1 (HOLOGRAFIA) — efeito por cima do mapa 2
+   SEM fundo pintado, SEM imagem, sempre alinhado
 ========================= */
-const holoOff = document.createElement("canvas");
-const holoOffCtx = holoOff.getContext("2d", { willReadFrequently:true });
-
-function isBgToRemove(r,g,b){
-  const m = (r+g+b)/3;
-  const v = Math.max(r,g,b) - Math.min(r,g,b);
-
-  const isWhite = (r>225 && g>225 && b>225);
-  const isLightGray = (m>215 && v<30);
-
-  const cyan1 = (g > 130 && b > 130 && r < 140);
-  const cyan2 = (b > 150 && g > 150 && r < 170);
-  const cyan3 = (((g+b)/2 - r) > 70 && Math.abs(g-b) < 90 && (g > 110 || b > 110));
-
-  return isWhite || isLightGray || cyan1 || cyan2 || cyan3;
-}
-
-function computeAlphaBBox(imgData, W, H, alphaMin=10){
-  const d = imgData.data;
-  let minx=Infinity, miny=Infinity, maxx=-Infinity, maxy=-Infinity;
-
-  for(let y=0; y<H; y++){
-    for(let x=0; x<W; x++){
-      const i = (y*W + x)*4;
-      if(d[i+3] > alphaMin){
-        if(x<minx) minx=x;
-        if(y<miny) miny=y;
-        if(x>maxx) maxx=x;
-        if(y>maxy) maxy=y;
-      }
-    }
-  }
-  if(minx===Infinity) return null;
-  return { minx, miny, maxx, maxy, w:(maxx-minx+1), h:(maxy-miny+1) };
-}
-
-function rebuildHoloKeyed(){
+function drawHologramEffect(){
   const W = cnvHolo.getBoundingClientRect().width;
   const H = cnvHolo.getBoundingClientRect().height;
 
-  state.holoKeyed = null;
-  state.holoCrop = null;
-  if(!state.holoImg || W<=2 || H<=2) return;
-
-  holoOff.width = Math.floor(W);
-  holoOff.height = Math.floor(H);
-  holoOffCtx.clearRect(0,0,W,H);
-
-  // desenha em contain (sem distorcer)
-  const fit = fitContain(state.holoImg.naturalWidth, state.holoImg.naturalHeight, W, H);
-  holoOffCtx.drawImage(state.holoImg, fit.x, fit.y, fit.w, fit.h);
-
-  // remove fundo turquesa/branco
-  const imgData = holoOffCtx.getImageData(0,0,W,H);
-  const d = imgData.data;
-
-  for(let i=0;i<d.length;i+=4){
-    const r=d[i], g=d[i+1], b=d[i+2];
-    if(isBgToRemove(r,g,b)){
-      d[i+3]=0;
-    }else{
-      d[i+3]=Math.min(255, d[i+3] + 18);
-    }
-  }
-  holoOffCtx.putImageData(imgData,0,0);
-
-  // recorta conteúdo (remove margens)
-  const crop = computeAlphaBBox(imgData, W, H, 12);
-  state.holoKeyed = holoOff;
-  state.holoCrop = crop;
-}
-
-function drawHologram(){
-  const W = cnvHolo.getBoundingClientRect().width;
-  const H = cnvHolo.getBoundingClientRect().height;
   ctxH.clearRect(0,0,W,H);
+  holoCtx.clearRect(0,0,W,H);
 
-  if(!state.holoKeyed || !state.holoCrop) return;
+  // desenha no offscreen: borda + rios + limites (o mesmo mapa)
+  holoCtx.globalCompositeOperation = "source-over";
+  holoCtx.drawImage(cnvBorder, 0,0, W,H);
+  holoCtx.drawImage(cnvLines,  0,0, W,H);
 
-  const c = state.holoCrop;
+  // flutuação sutil (camada suspensa)
+  const hover = Math.sin(state.t/42) * 1.4;
+  const dy = -1.6 + hover;
 
-  // hover sutil (camada suspensa)
-  const hover = Math.sin(state.t/42) * 1.6;
-  const dy = -2.0 + hover;
-
+  // PASSO 1: glow forte (screen)
   ctxH.save();
   ctxH.translate(0, dy);
-
-  // “screen” pra parecer holografia sem pintar fundo
   ctxH.globalCompositeOperation = "screen";
 
-  // brilho forte (duas passadas)
-  ctxH.globalAlpha = 0.68;
-  ctxH.shadowBlur = 26;
-  ctxH.shadowColor = "rgba(0,255,220,0.65)";
-  ctxH.drawImage(state.holoKeyed, c.minx, c.miny, c.w, c.h, 0, 0, W, H);
+  const pulse = 0.72 + 0.28*Math.sin(state.t/28);
 
-  ctxH.globalAlpha = 0.85;
+  // halo grande
+  ctxH.globalAlpha = 0.22 + 0.08*pulse;
+  ctxH.shadowBlur = 34;
+  ctxH.shadowColor = "rgba(0,255,230,0.75)";
+  ctxH.drawImage(holoOff, 0,0); // (placeholder)
+  ctxH.drawImage(holoOff, 0,0); // reforço
+
+  // como holoOff é canvas, garantimos conteúdo:
+  ctxH.shadowBlur = 34;
+  ctxH.drawImage(holoOff, 0,0);
+
+  ctxH.restore();
+
+  // Atualiza holoOff com conteúdo real (borda+linhas)
+  // (fazemos aqui pra não depender de timing)
+  const offW = holoOff.width, offH = holoOff.height;
+  holoCtx.setTransform(1,0,0,1,0,0);
+  holoCtx.clearRect(0,0,offW,offH);
+  holoCtx.drawImage(cnvBorder, 0,0, offW,offH);
+  holoCtx.drawImage(cnvLines,  0,0, offW,offH);
+
+  // Desenha no holo com glow e cor neon (sem fundo)
+  ctxH.save();
+  ctxH.translate(0, dy);
+  ctxH.globalCompositeOperation = "screen";
+
+  // glow externo
+  ctxH.globalAlpha = 0.28 + 0.10*pulse;
+  ctxH.shadowBlur = 30;
+  ctxH.shadowColor = "rgba(0,255,230,0.85)";
+  ctxH.drawImage(holoOff, 0,0, W,H);
+
+  // traço mais nítido
+  ctxH.globalAlpha = 0.62 + 0.12*pulse;
   ctxH.shadowBlur = 12;
-  ctxH.shadowColor = "rgba(0,255,255,0.38)";
-  ctxH.drawImage(state.holoKeyed, c.minx, c.miny, c.w, c.h, 0, 0, W, H);
+  ctxH.shadowColor = "rgba(120,220,255,0.55)";
+  ctxH.drawImage(holoOff, 0,0, W,H);
 
-  // scan holográfico leve só na camada
-  ctxH.globalAlpha = 0.16;
-  ctxH.shadowBlur = 0;
+  // scanlines só na camada holográfica
   ctxH.globalCompositeOperation = "overlay";
-  const y0 = (state.t*1.4) % 18;
-  ctxH.fillStyle = "rgba(120,220,255,0.35)";
+  ctxH.globalAlpha = 0.14;
+  const y0 = (state.t*1.6) % 18;
+  ctxH.fillStyle = "rgba(120,220,255,0.40)";
   for(let y=-18; y<H+18; y+=18){
     ctxH.fillRect(0, y+y0, W, 2);
   }
 
   ctxH.restore();
 
-  // recorta no Brasil (garante alinhamento com base)
+  // recorta no Brasil (alinhado)
   maskCanvasToBrasil(ctxH);
 }
 
 /* =========================
-   ANIMAÇÃO (pontos + holograma)
+   ANIMAÇÃO (pontos + holografia)
 ========================= */
 function startAnim(){
   if(state.animStarted) return;
@@ -900,16 +826,15 @@ function startAnim(){
     const W = cnvPoints.getBoundingClientRect().width;
     const H = cnvPoints.getBoundingClientRect().height;
 
-    // 1) desenha holograma (mapa 1) por frame
-    drawHologram();
+    // holografia em cima do mapa base
+    drawHologramEffect();
 
-    // 2) pontos
+    // pontos (sem pinos, sem markers)
     ctxP.clearRect(0,0,W,H);
 
     if(state.ptsXY.length){
       ctxP.globalCompositeOperation = "lighter";
 
-      // micro pontos
       for(const p of state.ptsXY){
         const count = densityAt(p.x, p.y);
         const [r,g,b] = colorForDensity(count);
@@ -924,7 +849,6 @@ function startAnim(){
         ctxP.fill();
       }
 
-      // sparkles
       const glowCount = Math.min(1800, Math.max(500, (state.ptsXY.length/14)|0));
       ctxP.save();
       ctxP.shadowBlur = 10;
@@ -1043,23 +967,6 @@ document.getElementById("btnBuy").addEventListener("click", ()=>{
 });
 
 /* =========================
-   LOAD IMAGE (mapa 1)
-========================= */
-function loadHoloImage(){
-  return new Promise((resolve,reject)=>{
-    const img = new Image();
-    img.decoding = "async";
-    img.onload = ()=>{
-      state.holoImg = img;
-      rebuildHoloKeyed();
-      resolve();
-    };
-    img.onerror = ()=>reject(new Error("Falha ao carregar " + FILES.holo_img));
-    img.src = "./" + FILES.holo_img + "?v=" + Date.now();
-  });
-}
-
-/* =========================
    BOOT
 ========================= */
 async function boot(){
@@ -1104,28 +1011,24 @@ async function boot(){
     resizeAll();
     state.ready = true;
 
-    // desenha base (mapa 2)
+    // mapa base (mapa 2)
     redrawStatic();
-
-    // carrega e prepara holograma (mapa 1)
-    statusEl.textContent = "Status: mapa base OK • carregando holograma…";
-    await loadHoloImage();
 
     // telemetry
     startWave(series);
 
-    // pontos (classes)
-    statusEl.textContent = "Status: holograma OK • carregando pontos (sample)…";
+    // pontos sample
+    statusEl.textContent = "Status: mapa base OK • carregando pontos (sample)…";
     const ptsSample = await loadJSON(FILES.pts_sample);
     state.ptsFC = ptsSample;
     buildProjectedPoints(ptsSample);
 
-    // inicia animação (holograma + pontos)
+    // animação (pontos + holografia)
     startAnim();
 
-    statusEl.textContent = `Status: OK • holografia alinhada • ${state.ptsXY.length.toLocaleString("pt-BR")} pontos • tentando FULL…`;
+    statusEl.textContent = `Status: OK • holografia aplicada ao mapa base • ${state.ptsXY.length.toLocaleString("pt-BR")} pontos • tentando FULL…`;
 
-    // tenta FULL depois
+    // tenta FULL
     setTimeout(async ()=>{
       try{
         const ptsFull = await loadJSON(FILES.pts_full);
