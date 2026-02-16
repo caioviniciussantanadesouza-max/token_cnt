@@ -331,15 +331,14 @@ input:focus{
 
   <div id="center" class="glass">
     <div id="mapWrap">
-      <!-- Mapa base (IBGE/linhas) -->
       <canvas id="cnvBase" class="layer"></canvas>
       <canvas id="cnvBorder" class="layer"></canvas>
       <canvas id="cnvLines" class="layer"></canvas>
 
-      <!-- Holograma (mapa 1 colorido) SUSPENSO -->
+      <!-- MAPA 1 (holograma) suspenso por cima do mapa 2 -->
       <canvas id="cnvHolo" class="layer"></canvas>
 
-      <!-- Pontos (se você quiser manter) -->
+      <!-- pontos (seus pontos reais) -->
       <canvas id="cnvPoints" class="layer"></canvas>
 
       <div id="mapGlow"></div>
@@ -377,10 +376,6 @@ input:focus{
 const PUMP_URL = "https://pump.fun/coin/GCVyjNaCbXkwGUuktyNxSXad4ozmTp2fzQr2jieSpump";
 const rate = 147449130;
 
-// >>> COLOQUE SUA IMAGEM DO MAPA 1 (COLORIDO) NO REPO:
-// recomendado: mapa_holo.png
-const HOLO_IMAGE_CANDIDATES = ["mapa_holo.png", "prod_mosaic.png", "mapa_base.png"];
-
 const FILES = {
   biomas: "biomas.geojson",
   br_simpl: "BR_IBGE_simplificado.geojson",
@@ -390,13 +385,17 @@ const FILES = {
   micro: "micro_rh.geojson",
   cnt: "CNT_FULL_10Y.geojson",
   pts_sample: "vege_pts_sample.geojson",
-  pts_full: "vege_pts.geojson"
+  pts_full: "vege_pts.geojson",
+
+  // MAPA 1 (imagem holográfica). Se você trocar o nome, troca aqui:
+  holo_img: "mapa_base.png"
 };
 
 /* =========================
    HELPERS
 ========================= */
 const statusEl = document.getElementById("status");
+
 function fmt(n, d=2){
   if(n === null || n === undefined || !Number.isFinite(Number(n))) return "--";
   return Number(n).toFixed(d).replace(".", ",");
@@ -412,6 +411,7 @@ async function loadJSON(name){
   try{ return JSON.parse(txt); }
   catch(e){ throw new Error(`${name}: JSON inválido / truncado`); }
 }
+
 async function loadEither(a,b){
   try{ return await loadJSON(a); }
   catch(e1){
@@ -419,6 +419,16 @@ async function loadEither(a,b){
     catch(e2){ throw e1; }
   }
 }
+
+function loadImage(path){
+  return new Promise((resolve, reject)=>{
+    const img = new Image();
+    img.onload = ()=> resolve(img);
+    img.onerror = ()=> reject(new Error("Falha ao carregar imagem: " + path));
+    img.src = "./" + path + "?v=" + Date.now();
+  });
+}
+
 function walkCoords(arr, cb){
   if(!arr) return;
   if(typeof arr[0] === "number") cb(arr);
@@ -436,6 +446,12 @@ function calcBBox(fc){
     });
   }
   return [minx, miny, maxx, maxy];
+}
+
+function fitContain(iw, ih, ow, oh){
+  const s = Math.min(ow/iw, oh/ih);
+  const w = iw*s, h = ih*s;
+  return { x:(ow-w)/2, y:(oh-h)/2, w, h, s };
 }
 
 /* proj */
@@ -460,7 +476,7 @@ const cnvPoints = document.getElementById("cnvPoints");
 const ctxBase = cnvBase.getContext("2d");
 const ctxB    = cnvBorder.getContext("2d");
 const ctxL    = cnvLines.getContext("2d");
-const ctxH    = cnvHolo.getContext("2d");
+const ctxH    = cnvHolo.getContext("2d", { willReadFrequently:true });
 const ctxP    = cnvPoints.getContext("2d");
 
 function resizeCanvas(cnv, ctx){
@@ -477,7 +493,10 @@ function resizeAll(){
   resizeCanvas(cnvHolo, ctxH);
   resizeCanvas(cnvPoints, ctxP);
   resizeWave();
-  if(state.ready) redrawStatic();
+  if(state.ready){
+    redrawStatic();
+    drawHologram(); // redesenha alinhado no resize
+  }
 }
 window.addEventListener("resize", resizeAll);
 
@@ -505,13 +524,16 @@ const state = {
   ptsFC:null,
   ptsXY:[],
   grid:null,
+
+  // holograma (MAPA 1)
+  holoImg:null,
+
+  // tuning visual
   gridSize:22,
   R:22,
   target:11,
   t:0,
-  animStarted:false,
-  holoImg:null,
-  holoName:null
+  animStarted:false
 };
 
 /* =========================
@@ -647,7 +669,7 @@ function maskCanvasToBrasil(ctx){
 }
 
 /* =========================
-   STATIC REDRAW (mapa base)
+   MAPA 2 (base) sempre aparece
 ========================= */
 function redrawStatic(){
   if(!bbox) return;
@@ -668,12 +690,45 @@ function redrawStatic(){
 }
 
 /* =========================
-   HOLO (mapa 1 por cima)
+   MAPA 1 (holograma) suspenso por cima
+   - remove fundo ciano/branco (pra não virar "tela turquesa")
+   - alinhado e "flutuando"
 ========================= */
-function fitContain(imgW, imgH, boxW, boxH){
-  const s = Math.min(boxW/imgW, boxH/imgH);
-  const w = imgW*s, h = imgH*s;
-  return { w, h, x:(boxW-w)/2, y:(boxH-h)/2 };
+const holoOff = document.createElement("canvas");
+const holoOffCtx = holoOff.getContext("2d", { willReadFrequently:true });
+
+function keyOutBackground(img, boxW, boxH){
+  holoOff.width  = Math.max(1, Math.floor(boxW));
+  holoOff.height = Math.max(1, Math.floor(boxH));
+
+  holoOffCtx.clearRect(0,0,boxW,boxH);
+
+  const fit = fitContain(img.naturalWidth, img.naturalHeight, boxW, boxH);
+  holoOffCtx.drawImage(img, fit.x, fit.y, fit.w, fit.h);
+
+  const imgData = holoOffCtx.getImageData(0,0,boxW,boxH);
+  const d = imgData.data;
+
+  for(let i=0;i<d.length;i+=4){
+    const r=d[i], g=d[i+1], b=d[i+2];
+
+    // remove fundo ciano (turquesa)
+    const isCyan = (g > 165 && b > 165 && r < 160);
+
+    // remove fundo branco/cinza claro
+    const isWhite = (r > 220 && g > 220 && b > 220);
+
+    if(isCyan || isWhite){
+      d[i+3] = 0;
+    }else{
+      // deixa o restante mais "holográfico"
+      // (opcional: aumenta brilho sem mudar cores base demais)
+      d[i+3] = Math.min(255, d[i+3] + 18);
+    }
+  }
+
+  holoOffCtx.putImageData(imgData,0,0);
+  return holoOff;
 }
 
 function drawHologram(){
@@ -681,46 +736,44 @@ function drawHologram(){
   const H = cnvHolo.getBoundingClientRect().height;
 
   ctxH.clearRect(0,0,W,H);
+  if(!state.holoImg) return;
 
-  if(!state.holoImg){
-    return;
-  }
+  const keyedCanvas = keyOutBackground(state.holoImg, W, H);
 
-  // efeito “camada suspensa”
-  const hover = Math.sin(state.t/38) * 1.8;      // sobe/desce leve
-  const dx = 3.5;                                // offset fixo
-  const dy = -3.5 + hover;
-  const scale = 1.012;                            // um pouco maior
-
-  const fit = fitContain(state.holoImg.naturalWidth, state.holoImg.naturalHeight, W, H);
+  // “camada suspensa”
+  const hover = Math.sin(state.t/38) * 1.6;
+  const dx = 3.2;
+  const dy = -3.2 + hover;
+  const scale = 1.012;
 
   ctxH.save();
-  ctxH.globalCompositeOperation = "lighter";
-  ctxH.globalAlpha = 0.92;
-  ctxH.filter = "blur(0.4px)";
 
-  // centraliza + escala
+  // screen dá holografia sem estourar o painel inteiro
+  ctxH.globalCompositeOperation = "screen";
+  ctxH.globalAlpha = 0.80;
+
+  // centraliza + escala (mantém alinhado no mesmo canvas do mapa 2)
   ctxH.translate(W/2 + dx, H/2 + dy);
   ctxH.scale(scale, scale);
   ctxH.translate(-W/2, -H/2);
 
-  // glow forte (2 passadas)
-  ctxH.shadowBlur = 34;
-  ctxH.shadowColor = "rgba(0,255,200,0.75)";
-  ctxH.drawImage(state.holoImg, fit.x, fit.y, fit.w, fit.h);
+  // glow
+  ctxH.shadowBlur = 26;
+  ctxH.shadowColor = "rgba(0,255,220,0.70)";
+  ctxH.drawImage(keyedCanvas, 0, 0, W, H);
 
-  ctxH.shadowBlur = 18;
-  ctxH.shadowColor = "rgba(0,255,255,0.65)";
-  ctxH.drawImage(state.holoImg, fit.x, fit.y, fit.w, fit.h);
+  ctxH.shadowBlur = 14;
+  ctxH.shadowColor = "rgba(0,255,255,0.55)";
+  ctxH.drawImage(keyedCanvas, 0, 0, W, H);
 
   ctxH.restore();
 
-  // recorte Brasil (não vaza)
+  // garante que só aparece dentro do Brasil
   maskCanvasToBrasil(ctxH);
 }
 
 /* =========================
-   POINTS (opcional por cima)
+   POINTS + GRID (densidade)
 ========================= */
 function buildProjectedPoints(fc){
   const W = cnvBase.getBoundingClientRect().width;
@@ -734,7 +787,8 @@ function buildProjectedPoints(fc){
     pts.push({ x,y, ph: Math.random()*Math.PI*2, sp: 0.7+Math.random()*1.3, base: 0.6+Math.random()*0.8 });
   }
 
-  const MAX = 120000;
+  // LIMITADOR (pra FULL não travar)
+  const MAX = 140000;
   if(pts.length > MAX){
     const step = Math.ceil(pts.length / MAX);
     const slim = [];
@@ -743,6 +797,68 @@ function buildProjectedPoints(fc){
   } else {
     state.ptsXY = pts;
   }
+
+  buildGrid();
+}
+
+function buildGrid(){
+  const W = cnvBase.getBoundingClientRect().width;
+  const H = cnvBase.getBoundingClientRect().height;
+  const s = state.gridSize;
+
+  const cols = Math.ceil(W/s);
+  const rows = Math.ceil(H/s);
+  const grid = new Array(cols*rows);
+  for(let i=0;i<grid.length;i++) grid[i]=[];
+
+  const idxOf = (x,y)=>{
+    const cx = Math.max(0, Math.min(cols-1, (x/s)|0));
+    const cy = Math.max(0, Math.min(rows-1, (y/s)|0));
+    return cy*cols + cx;
+  };
+
+  for(let i=0;i<state.ptsXY.length;i++){
+    const p = state.ptsXY[i];
+    grid[idxOf(p.x,p.y)].push(i);
+  }
+
+  state.grid = {grid, cols, rows, s};
+}
+
+function densityAt(x,y){
+  const g = state.grid;
+  if(!g) return 0;
+
+  const R = state.R;
+  const R2 = R*R;
+
+  const cx = (x/g.s)|0;
+  const cy = (y/g.s)|0;
+
+  let count = 0;
+  for(let oy=-1; oy<=1; oy++){
+    for(let ox=-1; ox<=1; ox++){
+      const nx = cx+ox, ny = cy+oy;
+      if(nx<0 || ny<0 || nx>=g.cols || ny>=g.rows) continue;
+      const bucket = g.grid[ny*g.cols + nx];
+      for(const pi of bucket){
+        const p = state.ptsXY[pi];
+        const dx = x - p.x, dy = y - p.y;
+        if(dx*dx + dy*dy <= R2) count++;
+      }
+    }
+  }
+  return count;
+}
+
+/* cores por densidade:
+   verde (mato) -> amarelo (transição) -> vermelho (pressão)
+*/
+function colorForDensity(count){
+  const norm = Math.min(1, count / state.target);
+  if(norm >= 0.70) return [60, 255, 180];   // verde
+  if(norm >= 0.40) return [255, 235, 90];   // amarelo
+  return [255, 80, 60];                     // vermelho
 }
 
 function startAnim(){
@@ -754,24 +870,48 @@ function startAnim(){
     const H = cnvPoints.getBoundingClientRect().height;
     ctxP.clearRect(0,0,W,H);
 
-    // desenha HOLO sempre (mapa 1 por cima)
+    // redesenha holograma flutuando (MAPA 1)
     drawHologram();
 
-    // se quiser pontos discretos também:
     if(state.ptsXY.length){
       ctxP.globalCompositeOperation = "lighter";
-      for(const p of state.ptsXY){
-        const pulse = 0.55 + 0.45*Math.sin(p.ph + state.t*p.sp*0.025);
-        const alpha = (0.03 + 0.10*pulse);
-        const rad   = 0.30 + p.base*0.35;
 
-        ctxP.shadowBlur = 10;
-        ctxP.shadowColor = "rgba(120,255,240,0.7)";
-        ctxP.fillStyle = `rgba(120,255,240,${alpha})`;
+      for(const p of state.ptsXY){
+        const count = densityAt(p.x, p.y);
+        const [r,g,b] = colorForDensity(count);
+
+        const pulse = 0.55 + 0.45*Math.sin(p.ph + state.t*p.sp*0.025);
+        const alpha = (0.08 + 0.28*pulse);
+        const rad   = 0.38 + p.base*0.42;
+
         ctxP.beginPath();
+        ctxP.fillStyle = `rgba(${r},${g},${b},${alpha})`;
         ctxP.arc(p.x, p.y, rad, 0, Math.PI*2);
         ctxP.fill();
       }
+
+      const glowCount = Math.min(1800, Math.max(500, (state.ptsXY.length/14)|0));
+      ctxP.save();
+      ctxP.shadowBlur = 10;
+      for(let i=0;i<glowCount;i++){
+        const p = state.ptsXY[(Math.random()*state.ptsXY.length)|0];
+        if(!p) continue;
+
+        const count = densityAt(p.x, p.y);
+        const [r,g,b] = colorForDensity(count);
+
+        const pulse = 0.55 + 0.45*Math.sin(p.ph + state.t*0.03);
+        const alpha = 0.06 + 0.18*pulse;
+
+        ctxP.shadowColor = `rgba(${r},${g},${b},${0.55})`;
+        ctxP.fillStyle   = `rgba(${r},${g},${b},${alpha})`;
+
+        ctxP.beginPath();
+        ctxP.arc(p.x, p.y, 1.2 + pulse*1.5, 0, Math.PI*2);
+        ctxP.fill();
+      }
+      ctxP.restore();
+
       maskCanvasToBrasil(ctxP);
       ctxP.globalCompositeOperation = "source-over";
     }
@@ -783,7 +923,7 @@ function startAnim(){
 }
 
 /* =========================
-   TELEMETRY (wave)
+   TELEMETRY
 ========================= */
 const wave = document.getElementById("wave");
 const wctx = wave.getContext("2d");
@@ -795,8 +935,9 @@ function resizeWave(){
   wave.height = Math.floor(wave.clientHeight * dpr);
   wctx.setTransform(dpr,0,0,dpr,0,0);
 }
+
 function startWave(series){
-  const s = Array.isArray(series) && series.length ? series : [18.1,18.2,18.0,18.3,18.4,18.0,17.6,17.9,18.0,18.1];
+  const s = Array.isArray(series) ? series : [];
   const draw = ()=>{
     const W = wave.clientWidth, H = wave.clientHeight;
     wctx.clearRect(0,0,W,H);
@@ -809,19 +950,24 @@ function startWave(series){
       wctx.beginPath(); wctx.moveTo(0,y); wctx.lineTo(W,y); wctx.stroke();
     }
 
-    const min = Math.min(...s);
-    const max = Math.max(...s);
+    const min = s.length? Math.min(...s) : 0;
+    const max = s.length? Math.max(...s) : 1;
 
     function yAt(i){
-      const idx = (i / (W-1)) * (s.length-1);
-      const a = Math.floor(idx);
-      const b = Math.min(s.length-1, a+1);
-      const f = idx - a;
-      const v = s[a]*(1-f) + s[b]*f;
-      const norm = (max-min) < 1e-9 ? 0.5 : (v - min) / (max - min);
-      let y = (H*0.18) + (1-norm) * (H*0.68);
-      y += Math.sin((i + tWave)/28) * (H*0.02);
-      return y;
+      if(s.length>=2){
+        const idx = (i / (W-1)) * (s.length-1);
+        const a = Math.floor(idx);
+        const b = Math.min(s.length-1, a+1);
+        const f = idx - a;
+        const v = s[a]*(1-f) + s[b]*f;
+        const norm = (max-min) < 1e-9 ? 0.5 : (v - min) / (max - min);
+        let y = (H*0.18) + (1-norm) * (H*0.68);
+        y += Math.sin((i + tWave)/28) * (H*0.02);
+        return y;
+      }
+      return (H*0.52)
+        + Math.sin((i+tWave)/38)*(H*0.20)
+        + Math.sin((i+tWave)/13)*(H*0.07);
     }
 
     wctx.lineWidth = 2;
@@ -858,29 +1004,10 @@ function updateOut(){
 }
 solInput.addEventListener("input", updateOut);
 updateOut();
+
 document.getElementById("btnBuy").addEventListener("click", ()=>{
   window.open(PUMP_URL, "_blank", "noopener,noreferrer");
 });
-
-/* =========================
-   LOAD HOLO IMAGE
-========================= */
-function loadImageTry(names){
-  return new Promise(async (resolve)=>{
-    for(const name of names){
-      try{
-        const img = new Image();
-        img.decoding = "async";
-        img.loading = "eager";
-        img.src = "./" + name + "?v=" + Date.now();
-        await img.decode();
-        resolve({img, name});
-        return;
-      }catch(e){}
-    }
-    resolve(null);
-  });
-}
 
 /* =========================
    BOOT
@@ -889,13 +1016,21 @@ async function boot(){
   try{
     statusEl.textContent = "Status: carregando camadas base…";
 
-    // base
+    // base (MAPA 2)
     state.biomas = await loadJSON(FILES.biomas);
     state.brasilMask = await loadEither(FILES.br_simpl, FILES.br_full);
     state.uf = await loadJSON(FILES.uf);
     state.macro = await loadJSON(FILES.macro);
     state.micro = await loadJSON(FILES.micro);
     state.cnt = await loadJSON(FILES.cnt);
+
+    // carrega MAPA 1 (imagem)
+    try{
+      state.holoImg = await loadImage(FILES.holo_img);
+    }catch(e){
+      // se não achar, não trava o site
+      state.holoImg = null;
+    }
 
     bbox = calcBBox(state.biomas);
 
@@ -928,29 +1063,34 @@ async function boot(){
     resizeAll();
     state.ready = true;
 
-    // desenha mapa base imediatamente
+    // desenha mapa 2
     redrawStatic();
+
+    // desenha mapa 1 (holograma) alinhado por cima
+    drawHologram();
+
     startWave(series);
 
-    // carrega HOLO image (mapa 1)
-    statusEl.textContent = "Status: mapa base OK • carregando holograma (mapa 1)…";
-    const holo = await loadImageTry(HOLO_IMAGE_CANDIDATES);
-    if(holo){
-      state.holoImg = holo.img;
-      state.holoName = holo.name;
-      statusEl.textContent = `Status: HOLOGRAMA OK (${holo.name}) • alinhado e suspenso.`;
-    } else {
-      statusEl.textContent = "Status: HOLOGRAMA NÃO ENCONTRADO • envie mapa_holo.png (ou use prod_mosaic.png).";
-    }
-
-    // pontos (opcional) — sample primeiro
-    try{
-      const ptsSample = await loadJSON(FILES.pts_sample);
-      state.ptsFC = ptsSample;
-      buildProjectedPoints(ptsSample);
-    }catch(e){}
+    // pontos sample primeiro
+    statusEl.textContent = "Status: mapa base OK • carregando pontos (sample)…";
+    const ptsSample = await loadJSON(FILES.pts_sample);
+    state.ptsFC = ptsSample;
+    buildProjectedPoints(ptsSample);
 
     startAnim();
+    statusEl.textContent = `Status: OK • holografia alinhada • sample ${state.ptsXY.length.toLocaleString("pt-BR")} pts • tentando FULL…`;
+
+    // tenta FULL
+    setTimeout(async ()=>{
+      try{
+        const ptsFull = await loadJSON(FILES.pts_full);
+        state.ptsFC = ptsFull;
+        buildProjectedPoints(ptsFull);
+        statusEl.textContent = `Status: FULL OK • holografia ativa • ${state.ptsXY.length.toLocaleString("pt-BR")} pontos (cap)`;
+      }catch(e){
+        statusEl.textContent = `Status: FULL indisponível • mantendo sample (${state.ptsXY.length.toLocaleString("pt-BR")} pts) • holografia ativa`;
+      }
+    }, 250);
 
   }catch(err){
     console.error(err);
@@ -958,8 +1098,8 @@ async function boot(){
     document.getElementById("telemetryHint").textContent = "Erro: arquivos não carregaram. Veja o console (F12).";
   }
 }
+
 boot();
 </script>
-
 </body>
 </html>
