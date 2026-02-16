@@ -331,14 +331,15 @@ input:focus{
 
   <div id="center" class="glass">
     <div id="mapWrap">
+      <!-- MAPA 2 (base real) -->
       <canvas id="cnvBase" class="layer"></canvas>
       <canvas id="cnvBorder" class="layer"></canvas>
       <canvas id="cnvLines" class="layer"></canvas>
 
-      <!-- MAPA 1 (holograma) suspenso por cima do mapa 2 -->
+      <!-- MAPA 1 (holograma suspenso por cima) -->
       <canvas id="cnvHolo" class="layer"></canvas>
 
-      <!-- pontos (seus pontos reais) -->
+      <!-- pontos reais (cores) -->
       <canvas id="cnvPoints" class="layer"></canvas>
 
       <div id="mapGlow"></div>
@@ -387,7 +388,7 @@ const FILES = {
   pts_sample: "vege_pts_sample.geojson",
   pts_full: "vege_pts.geojson",
 
-  // MAPA 1 (imagem holográfica). Se você trocar o nome, troca aqui:
+  // MAPA 1 (imagem holográfica). coloque esse arquivo na mesma pasta do index:
   holo_img: "mapa_base.png"
 };
 
@@ -486,6 +487,7 @@ function resizeCanvas(cnv, ctx){
   cnv.height = Math.floor(r.height * dpr);
   ctx.setTransform(dpr,0,0,dpr,0,0);
 }
+
 function resizeAll(){
   resizeCanvas(cnvBase, ctxBase);
   resizeCanvas(cnvBorder, ctxB);
@@ -493,9 +495,12 @@ function resizeAll(){
   resizeCanvas(cnvHolo, ctxH);
   resizeCanvas(cnvPoints, ctxP);
   resizeWave();
+
   if(state.ready){
+    // recalcula key do holograma pro tamanho novo
+    rebuildHoloKeyed();
     redrawStatic();
-    drawHologram(); // redesenha alinhado no resize
+    drawHologram();
   }
 }
 window.addEventListener("resize", resizeAll);
@@ -521,12 +526,14 @@ const state = {
   macro:null,
   micro:null,
   cnt:null,
+
   ptsFC:null,
   ptsXY:[],
   grid:null,
 
-  // holograma (MAPA 1)
+  // MAPA 1 (imagem e versão com fundo removido)
   holoImg:null,
+  holoKeyed:null,
 
   // tuning visual
   gridSize:22,
@@ -669,20 +676,24 @@ function maskCanvasToBrasil(ctx){
 }
 
 /* =========================
-   MAPA 2 (base) sempre aparece
+   MAPA 2 (base real)
 ========================= */
 function redrawStatic(){
   if(!bbox) return;
-  clearAll();
 
-  // base leve
+  // NÃO limpa tudo aqui (porque animação limpa cnvPoints/cnvHolo)
+  // limpa só as camadas estáticas:
+  const W = cnvBase.getBoundingClientRect().width;
+  const H = cnvBase.getBoundingClientRect().height;
+  ctxBase.clearRect(0,0,W,H);
+  ctxB.clearRect(0,0,W,H);
+  ctxL.clearRect(0,0,W,H);
+
   fillPolygons(ctxBase, state.biomas, "rgba(0,255,200,1)", 0.035);
   maskCanvasToBrasil(ctxBase);
 
-  // borda
   strokePolygonsGlow(ctxB, state.brasilMask);
 
-  // linhas (água e limites)
   strokeLines(ctxL, state.macro, "rgba(0,234,255,0.90)", 1.15, 1);
   strokeLines(ctxL, state.micro, "rgba(0,120,255,0.60)", 0.55, 1);
   strokeLines(ctxL, state.uf,    "rgba(160,245,255,0.70)", 1.05, 1);
@@ -690,45 +701,61 @@ function redrawStatic(){
 }
 
 /* =========================
-   MAPA 1 (holograma) suspenso por cima
-   - remove fundo ciano/branco (pra não virar "tela turquesa")
-   - alinhado e "flutuando"
+   MAPA 1 (holograma)
+   FIX: remove fundo ciano/branco de verdade (sem "tela turquesa")
 ========================= */
 const holoOff = document.createElement("canvas");
 const holoOffCtx = holoOff.getContext("2d", { willReadFrequently:true });
 
-function keyOutBackground(img, boxW, boxH){
-  holoOff.width  = Math.max(1, Math.floor(boxW));
-  holoOff.height = Math.max(1, Math.floor(boxH));
+function isCyanBg(r,g,b){
+  // pega turquoise/ciano mesmo com variação
+  const gb = (g + b) * 0.5;
+  const cyanDominant = (g > 120 && b > 120 && gb - r > 60);
+  const gbClose = Math.abs(g - b) < 70;
+  return cyanDominant && gbClose;
+}
+function isWhiteBg(r,g,b){
+  return (r > 220 && g > 220 && b > 220);
+}
+function isLightGrayBg(r,g,b){
+  const m = (r+g+b)/3;
+  const v = Math.max(r,g,b) - Math.min(r,g,b);
+  return (m > 210 && v < 25);
+}
 
-  holoOffCtx.clearRect(0,0,boxW,boxH);
+function rebuildHoloKeyed(){
+  const W = cnvHolo.getBoundingClientRect().width;
+  const H = cnvHolo.getBoundingClientRect().height;
 
-  const fit = fitContain(img.naturalWidth, img.naturalHeight, boxW, boxH);
-  holoOffCtx.drawImage(img, fit.x, fit.y, fit.w, fit.h);
+  state.holoKeyed = null;
+  if(!state.holoImg || W<=1 || H<=1) return;
 
-  const imgData = holoOffCtx.getImageData(0,0,boxW,boxH);
+  holoOff.width = Math.max(1, Math.floor(W));
+  holoOff.height = Math.max(1, Math.floor(H));
+
+  holoOffCtx.clearRect(0,0,W,H);
+
+  // desenha imagem em contain, sem distorcer
+  const fit = fitContain(state.holoImg.naturalWidth, state.holoImg.naturalHeight, W, H);
+  holoOffCtx.drawImage(state.holoImg, fit.x, fit.y, fit.w, fit.h);
+
+  const imgData = holoOffCtx.getImageData(0,0,W,H);
   const d = imgData.data;
 
   for(let i=0;i<d.length;i+=4){
     const r=d[i], g=d[i+1], b=d[i+2];
 
-    // remove fundo ciano (turquesa)
-    const isCyan = (g > 165 && b > 165 && r < 160);
-
-    // remove fundo branco/cinza claro
-    const isWhite = (r > 220 && g > 220 && b > 220);
-
-    if(isCyan || isWhite){
-      d[i+3] = 0;
+    if(isCyanBg(r,g,b) || isWhiteBg(r,g,b) || isLightGrayBg(r,g,b)){
+      d[i+3] = 0; // mata o fundo -> TRANSPARENTE
     }else{
-      // deixa o restante mais "holográfico"
-      // (opcional: aumenta brilho sem mudar cores base demais)
-      d[i+3] = Math.min(255, d[i+3] + 18);
+      // reforça “holografia” nos pixels do mapa
+      // (sem pintar o fundo)
+      d[i+3] = Math.min(255, d[i+3] + 20);
     }
   }
 
   holoOffCtx.putImageData(imgData,0,0);
-  return holoOff;
+  state.holoKeyed = holoOff;
 }
 
 function drawHologram(){
@@ -736,39 +763,37 @@ function drawHologram(){
   const H = cnvHolo.getBoundingClientRect().height;
 
   ctxH.clearRect(0,0,W,H);
-  if(!state.holoImg) return;
+  if(!state.holoKeyed) return;
 
-  const keyedCanvas = keyOutBackground(state.holoImg, W, H);
-
-  // “camada suspensa”
-  const hover = Math.sin(state.t/38) * 1.6;
-  const dx = 3.2;
-  const dy = -3.2 + hover;
+  // camada “suspensa”
+  const hover = Math.sin(state.t/42) * 1.8;
+  const dx = 2.6;
+  const dy = -3.6 + hover;
   const scale = 1.012;
 
   ctxH.save();
 
-  // screen dá holografia sem estourar o painel inteiro
+  // muito importante: não deixar nada “pintar o fundo”
+  // screen só nos pixels existentes (o fundo já está alpha=0)
   ctxH.globalCompositeOperation = "screen";
-  ctxH.globalAlpha = 0.80;
+  ctxH.globalAlpha = 0.70;
 
-  // centraliza + escala (mantém alinhado no mesmo canvas do mapa 2)
   ctxH.translate(W/2 + dx, H/2 + dy);
   ctxH.scale(scale, scale);
   ctxH.translate(-W/2, -H/2);
 
-  // glow
-  ctxH.shadowBlur = 26;
-  ctxH.shadowColor = "rgba(0,255,220,0.70)";
-  ctxH.drawImage(keyedCanvas, 0, 0, W, H);
+  // glow leve
+  ctxH.shadowBlur = 24;
+  ctxH.shadowColor = "rgba(0,255,220,0.65)";
+  ctxH.drawImage(state.holoKeyed, 0, 0, W, H);
 
-  ctxH.shadowBlur = 14;
-  ctxH.shadowColor = "rgba(0,255,255,0.55)";
-  ctxH.drawImage(keyedCanvas, 0, 0, W, H);
+  ctxH.shadowBlur = 12;
+  ctxH.shadowColor = "rgba(0,255,255,0.45)";
+  ctxH.drawImage(state.holoKeyed, 0, 0, W, H);
 
   ctxH.restore();
 
-  // garante que só aparece dentro do Brasil
+  // recorta no Brasil
   maskCanvasToBrasil(ctxH);
 }
 
@@ -787,7 +812,6 @@ function buildProjectedPoints(fc){
     pts.push({ x,y, ph: Math.random()*Math.PI*2, sp: 0.7+Math.random()*1.3, base: 0.6+Math.random()*0.8 });
   }
 
-  // LIMITADOR (pra FULL não travar)
   const MAX = 140000;
   if(pts.length > MAX){
     const step = Math.ceil(pts.length / MAX);
@@ -851,9 +875,6 @@ function densityAt(x,y){
   return count;
 }
 
-/* cores por densidade:
-   verde (mato) -> amarelo (transição) -> vermelho (pressão)
-*/
 function colorForDensity(count){
   const norm = Math.min(1, count / state.target);
   if(norm >= 0.70) return [60, 255, 180];   // verde
@@ -868,9 +889,12 @@ function startAnim(){
   const loop = ()=>{
     const W = cnvPoints.getBoundingClientRect().width;
     const H = cnvPoints.getBoundingClientRect().height;
-    ctxP.clearRect(0,0,W,H);
 
-    // redesenha holograma flutuando (MAPA 1)
+    // limpa só camadas animadas
+    ctxP.clearRect(0,0,W,H);
+    ctxH.clearRect(0,0,W,H);
+
+    // desenha holograma alinhado por cima do mapa 2
     drawHologram();
 
     if(state.ptsXY.length){
@@ -1016,7 +1040,7 @@ async function boot(){
   try{
     statusEl.textContent = "Status: carregando camadas base…";
 
-    // base (MAPA 2)
+    // MAPA 2
     state.biomas = await loadJSON(FILES.biomas);
     state.brasilMask = await loadEither(FILES.br_simpl, FILES.br_full);
     state.uf = await loadJSON(FILES.uf);
@@ -1024,11 +1048,10 @@ async function boot(){
     state.micro = await loadJSON(FILES.micro);
     state.cnt = await loadJSON(FILES.cnt);
 
-    // carrega MAPA 1 (imagem)
+    // MAPA 1 (imagem)
     try{
       state.holoImg = await loadImage(FILES.holo_img);
     }catch(e){
-      // se não achar, não trava o site
       state.holoImg = null;
     }
 
@@ -1063,24 +1086,22 @@ async function boot(){
     resizeAll();
     state.ready = true;
 
-    // desenha mapa 2
+    // key do holograma (agora o fundo some)
+    rebuildHoloKeyed();
+
+    // desenha MAPA 2 e inicia
     redrawStatic();
-
-    // desenha mapa 1 (holograma) alinhado por cima
-    drawHologram();
-
     startWave(series);
 
-    // pontos sample primeiro
+    // pontos
     statusEl.textContent = "Status: mapa base OK • carregando pontos (sample)…";
     const ptsSample = await loadJSON(FILES.pts_sample);
     state.ptsFC = ptsSample;
     buildProjectedPoints(ptsSample);
 
     startAnim();
-    statusEl.textContent = `Status: OK • holografia alinhada • sample ${state.ptsXY.length.toLocaleString("pt-BR")} pts • tentando FULL…`;
+    statusEl.textContent = `Status: OK • holografia alinhada (sem fundo) • sample ${state.ptsXY.length.toLocaleString("pt-BR")} pts • tentando FULL…`;
 
-    // tenta FULL
     setTimeout(async ()=>{
       try{
         const ptsFull = await loadJSON(FILES.pts_full);
@@ -1088,7 +1109,7 @@ async function boot(){
         buildProjectedPoints(ptsFull);
         statusEl.textContent = `Status: FULL OK • holografia ativa • ${state.ptsXY.length.toLocaleString("pt-BR")} pontos (cap)`;
       }catch(e){
-        statusEl.textContent = `Status: FULL indisponível • mantendo sample (${state.ptsXY.length.toLocaleString("pt-BR")} pts) • holografia ativa`;
+        statusEl.textContent = `Status: FULL indisponível • mantendo sample (${state.ptsXY.length.toLocaleString("pt-BR")} pts)`;
       }
     }, 250);
 
@@ -1098,7 +1119,6 @@ async function boot(){
     document.getElementById("telemetryHint").textContent = "Erro: arquivos não carregaram. Veja o console (F12).";
   }
 }
-
 boot();
 </script>
 </body>
