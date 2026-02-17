@@ -4,7 +4,6 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>CNT — Centro Natural TEC Amazônia</title>
-
 <style>
 :root{
   --bg0:#000;
@@ -80,8 +79,14 @@ html,body{
   color:#cfefff;
   opacity:.95;
 }
-.chip.btn{ cursor:pointer; user-select:none; }
-.chip.btn:hover{ box-shadow:0 0 14px rgba(110,210,255,.22); }
+.chip.btn{
+  cursor:pointer;
+  user-select:none;
+  border-color: rgba(110,210,255,.45);
+  background: rgba(0,0,0,.28);
+  font-weight:900;
+}
+.chip.btn:hover{ box-shadow:0 0 18px rgba(110,210,255,.25); }
 
 /* Left */
 #left{
@@ -293,19 +298,18 @@ input:focus{
 <div id="app">
   <div id="header" class="glass">
     <h1>CNT — Centro Natural TEC Amazônia</h1>
-    <p class="sub">Mapa ecológico real • Água (azul) • Vegetação (verde) • Transição (amarelo) • Desmatamento (vermelho) • Baixa pressão (azul)</p>
+    <p class="sub">Mapa ecológico real • Água (azul) • Vegetação (verde) • Transição (amarelo) • Desmatamento (vermelho)</p>
     <div id="chips">
-      <div class="chip" id="chipFonte">Fonte: dados públicos governamentais</div>
-      <div class="chip" id="chipAno">Ano base: 2025</div>
+      <div class="chip" id="chipSource">Fonte: dados públicos governamentais</div>
+      <div class="chip" id="chipYear">Ano base: 2025</div>
       <div class="chip" id="chipPts">Pontos: carregando…</div>
       <div class="chip" id="chipAlerts">Alertas: carregando…</div>
-      <div class="chip btn" id="btnFull">Carregar FULL (manual)</div>
+      <div class="chip btn" id="btnFull">Carregar FULL (vegetação)</div>
     </div>
   </div>
 
   <div id="left" class="glass">
     <div class="small"><b>CNT</b> (índice único Brasil)</div>
-
     <div class="big"><span id="eco">--</span><span style="font-size:16px; opacity:.9;">/100</span></div>
     <div class="small">RAW auditável: <b id="raw">--</b></div>
 
@@ -352,7 +356,7 @@ input:focus{
 
       <label for="sol">Contribuição</label>
       <div class="row">
-        <input id="sol" type="number" step="0.01" min="0" value="0.10" />
+        <input id="sol" name="sol" type="number" step="0.01" min="0" value="0.10" />
         <button class="btn" id="btnBuy">Comprar no Pump</button>
       </div>
 
@@ -370,31 +374,43 @@ input:focus{
 
 <script>
 /* =========================
-   CONFIG (AJUSTE CAMINHOS AQUI)
+   CONFIG (arquivos que EXISTEM no seu repo)
 ========================= */
-const PUMP_URL = "https://pump.fun/coin/GCVyjNaCbXkwGUuktyNxSXad4ozmTp2fzQr2jieSpump";
-const rate = 147449130;
-
-// Se teus arquivos estão em /dados/, troque pra "dados/arquivo.ext"
 const FILES = {
-  biomas: "biomas.geojson",
+  dados: "dados_cnt.json",
   br_simpl: "BR_IBGE_simplificado.geojson",
   br_full: "BR_IBGE.geojson",
   uf: "uf.geojson",
   macro: "macro_rh.geojson",
   micro: "micro_rh.geojson",
-
-  // Painel
-  dados_cnt: "dados_cnt.json",          // preferido
-  cnt_geojson: "CNT_FULL_10Y.geojson",  // fallback
-
-  // Pontos
-  pts_sample: "vege_pts_sample.geojson",
-  pts_full: "vege_pts.geojson",
-
-  // Alertas
-  alerts: "dados/alerts_2024.geojson" // ajuste se necessário
+  biomas: "biomas.geojson",              // opcional (se tiver)
+  // pontos por classe (4 cores)
+  pts_agua: "agua_pts_sample.geojson",   // azul
+  pts_vege_sample: "vege_pts_sample.geojson", // verde (rápido)
+  pts_vege_full: "vege_pts.geojson",     // verde (pesado)
+  pts_trans: "trans_pts_sample.geojson", // amarelo
+  pts_desm: "desm_pts_sample.geojson"    // vermelho
 };
+
+// performance: cap por camada (FULL pode ser gigantesco)
+const CAPS = {
+  agua: 45000,
+  vege: 120000,
+  trans: 45000,
+  desm: 45000
+};
+
+// holografia: “profundidade” por camada (parallax)
+const Z = {
+  agua: 0.6,
+  vege: 1.0,
+  trans: 1.25,
+  desm: 1.5
+};
+
+// token / buy
+let PUMP_URL = "https://pump.fun/coin/GCVyjNaCbXkwGUuktyNxSXad4ozmTp2fzQr2jieSpump";
+const rate = 147449130;
 
 /* =========================
    HELPERS
@@ -402,6 +418,7 @@ const FILES = {
 const statusEl = document.getElementById("status");
 const chipPts = document.getElementById("chipPts");
 const chipAlerts = document.getElementById("chipAlerts");
+const btnFull = document.getElementById("btnFull");
 
 function fmt(n, d=2){
   if(n === null || n === undefined || !Number.isFinite(Number(n))) return "--";
@@ -410,22 +427,18 @@ function fmt(n, d=2){
 function fmt1(n){ return fmt(n,1); }
 function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
 
-async function loadJSON(path){
-  const url = "./" + path + "?v=" + Date.now();
+async function loadJSON(name){
+  const url = "./" + name + "?v=" + Date.now();
   const res = await fetch(url, { cache:"no-store" });
-  if(!res.ok) throw new Error(`${path} HTTP ${res.status}`);
+  if(!res.ok) throw new Error(`${name} HTTP ${res.status}`);
   const txt = await res.text();
   try{ return JSON.parse(txt); }
-  catch(e){ throw new Error(`${path}: JSON inválido / truncado`); }
+  catch(e){ throw new Error(`${name}: JSON inválido / truncado`); }
 }
 async function loadEither(a,b){
   try{ return await loadJSON(a); }
-  catch(e1){
-    try{ return await loadJSON(b); }
-    catch(e2){ throw e1; }
-  }
+  catch(e1){ return await loadJSON(b); }
 }
-
 function walkCoords(arr, cb){
   if(!arr) return;
   if(typeof arr[0] === "number") cb(arr);
@@ -446,9 +459,10 @@ function calcBBox(fc){
 }
 
 /* =========================
-   PROJEÇÃO
+   PROJEÇÃO (sempre Brasil INTEIRO)
+   -> bbox vem do BR_IBGE (não do biomas)
 ========================= */
-let bbox = null;
+let bbox = [-74, -34, -34, 6];
 function proj(lon,lat,w,h){
   const [minx,miny,maxx,maxy] = bbox;
   return [
@@ -472,7 +486,15 @@ const ctxL    = cnvLines.getContext("2d");
 const ctxP    = cnvPoints.getContext("2d");
 const ctxA    = cnvAlerts.getContext("2d");
 
-let W = 0, H = 0;
+// offscreen (desenha 1x, anima só com drawImage -> não trava)
+let off = {
+  agua: null, vege: null, trans: null, desm: null
+};
+function makeOffscreen(w,h){
+  const c = document.createElement("canvas");
+  c.width = w; c.height = h;
+  return c;
+}
 
 function resizeCanvas(cnv, ctx){
   const dpr = Math.max(1, window.devicePixelRatio || 1);
@@ -480,27 +502,30 @@ function resizeCanvas(cnv, ctx){
   cnv.width  = Math.floor(r.width * dpr);
   cnv.height = Math.floor(r.height * dpr);
   ctx.setTransform(dpr,0,0,dpr,0,0);
+  return {w: cnv.width, h: cnv.height, dpr};
 }
 function resizeAll(){
-  resizeCanvas(cnvBase, ctxBase);
+  const a = resizeCanvas(cnvBase, ctxBase);
   resizeCanvas(cnvBorder, ctxB);
   resizeCanvas(cnvLines, ctxL);
   resizeCanvas(cnvPoints, ctxP);
   resizeCanvas(cnvAlerts, ctxA);
   resizeWave();
 
-  const rr = cnvBase.getBoundingClientRect();
-  W = rr.width; H = rr.height;
+  // recria offscreen no tamanho novo
+  off.agua = makeOffscreen(a.w, a.h);
+  off.vege = makeOffscreen(a.w, a.h);
+  off.trans= makeOffscreen(a.w, a.h);
+  off.desm = makeOffscreen(a.w, a.h);
 
-  if(state.ready){
-    rebuildBrasilClip();   // clip path atualizado no resize
-    redrawStatic();
-    rebuildPointsProjection(); // re-projeta pontos no novo tamanho (leve)
-  }
+  if(state.ready) redrawStatic();
+  if(state.layersReady) renderAllPointLayers();
 }
 window.addEventListener("resize", resizeAll);
 
 function clearAll(){
+  const W = cnvBase.getBoundingClientRect().width;
+  const H = cnvBase.getBoundingClientRect().height;
   ctxBase.clearRect(0,0,W,H);
   ctxB.clearRect(0,0,W,H);
   ctxL.clearRect(0,0,W,H);
@@ -513,51 +538,26 @@ function clearAll(){
 ========================= */
 const state = {
   ready:false,
-
-  biomas:null,
+  layersReady:false,
   brasilMask:null,
   uf:null,
   macro:null,
   micro:null,
-
-  dadosCnt:null,
-  cntGeo:null,
-
-  ptsFC:null,
-  ptsRaw:[],     // lon/lat
-  ptsXY:[],      // projetado
-  grid:null,
-  densityReady:false,
-
-  alertsFC:null,
-  alertsXY:[],
-
-  // tuning
-  gridSize:22,
-  R:22,
-
-  // 4 faixas (AZUL/VERDE/AMARELO/VERMELHO)
-  // thresholds em "contagem dentro do raio"
-  thBlue:  1,
-  thGreen: 5,
-  thYellow:10,
-
-  // animação
-  t:0,
-  lastTs:0,
+  biomas:null,
+  dados:null,
+  alerts:[],
+  pts:{ agua:[], vege:[], trans:[], desm:[] },
   animStarted:false,
-
-  // clip
-  clipPath:null,
-
-  // FULL
+  t:0,
   fullLoaded:false
 };
 
 /* =========================
-   DRAW SHAPES
+   DRAW VETORES (base)
 ========================= */
 function fillPolygons(ctx, fc, fillStyle, alpha){
+  const W = cnvBase.getBoundingClientRect().width;
+  const H = cnvBase.getBoundingClientRect().height;
   ctx.save();
   ctx.globalAlpha = alpha;
   ctx.fillStyle = fillStyle;
@@ -580,8 +580,10 @@ function fillPolygons(ctx, fc, fillStyle, alpha){
   }
   ctx.restore();
 }
-
 function strokePolygonsGlow(ctx, fc){
+  const W = cnvBorder.getBoundingClientRect().width;
+  const H = cnvBorder.getBoundingClientRect().height;
+
   ctx.save();
   ctx.lineJoin="round";
   ctx.lineCap="round";
@@ -618,8 +620,10 @@ function strokePolygonsGlow(ctx, fc){
 
   ctx.restore();
 }
-
 function strokeLines(ctx, fc, strokeStyle, width, alpha){
+  const W = cnvBase.getBoundingClientRect().width;
+  const H = cnvBase.getBoundingClientRect().height;
+
   ctx.save();
   ctx.globalAlpha = alpha;
   ctx.strokeStyle = strokeStyle;
@@ -648,12 +652,15 @@ function strokeLines(ctx, fc, strokeStyle, width, alpha){
 
   ctx.restore();
 }
+function maskCanvasToBrasil(ctx){
+  const W = cnvBase.getBoundingClientRect().width;
+  const H = cnvBase.getBoundingClientRect().height;
 
-/* =========================
-   CLIP PATH (rápido, sem “destination-in” todo frame)
-========================= */
-function rebuildBrasilClip(){
-  const path = new Path2D();
+  ctx.save();
+  ctx.globalCompositeOperation = "destination-in";
+  ctx.fillStyle = "#fff";
+  ctx.beginPath();
+
   for(const f of (state.brasilMask.features||[])){
     const g = f.geometry;
     if(!g) continue;
@@ -663,305 +670,229 @@ function rebuildBrasilClip(){
       if(!outer || outer.length<3) continue;
       for(let i=0;i<outer.length;i++){
         const [x,y] = proj(outer[i][0], outer[i][1], W, H);
-        if(i===0) path.moveTo(x,y); else path.lineTo(x,y);
+        if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
       }
-      path.closePath();
+      ctx.closePath();
     }
   }
-  state.clipPath = path;
-}
-
-function clipBrasil(ctx){
-  if(!state.clipPath) return;
-  ctx.save();
-  ctx.clip(state.clipPath);
+  ctx.fill();
+  ctx.restore();
+  ctx.globalCompositeOperation = "source-over";
 }
 
 /* =========================
-   STATIC REDRAW
+   BASE REDRAW
 ========================= */
 function redrawStatic(){
-  if(!bbox) return;
   clearAll();
 
-  // base “neon wash” (se biomas existir, dá textura; se não, só Brasil)
+  fillPolygons(ctxBase, state.brasilMask, "rgba(0,255,200,1)", 0.025);
   if(state.biomas){
-    clipBrasil(ctxBase);
-    fillPolygons(ctxBase, state.biomas, "rgba(0,255,200,1)", 0.030);
-    ctxBase.restore();
-  } else {
-    clipBrasil(ctxBase);
-    ctxBase.fillStyle = "rgba(0,255,200,0.03)";
-    ctxBase.fillRect(0,0,W,H);
-    ctxBase.restore();
+    fillPolygons(ctxBase, state.biomas, "rgba(0,255,200,1)", 0.020);
   }
+  maskCanvasToBrasil(ctxBase);
 
-  // borda Brasil
   strokePolygonsGlow(ctxB, state.brasilMask);
 
-  // linhas (água em azul forte + rede)
-  clipBrasil(ctxL);
-  strokeLines(ctxL, state.macro, "rgba(0,234,255,0.90)", 1.15, 1);
-  strokeLines(ctxL, state.micro, "rgba(0,120,255,0.60)", 0.55, 1);
-  strokeLines(ctxL, state.uf,    "rgba(160,245,255,0.70)", 1.05, 1);
-  ctxL.restore();
+  strokeLines(ctxL, state.macro, "rgba(0,234,255,0.90)", 1.10, 1);
+  strokeLines(ctxL, state.micro, "rgba(0,120,255,0.55)", 0.55, 1);
+  strokeLines(ctxL, state.uf,    "rgba(160,245,255,0.65)", 1.00, 1);
+  maskCanvasToBrasil(ctxL);
 }
 
 /* =========================
-   PONTOS (projeção + grid + densidade PRECALCULADA)
+   PONTOS: carregar + amostrar + projetar
 ========================= */
-function buildRawPointsFromFC(fc){
-  const pts = [];
-  for(const f of (fc.features||[])){
-    const g = f.geometry;
-    if(!g || g.type!=="Point") continue;
+function capAndProjectPoints(fc, cap){
+  const W = cnvBase.getBoundingClientRect().width;
+  const H = cnvBase.getBoundingClientRect().height;
+
+  const feats = (fc && fc.features) ? fc.features : [];
+  if(!feats.length) return [];
+
+  const step = Math.max(1, Math.ceil(feats.length / cap));
+  const out = [];
+
+  for(let i=0;i<feats.length;i+=step){
+    const g = feats[i]?.geometry;
+    if(!g || g.type !== "Point") continue;
     const lon = g.coordinates[0], lat = g.coordinates[1];
-    pts.push({
-      lon, lat,
+    const [x,y] = proj(lon, lat, W, H);
+    if(x < -5 || y < -5 || x > W+5 || y > H+5) continue;
+
+    out.push({
+      x, y,
       ph: Math.random()*Math.PI*2,
-      sp: 0.7+Math.random()*1.3,
-      base: 0.6+Math.random()*0.8,
-      den: 0,
-      band: 1
+      sp: 0.6 + Math.random()*1.5,
+      r: 0.35 + Math.random()*0.9,
+      a: 0.25 + Math.random()*0.55
     });
+    if(out.length >= cap) break;
   }
-  // cap pra não explodir o browser
-  const MAX = 140000;
-  if(pts.length > MAX){
-    const step = Math.ceil(pts.length / MAX);
-    const slim = [];
-    for(let i=0;i<pts.length;i+=step) slim.push(pts[i]);
-    state.ptsRaw = slim;
-  } else {
-    state.ptsRaw = pts;
-  }
-}
-
-function rebuildPointsProjection(){
-  if(!state.ptsRaw.length) return;
-  state.ptsXY = state.ptsRaw.map(p=>{
-    const [x,y] = proj(p.lon, p.lat, W, H);
-    return { ...p, x, y };
-  });
-  buildGrid();
-  state.densityReady = false;
-  // densidade será recalculada em chunks (não trava)
-  computeDensityAsync();
-}
-
-function buildGrid(){
-  const s = state.gridSize;
-  const cols = Math.ceil(W/s);
-  const rows = Math.ceil(H/s);
-  const grid = new Array(cols*rows);
-  for(let i=0;i<grid.length;i++) grid[i]=[];
-
-  const idxOf = (x,y)=>{
-    const cx = Math.max(0, Math.min(cols-1, (x/s)|0));
-    const cy = Math.max(0, Math.min(rows-1, (y/s)|0));
-    return cy*cols + cx;
-  };
-
-  for(let i=0;i<state.ptsXY.length;i++){
-    const p = state.ptsXY[i];
-    grid[idxOf(p.x,p.y)].push(i);
-  }
-
-  state.grid = {grid, cols, rows, s};
-}
-
-function densityAtIdx(i){
-  const g = state.grid;
-  if(!g) return 0;
-
-  const p0 = state.ptsXY[i];
-  const R = state.R;
-  const R2 = R*R;
-
-  const cx = (p0.x/g.s)|0;
-  const cy = (p0.y/g.s)|0;
-
-  let count = 0;
-  for(let oy=-1; oy<=1; oy++){
-    for(let ox=-1; ox<=1; ox++){
-      const nx = cx+ox, ny = cy+oy;
-      if(nx<0 || ny<0 || nx>=g.cols || ny>=g.rows) continue;
-      const bucket = g.grid[ny*g.cols + nx];
-      for(const pi of bucket){
-        const p = state.ptsXY[pi];
-        const dx = p0.x - p.x, dy = p0.y - p.y;
-        if(dx*dx + dy*dy <= R2) count++;
-      }
-    }
-  }
-  return count;
-}
-
-// 4 bandas: AZUL -> VERDE -> AMARELO -> VERMELHO
-function bandFromDensity(d){
-  if(d <= state.thBlue) return 0;        // azul (baixa)
-  if(d <= state.thGreen) return 1;       // verde
-  if(d <= state.thYellow) return 2;      // amarelo
-  return 3;                               // vermelho
-}
-function colorFromBand(b){
-  // (r,g,b)
-  if(b===0) return [0, 170, 255];        // AZUL
-  if(b===1) return [60, 255, 180];       // VERDE
-  if(b===2) return [255, 235, 90];       // AMARELO
-  return [255, 80, 60];                  // VERMELHO
-}
-
-// calcula densidade em “fatias” (não trava)
-async function computeDensityAsync(){
-  if(!state.ptsXY.length) return;
-  statusEl.textContent = "Status: calculando densidade (holografia)…";
-  state.densityReady = false;
-
-  const total = state.ptsXY.length;
-  let i = 0;
-
-  const slice = 2500; // ajusta se quiser (maior = mais rápido, mas pesa)
-  while(i < total){
-    const end = Math.min(total, i + slice);
-    for(let k=i; k<end; k++){
-      const d = densityAtIdx(k);
-      state.ptsXY[k].den = d;
-      state.ptsXY[k].band = bandFromDensity(d);
-    }
-    i = end;
-
-    chipPts.textContent = `Pontos: ${total.toLocaleString("pt-BR")} • densidade ${(i*100/total).toFixed(0)}%`;
-    // cede o controle pro browser
-    await new Promise(r => setTimeout(r, 0));
-  }
-
-  state.densityReady = true;
-  statusEl.textContent = `Status: holografia pronta • ${total.toLocaleString("pt-BR")} pontos`;
+  return out;
 }
 
 /* =========================
-   ALERTAS (pontos pulsando)
+   RENDER 1x em offscreen (muito mais leve)
 ========================= */
-function buildAlertsXY(fc){
-  const pts = [];
-  for(const f of (fc.features||[])){
-    const g = f.geometry;
-    if(!g || g.type!=="Point") continue;
-    const [x,y] = proj(g.coordinates[0], g.coordinates[1], W, H);
-    pts.push({ x,y, ph: Math.random()*Math.PI*2 });
+function renderLayerToOffscreen(key, rgb){
+  const c = off[key];
+  if(!c) return;
+  const octx = c.getContext("2d");
+  const W = c.width, H = c.height;
+  octx.clearRect(0,0,W,H);
+
+  const pts = state.pts[key] || [];
+  if(!pts.length) return;
+
+  octx.globalCompositeOperation = "lighter";
+
+  for(const p of pts){
+    octx.beginPath();
+    octx.fillStyle = `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${p.a*0.55})`;
+    octx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+    octx.fill();
   }
-  state.alertsXY = pts;
-  chipAlerts.textContent = `Alertas: ${pts.length.toLocaleString("pt-BR")}`;
+
+  const glowN = Math.min(2400, Math.max(600, (pts.length/18)|0));
+  octx.save();
+  octx.shadowBlur = 12;
+  for(let i=0;i<glowN;i++){
+    const p = pts[(Math.random()*pts.length)|0];
+    const k = 0.6 + Math.random()*0.6;
+    octx.shadowColor = `rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.65)`;
+    octx.fillStyle   = `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${0.07*k})`;
+    octx.beginPath();
+    octx.arc(p.x, p.y, 1.2 + k*1.6, 0, Math.PI*2);
+    octx.fill();
+  }
+  octx.restore();
+
+  octx.save();
+  octx.globalCompositeOperation = "destination-in";
+  octx.fillStyle="#fff";
+  octx.beginPath();
+
+  const Wv = cnvBase.getBoundingClientRect().width;
+  const Hv = cnvBase.getBoundingClientRect().height;
+
+  for(const f of (state.brasilMask.features||[])){
+    const g = f.geometry;
+    if(!g) continue;
+    const polys = (g.type==="Polygon") ? [g.coordinates] : (g.type==="MultiPolygon" ? g.coordinates : []);
+    for(const poly of polys){
+      const outer = poly[0];
+      if(!outer || outer.length<3) continue;
+      for(let i=0;i<outer.length;i++){
+        const [x,y] = proj(outer[i][0], outer[i][1], Wv, Hv);
+        if(i===0) octx.moveTo(x,y); else octx.lineTo(x,y);
+      }
+      octx.closePath();
+    }
+  }
+  octx.fill();
+  octx.restore();
+
+  octx.globalCompositeOperation = "source-over";
+}
+function renderAllPointLayers(){
+  renderLayerToOffscreen("agua", [0, 210, 255]);   // azul
+  renderLayerToOffscreen("vege", [60, 255, 180]);  // verde
+  renderLayerToOffscreen("trans",[255, 235, 90]);  // amarelo
+  renderLayerToOffscreen("desm", [255, 80, 60]);   // vermelho
+  state.layersReady = true;
+
+  const total =
+    (state.pts.agua?.length||0)+
+    (state.pts.vege?.length||0)+
+    (state.pts.trans?.length||0)+
+    (state.pts.desm?.length||0);
+
+  chipPts.textContent = "Pontos: " + total.toLocaleString("pt-BR") + " (4 camadas)";
 }
 
 /* =========================
-   ANIMAÇÃO (continua SEM travar)
-   - não recalcula densidade aqui
-   - só pulsa brilho/raio
+   ALERTAS (pulsando)
+========================= */
+function drawAlerts(t){
+  const W = cnvAlerts.getBoundingClientRect().width;
+  const H = cnvAlerts.getBoundingClientRect().height;
+  ctxA.clearRect(0,0,W,H);
+
+  if(!state.alerts || !state.alerts.length) return;
+
+  ctxA.globalCompositeOperation = "lighter";
+
+  for(const a of state.alerts){
+    const [x,y] = proj(a.lon, a.lat, W, H);
+    const s = 0.5 + 0.5*Math.sin(t*0.06 + (a._ph||0));
+    const r0 = 2.0 + s*2.5;
+    const r1 = 10.0 + s*14.0;
+
+    ctxA.shadowBlur = 16;
+    ctxA.shadowColor = "rgba(255,100,60,0.9)";
+    ctxA.fillStyle = "rgba(255,100,60,0.85)";
+    ctxA.beginPath();
+    ctxA.arc(x,y,r0,0,Math.PI*2);
+    ctxA.fill();
+
+    ctxA.shadowBlur = 0;
+    ctxA.strokeStyle = `rgba(255,140,70,${0.10 + 0.22*s})`;
+    ctxA.lineWidth = 1.6;
+    ctxA.beginPath();
+    ctxA.arc(x,y,r1,0,Math.PI*2);
+    ctxA.stroke();
+  }
+  ctxA.globalCompositeOperation = "source-over";
+}
+
+/* =========================
+   ANIMAÇÃO HOLOGRÁFICA (NÃO TRAVA)
 ========================= */
 function startAnim(){
   if(state.animStarted) return;
   state.animStarted = true;
 
-  const loop = (ts)=>{
-    try{
-      if(!state.lastTs) state.lastTs = ts;
-      const dt = Math.min(33, ts - state.lastTs); // limita delta
-      state.lastTs = ts;
+  const loop = ()=>{
+    const W = cnvPoints.getBoundingClientRect().width;
+    const H = cnvPoints.getBoundingClientRect().height;
+    ctxP.clearRect(0,0,W,H);
 
-      // limpa camadas dinâmicas
-      ctxP.clearRect(0,0,W,H);
-      ctxA.clearRect(0,0,W,H);
+    if(state.layersReady){
+      ctxP.globalCompositeOperation = "lighter";
 
-      // PONTOS
-      if(state.ptsXY.length){
-        clipBrasil(ctxP);
-        ctxP.globalCompositeOperation = "lighter";
+      const t = state.t;
+      const ox = Math.sin(t*0.010)*2.2;
+      const oy = Math.cos(t*0.012)*1.6;
 
-        // desenha em lote (mais leve)
-        const pts = state.ptsXY;
-        const t = state.t;
+      const drawOff = (key, baseAlpha)=>{
+        const c = off[key];
+        if(!c) return;
 
-        // 1) micro pontos
-        for(let i=0;i<pts.length;i++){
-          const p = pts[i];
-          const [r,g,b] = colorFromBand(p.band);
+        const z = Z[key] || 1;
+        const a = baseAlpha * (0.80 + 0.20*Math.sin(t*0.020 + z));
+        ctxP.globalAlpha = a;
 
-          const pulse = 0.55 + 0.45*Math.sin(p.ph + t*p.sp*0.020);
-          const alpha = (0.06 + 0.22*pulse);
-          const rad   = 0.32 + p.base*0.40;
+        const dx = ox * (z-1);
+        const dy = oy * (z-1);
 
-          ctxP.beginPath();
-          ctxP.fillStyle = `rgba(${r},${g},${b},${alpha})`;
-          ctxP.arc(p.x, p.y, rad, 0, Math.PI*2);
-          ctxP.fill();
-        }
+        ctxP.drawImage(c, dx, dy, W, H);
+      };
 
-        // 2) sparkles (efeito holográfico)
-        const glowCount = Math.min(1600, Math.max(450, (pts.length/18)|0));
-        ctxP.save();
-        ctxP.shadowBlur = 10;
-        for(let i=0;i<glowCount;i++){
-          const p = pts[(Math.random()*pts.length)|0];
-          const [r,g,b] = colorFromBand(p.band);
+      drawOff("agua", 0.55);
+      drawOff("vege", 0.75);
+      drawOff("trans",0.70);
+      drawOff("desm", 0.65);
 
-          const pulse = 0.55 + 0.45*Math.sin(p.ph + t*0.025);
-          const alpha = 0.05 + 0.16*pulse;
-
-          ctxP.shadowColor = `rgba(${r},${g},${b},${0.55})`;
-          ctxP.fillStyle   = `rgba(${r},${g},${b},${alpha})`;
-
-          ctxP.beginPath();
-          ctxP.arc(p.x, p.y, 1.0 + pulse*1.3, 0, Math.PI*2);
-          ctxP.fill();
-        }
-        ctxP.restore();
-
-        ctxP.globalCompositeOperation = "source-over";
-        ctxP.restore(); // clipBrasil
-      }
-
-      // ALERTAS
-      if(state.alertsXY.length){
-        clipBrasil(ctxA);
-        ctxA.globalCompositeOperation = "lighter";
-        for(const a of state.alertsXY){
-          const pulse = 0.5 + 0.5*Math.sin(a.ph + state.t*0.06);
-          const r = 255, g = 110, b = 40;
-
-          ctxA.save();
-          ctxA.shadowBlur = 18 + pulse*18;
-          ctxA.shadowColor = `rgba(${r},${g},${b},${0.70})`;
-
-          ctxA.fillStyle = `rgba(${r},${g},${b},${0.08 + 0.18*pulse})`;
-          ctxA.beginPath();
-          ctxA.arc(a.x, a.y, 2.2 + pulse*2.6, 0, Math.PI*2);
-          ctxA.fill();
-
-          ctxA.strokeStyle = `rgba(${r},${g},${b},${0.10 + 0.22*pulse})`;
-          ctxA.lineWidth = 1.2;
-          ctxA.beginPath();
-          ctxA.arc(a.x, a.y, 6 + pulse*10, 0, Math.PI*2);
-          ctxA.stroke();
-
-          ctxA.restore();
-        }
-        ctxA.globalCompositeOperation = "source-over";
-        ctxA.restore(); // clipBrasil
-      }
-
-      // avança tempo (independente do dt)
-      state.t += (dt * 0.9);
-      requestAnimationFrame(loop);
-    }catch(e){
-      console.error(e);
-      // se der qualquer erro, reinicia o loop (não “morre”)
-      state.lastTs = 0;
-      requestAnimationFrame(loop);
+      ctxP.globalAlpha = 1;
+      ctxP.globalCompositeOperation = "source-over";
     }
+
+    drawAlerts(state.t);
+    state.t++;
+    requestAnimationFrame(loop);
   };
-  requestAnimationFrame(loop);
+  loop();
 }
 
 /* =========================
@@ -979,15 +910,15 @@ function resizeWave(){
 function startWave(series){
   const s = Array.isArray(series) ? series : [];
   const draw = ()=>{
-    const WW = wave.clientWidth, HH = wave.clientHeight;
-    wctx.clearRect(0,0,WW,HH);
+    const W = wave.clientWidth, H = wave.clientHeight;
+    wctx.clearRect(0,0,W,H);
     wctx.fillStyle = "rgba(0,0,0,.25)";
-    wctx.fillRect(0,0,WW,HH);
+    wctx.fillRect(0,0,W,H);
 
     wctx.strokeStyle = "rgba(110,210,255,.10)";
     wctx.lineWidth = 1;
-    for(let y=12; y<HH; y+=18){
-      wctx.beginPath(); wctx.moveTo(0,y); wctx.lineTo(WW,y); wctx.stroke();
+    for(let y=12; y<H; y+=18){
+      wctx.beginPath(); wctx.moveTo(0,y); wctx.lineTo(W,y); wctx.stroke();
     }
 
     const min = s.length? Math.min(...s) : 0;
@@ -995,25 +926,25 @@ function startWave(series){
 
     function yAt(i){
       if(s.length>=2){
-        const idx = (i / (WW-1)) * (s.length-1);
+        const idx = (i / (W-1)) * (s.length-1);
         const a = Math.floor(idx);
         const b = Math.min(s.length-1, a+1);
         const f = idx - a;
         const v = s[a]*(1-f) + s[b]*f;
         const norm = (max-min) < 1e-9 ? 0.5 : (v - min) / (max - min);
-        let y = (HH*0.18) + (1-norm) * (HH*0.68);
-        y += Math.sin((i + tWave)/28) * (HH*0.02);
+        let y = (H*0.18) + (1-norm) * (H*0.68);
+        y += Math.sin((i + tWave)/28) * (H*0.02);
         return y;
       }
-      return (HH*0.52)
-        + Math.sin((i+tWave)/38)*(HH*0.20)
-        + Math.sin((i+tWave)/13)*(HH*0.07);
+      return (H*0.52)
+        + Math.sin((i+tWave)/38)*(H*0.20)
+        + Math.sin((i+tWave)/13)*(H*0.07);
     }
 
     wctx.lineWidth = 2;
     wctx.strokeStyle = "rgba(110,210,255,.35)";
     wctx.beginPath();
-    for(let i=0;i<WW;i++){
+    for(let i=0;i<W;i++){
       const y = yAt(i);
       if(i===0) wctx.moveTo(i,y); else wctx.lineTo(i,y);
     }
@@ -1021,7 +952,7 @@ function startWave(series){
 
     wctx.strokeStyle = "rgba(110,210,255,.90)";
     wctx.beginPath();
-    for(let i=0;i<WW;i++){
+    for(let i=0;i<W;i++){
       const y = yAt(i);
       if(i===0) wctx.moveTo(i,y); else wctx.lineTo(i,y);
     }
@@ -1049,149 +980,116 @@ document.getElementById("btnBuy").addEventListener("click", ()=>{
 });
 
 /* =========================
-   PAINEL (dados_cnt.json -> fallback cnt_geojson)
+   UI: FULL
 ========================= */
-function applyPanelFromObj(obj){
-  // aceita tanto formato direto quanto {data:{...}}
-  const p = obj?.data || obj || {};
-  // nomes flexíveis (pra não quebrar)
-  const rawA = Number(p.cnt_A ?? p.RAW ?? p.raw ?? p.rawA ?? p.valor_raw);
-  const A100 = Number.isFinite(rawA) ? clamp(rawA * 4, 0, 100) : NaN;
-
-  document.getElementById("raw").textContent = fmt(rawA,2);
-  document.getElementById("eco").textContent = fmt1(A100);
-  document.getElementById("A").textContent   = fmt(A100,2);
-
-  const b = Number(p.cnt_B ?? p.B ?? p.trend);
-  document.getElementById("B").textContent = Number.isFinite(b) ? ((b>=0?"+":"") + fmt(b,2)) : "--";
-  document.getElementById("C").textContent = fmt(Number(p.cnt_C ?? p.C ?? p.stability),2);
-  document.getElementById("R").textContent = (p.grade ?? p.grau ?? "--");
-
-  document.getElementById("ibe").textContent = Number.isFinite(Number(p.IBE ?? p.FUNC)) ? fmt(Number(p.IBE ?? p.FUNC),1) : "--";
-  document.getElementById("iab").textContent = Number.isFinite(Number(p.IAB)) ? fmt(Number(p.IAB),1) : "N/D";
-  document.getElementById("ibi").textContent = Number.isFinite(Number(p.IBI)) ? fmt(Number(p.IBI),1) : "--";
-  document.getElementById("hid").textContent = Number.isFinite(Number(p.HID)) ? fmt(Number(p.HID),2) : "--";
-  document.getElementById("ent").textContent = Number.isFinite(Number(p.ENT)) ? fmt(Number(p.ENT),1) : "--";
-  document.getElementById("pan").textContent = Number.isFinite(Number(p.PAN)) ? fmt(Number(p.PAN),1) : "--";
-
-  const series = Array.isArray(p.series_10y) ? p.series_10y.map(Number).filter(Number.isFinite) : [];
-  document.getElementById("telemetryHint").textContent = series.length
-    ? ("Histórico: " + series.length + " • Último (RAW): " + fmt(rawA,2))
-    : "Sem série 10y em dados_cnt.json.";
-  startWave(series);
-}
-
-/* fallback do geojson antigo */
-function applyPanelFromGeoJSON(fc){
-  const props = fc?.features?.[0]?.properties || {};
-  const rawA = Number(props.cnt_A);
-  const A100 = Number.isFinite(rawA) ? clamp(rawA * 4, 0, 100) : NaN;
-
-  document.getElementById("raw").textContent = fmt(rawA,2);
-  document.getElementById("eco").textContent = fmt1(A100);
-  document.getElementById("A").textContent   = fmt(A100,2);
-
-  const b = Number(props.cnt_B);
-  document.getElementById("B").textContent = Number.isFinite(b) ? ((b>=0?"+":"") + fmt(b,2)) : "--";
-  document.getElementById("C").textContent = fmt(props.cnt_C,2);
-  document.getElementById("R").textContent = props.grade || "--";
-
-  document.getElementById("ibe").textContent = Number.isFinite(Number(props.IBE ?? props.FUNC)) ? fmt(Number(props.IBE ?? props.FUNC),1) : "--";
-  document.getElementById("iab").textContent = Number.isFinite(Number(props.IAB))  ? fmt(props.IAB,1)  : "N/D";
-  document.getElementById("ibi").textContent = Number.isFinite(Number(props.IBI))  ? fmt(props.IBI,1)  : "--";
-  document.getElementById("hid").textContent = Number.isFinite(Number(props.HID))  ? fmt(props.HID,2)  : "--";
-  document.getElementById("ent").textContent = Number.isFinite(Number(props.ENT))  ? fmt(props.ENT,1)  : "--";
-  document.getElementById("pan").textContent = Number.isFinite(Number(props.PAN))  ? fmt(props.PAN,1)  : "--";
-
-  const series = Array.isArray(props.series_10y) ? props.series_10y.map(Number).filter(Number.isFinite) : [];
-  document.getElementById("telemetryHint").textContent = series.length
-    ? ("Histórico: " + series.length + " • Último (RAW): " + fmt(rawA,2))
-    : "Sem série 10y no GeoJSON.";
-  startWave(series);
-}
-
-/* =========================
-   FULL (manual)
-========================= */
-async function loadFullPoints(){
+btnFull.addEventListener("click", async ()=>{
   if(state.fullLoaded) return;
-  state.fullLoaded = true;
+  btnFull.textContent = "Carregando FULL…";
+  btnFull.style.opacity = "0.85";
   try{
-    statusEl.textContent = "Status: carregando FULL…";
-    const ptsFull = await loadJSON(FILES.pts_full);
-    state.ptsFC = ptsFull;
-    buildRawPointsFromFC(ptsFull);
-    rebuildPointsProjection();
-    chipPts.textContent = `Pontos: FULL (${state.ptsRaw.length.toLocaleString("pt-BR")})`;
+    const fc = await loadJSON(FILES.pts_vege_full);
+    state.pts.vege = capAndProjectPoints(fc, CAPS.vege);
+    renderAllPointLayers();
+    state.fullLoaded = true;
+    btnFull.textContent = "FULL OK (vegetação)";
   }catch(e){
     console.error(e);
-    state.fullLoaded = false;
-    statusEl.textContent = "Status: FULL indisponível • mantendo sample.";
+    btnFull.textContent = "FULL indisponível";
   }
-}
-document.getElementById("btnFull").addEventListener("click", loadFullPoints);
+});
 
 /* =========================
    BOOT
 ========================= */
+function setHUDfromDados(d){
+  const meta = d?.meta || {};
+  const token = d?.token || {};
+  const idx = d?.indices || {};
+  const sub = idx?.sub || {};
+
+  if(meta.source) document.getElementById("chipSource").textContent = "Fonte: " + meta.source;
+  if(meta.year_base) document.getElementById("chipYear").textContent = "Ano base: " + meta.year_base;
+  if(token.pump_url) PUMP_URL = token.pump_url;
+
+  const rawA = Number(idx.cnt_A_raw);
+  const A100 = Number.isFinite(Number(idx.cnt_A_0_100)) ? Number(idx.cnt_A_0_100) :
+               (Number.isFinite(rawA) ? clamp(rawA*4,0,100) : NaN);
+
+  document.getElementById("raw").textContent = fmt(rawA,2);
+  document.getElementById("eco").textContent = fmt1(A100);
+  document.getElementById("A").textContent   = fmt(A100,2);
+
+  const b = Number(idx.cnt_B);
+  document.getElementById("B").textContent = Number.isFinite(b) ? ((b>=0?"+":"") + fmt(b,2)) : "--";
+  document.getElementById("C").textContent = fmt(idx.cnt_C,2);
+  document.getElementById("R").textContent = idx.grade || "--";
+
+  document.getElementById("ibe").textContent = Number.isFinite(Number(sub.IBE)) ? fmt(sub.IBE,1) : "--";
+  document.getElementById("iab").textContent = Number.isFinite(Number(sub.IAB)) ? fmt(sub.IAB,1) : "--";
+  document.getElementById("ibi").textContent = Number.isFinite(Number(sub.IBI)) ? fmt(sub.IBI,1) : "--";
+  document.getElementById("hid").textContent = Number.isFinite(Number(sub.HID)) ? fmt(sub.HID,1) : "--";
+  document.getElementById("ent").textContent = Number.isFinite(Number(sub.ENT)) ? fmt(sub.ENT,1) : "--";
+  document.getElementById("pan").textContent = Number.isFinite(Number(sub.PAN)) ? fmt(sub.PAN,1) : "--";
+
+  const series = Array.isArray(idx.series_10y) ? idx.series_10y.map(Number).filter(Number.isFinite) : [];
+  document.getElementById("telemetryHint").textContent = series.length
+    ? ("Histórico: " + series.length + " • Último (0–100): " + fmt1(A100))
+    : "Sem série 10y em dados_cnt.json.";
+  startWave(series);
+
+  const al = d?.alerts?.items || [];
+  state.alerts = al.map((x)=>({ ...x, _ph: Math.random()*Math.PI*2 }));
+  chipAlerts.textContent = "Alertas: " + (state.alerts.length ? (state.alerts.length + " ativos") : "OFF");
+}
+
 async function boot(){
   try{
-    statusEl.textContent = "Status: carregando camadas base…";
+    statusEl.textContent = "Status: carregando dados_cnt.json…";
+    state.dados = await loadJSON(FILES.dados);
+    setHUDfromDados(state.dados);
 
-    // BASE
+    statusEl.textContent = "Status: carregando Brasil (IBGE)…";
     state.brasilMask = await loadEither(FILES.br_simpl, FILES.br_full);
-    // bbox SEMPRE do Brasil (pra não ficar só Amazônia)
     bbox = calcBBox(state.brasilMask);
 
-    // camadas auxiliares
-    try{ state.biomas = await loadJSON(FILES.biomas); }catch(_){ state.biomas = null; }
-    state.uf = await loadJSON(FILES.uf);
+    statusEl.textContent = "Status: carregando camadas (UF / hidrografia)…";
+    state.uf    = await loadJSON(FILES.uf);
     state.macro = await loadJSON(FILES.macro);
     state.micro = await loadJSON(FILES.micro);
 
-    // painel (dados_cnt.json -> fallback)
-    try{
-      state.dadosCnt = await loadJSON(FILES.dados_cnt);
-      applyPanelFromObj(state.dadosCnt);
-    }catch(e1){
-      console.warn("dados_cnt.json falhou, usando CNT_FULL_10Y.geojson", e1);
-      state.cntGeo = await loadJSON(FILES.cnt_geojson);
-      applyPanelFromGeoJSON(state.cntGeo);
-    }
+    try{ state.biomas = await loadJSON(FILES.biomas); }catch(_){ state.biomas = null; }
 
-    // prepara canvas + clip
     resizeAll();
     state.ready = true;
-    rebuildBrasilClip();
     redrawStatic();
 
-    // ALERTAS
-    try{
-      state.alertsFC = await loadJSON(FILES.alerts);
-      buildAlertsXY(state.alertsFC);
-    }catch(eA){
-      console.warn("alertas falhou:", eA);
-      chipAlerts.textContent = "Alertas: OFF";
-      state.alertsXY = [];
-    }
+    statusEl.textContent = "Status: carregando pontos (4 camadas)…";
+    const [agua, vegeS, trans, desm] = await Promise.all([
+      loadJSON(FILES.pts_agua),
+      loadJSON(FILES.pts_vege_sample),
+      loadJSON(FILES.pts_trans),
+      loadJSON(FILES.pts_desm)
+    ]);
 
-    // PONTOS SAMPLE (rápido)
-    statusEl.textContent = "Status: mapa base OK • carregando pontos (sample)…";
-    const ptsSample = await loadJSON(FILES.pts_sample);
-    state.ptsFC = ptsSample;
-    buildRawPointsFromFC(ptsSample);
-    rebuildPointsProjection();
-    chipPts.textContent = `Pontos: sample (${state.ptsRaw.length.toLocaleString("pt-BR")})`;
+    state.pts.agua = capAndProjectPoints(agua, CAPS.agua);
+    state.pts.vege = capAndProjectPoints(vegeS, Math.min(50000, CAPS.vege));
+    state.pts.trans= capAndProjectPoints(trans, CAPS.trans);
+    state.pts.desm = capAndProjectPoints(desm, CAPS.desm);
 
-    // inicia animação contínua (não morre)
+    renderAllPointLayers();
+
+    statusEl.textContent =
+      "Status: mapa base OK + holografia OK\n" +
+      "• Verde=vegetação • Azul=água • Amarelo=transição • Vermelho=desmatamento\n" +
+      "Dica: clique em “Carregar FULL” para vegetação detalhada.";
     startAnim();
 
   }catch(err){
     console.error(err);
     statusEl.textContent = "Status: ERRO • " + (err?.message || err);
-    document.getElementById("telemetryHint").textContent = "Erro: arquivos não carregaram. Veja o console (F12).";
     chipPts.textContent = "Pontos: OFF";
     chipAlerts.textContent = "Alertas: OFF";
+    document.getElementById("telemetryHint").textContent = "Erro ao carregar arquivos. Veja o console (F12).";
   }
 }
 boot();
