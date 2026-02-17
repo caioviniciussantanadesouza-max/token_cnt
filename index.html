@@ -394,7 +394,7 @@ const FILES = {
   pts_desm: "desm_pts_sample.geojson",
 };
 
-// cores fixas combinadas (4 cores)
+// cores fixas (4 cores)
 const COLORS = {
   water: [0, 190, 255],
   vege:  [60, 255, 180],
@@ -415,7 +415,6 @@ function fmt(n, d=2){
   return Number(n).toFixed(d).replace(".", ",");
 }
 function fmt1(n){ return fmt(n,1); }
-function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
 
 async function loadJSON(path){
   const url = "./" + path + "?v=" + Date.now();
@@ -445,13 +444,14 @@ function calcBBox(fc){
   return [minx, miny, maxx, maxy];
 }
 
-/* proj (fit-to-canvas com padding) */
+/* =========================
+   PROJEÇÃO (IBGE manda)
+========================= */
 let bbox = null;
 
 function proj(lon, lat, w, h){
   const [minx,miny,maxx,maxy] = bbox;
 
-  // mesmo padding SEMPRE (IBGE e imagem usam isso)
   const pad = 0.035;
   const x0 = pad*w, y0 = pad*h;
   const W  = (1-2*pad)*w;
@@ -460,35 +460,6 @@ function proj(lon, lat, w, h){
   const x = x0 + ((lon - minx) / (maxx - minx)) * W;
   const y = y0 + ((maxy - lat) / (maxy - miny)) * H;
   return [x,y];
-}
-
-function clipBrasil(ctx, fc){
-  const W = cnvBase.getBoundingClientRect().width;
-  const H = cnvBase.getBoundingClientRect().height;
-
-  ctx.beginPath();
-
-  for(const f of (fc.features||[])){
-    const g = f.geometry;
-    if(!g) continue;
-
-    const polys =
-      (g.type === "Polygon") ? [g.coordinates] :
-      (g.type === "MultiPolygon") ? g.coordinates : [];
-
-    for(const poly of polys){
-      const outer = poly[0];
-      if(!outer || outer.length < 3) continue;
-
-      for(let i=0;i<outer.length;i++){
-        const [x,y] = proj(outer[i][0], outer[i][1], W, H);
-        if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-      }
-      ctx.closePath();
-    }
-  }
-
-  ctx.clip();
 }
 
 /* =========================
@@ -527,10 +498,46 @@ function resizeAll(){
   resizeWave();
   if(state.ready) redrawStatic();
 }
-window.addEventListener("resize", resizeAll);
+window.addEventListener("resize", ()=>{
+  resizeAll();
+  // reprojeta pontos no resize pra não “escorregar”
+  if(state.ready) rebuildAllPoints();
+});
 
 /* =========================
-   DRAW SHAPES
+   CLIP NO BRASIL
+========================= */
+function clipBrasil(ctx, fc){
+  const W = cnvBase.getBoundingClientRect().width;
+  const H = cnvBase.getBoundingClientRect().height;
+
+  ctx.beginPath();
+
+  for(const f of (fc.features||[])){
+    const g = f.geometry;
+    if(!g) continue;
+
+    const polys =
+      (g.type === "Polygon") ? [g.coordinates] :
+      (g.type === "MultiPolygon") ? g.coordinates : [];
+
+    for(const poly of polys){
+      const outer = poly[0];
+      if(!outer || outer.length < 3) continue;
+
+      for(let i=0;i<outer.length;i++){
+        const [x,y] = proj(outer[i][0], outer[i][1], W, H);
+        if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      }
+      ctx.closePath();
+    }
+  }
+
+  ctx.clip();
+}
+
+/* =========================
+   DRAW: PNG + BORDA + LINHAS
 ========================= */
 function drawBasePNG(img){
   const W = cnvBase.getBoundingClientRect().width;
@@ -539,27 +546,28 @@ function drawBasePNG(img){
   ctxBase.save();
   ctxBase.clearRect(0,0,W,H);
 
-  // fundo preto real
   ctxBase.fillStyle = "#000";
   ctxBase.fillRect(0,0,W,H);
 
-  // retângulo-alvo (igual ao proj)
   const pad = 0.035;
-  const dx = pad*W, dy = pad*H;
-  const dw = (1-2*pad)*W;
-  const dh = (1-2*pad)*H;
 
-  // corta pelo contorno do Brasil (IBGE)
+  // BLEED: textura passa por baixo do glow
+  const BLEED = 14; // se ainda parecer “menor”, use 18
+
+  const dx = pad*W - BLEED;
+  const dy = pad*H - BLEED;
+  const dw = (1-2*pad)*W + BLEED*2;
+  const dh = (1-2*pad)*H + BLEED*2;
+
   if(state && state.brasil) clipBrasil(ctxBase, state.brasil);
 
-  // A imagem é encaixada no mesmo retângulo do IBGE (alinhamento garantido)
-  ctxBase.globalAlpha = 0.95;
+  ctxBase.globalAlpha = 0.92;
   ctxBase.drawImage(img, dx, dy, dw, dh);
   ctxBase.globalAlpha = 1;
 
   ctxBase.restore();
 
-  // vinheta suave (holografia sem estourar cor)
+  // vinheta suave
   ctxBase.save();
   const vg = ctxBase.createRadialGradient(W*0.52,H*0.46, 10, W*0.52,H*0.46, Math.max(W,H)*0.72);
   vg.addColorStop(0, "rgba(0,0,0,0)");
@@ -572,6 +580,7 @@ function drawBasePNG(img){
 function strokePolygonsGlow(ctx, fc){
   const W = cnvBorder.getBoundingClientRect().width;
   const H = cnvBorder.getBoundingClientRect().height;
+
   ctx.save();
   ctx.lineJoin="round";
   ctx.lineCap="round";
@@ -595,14 +604,16 @@ function strokePolygonsGlow(ctx, fc){
     }
   };
 
-  ctx.shadowColor = "rgba(0,255,220,0.95)";
-  ctx.shadowBlur  = 28;
-  ctx.lineWidth   = 4.8;
-  ctx.strokeStyle = "rgba(0,255,220,0.55)";
+  // glow externo menor (não “incha” o Brasil)
+  ctx.shadowColor = "rgba(0,255,220,0.90)";
+  ctx.shadowBlur  = 18;
+  ctx.lineWidth   = 3.6;
+  ctx.strokeStyle = "rgba(0,255,220,0.45)";
   drawOuter();
 
-  ctx.shadowBlur  = 12;
-  ctx.lineWidth   = 2.2;
+  // linha principal nítida
+  ctx.shadowBlur  = 8;
+  ctx.lineWidth   = 1.9;
   ctx.strokeStyle = "rgba(0,255,220,0.95)";
   drawOuter();
 
@@ -642,7 +653,7 @@ function strokeLines(ctx, fc, strokeStyle, width, alpha){
 }
 
 /* =========================
-   HOLOGRAFIA (render rápido, não trava)
+   HOLOGRAFIA (pontos)
 ========================= */
 function projectPoints(fc, W, H){
   const pts = [];
@@ -669,7 +680,6 @@ function buildHeatCanvas(points, colorRGB, cell){
     grid[cy*cols + cx]++;
   }
 
-  // normaliza
   let max=0;
   for(let i=0;i<grid.length;i++) if(grid[i]>max) max=grid[i];
   max = Math.max(1, max);
@@ -697,17 +707,14 @@ function buildHeatCanvas(points, colorRGB, cell){
 }
 
 function drawHeat(heat, alpha, blurPx=8, jitter=0){
-  const W = cnvPoints.getBoundingClientRect().width;
-  const H = cnvPoints.getBoundingClientRect().height;
-
   ctxP.save();
   ctxP.globalCompositeOperation = "lighter";
   ctxP.globalAlpha = alpha;
   ctxP.filter = `blur(${blurPx}px)`;
 
-  // escala do offscreen (1px = cell)
   const dx = jitter ? (Math.sin(state.t*0.03)*jitter) : 0;
   const dy = jitter ? (Math.cos(state.t*0.021)*jitter) : 0;
+
   ctxP.drawImage(heat.off, 0,0, heat.cols, heat.rows, dx,dy, heat.cols*heat.cell, heat.rows*heat.cell);
 
   ctxP.filter = "none";
@@ -717,20 +724,15 @@ function drawHeat(heat, alpha, blurPx=8, jitter=0){
 }
 
 function drawSparkles(allPts, allColors){
-  const W = cnvPoints.getBoundingClientRect().width;
-  const H = cnvPoints.getBoundingClientRect().height;
-
   const total = allPts.reduce((s,a)=>s+a.length, 0);
   if(!total) return;
 
-  // quantos brilhos por frame (leve)
   const N = Math.min(1300, Math.max(420, (total/14)|0));
   ctxP.save();
   ctxP.globalCompositeOperation = "lighter";
   ctxP.shadowBlur = 10;
 
   for(let i=0;i<N;i++){
-    // escolhe camada
     let pick = Math.random()*total;
     let layer = 0;
     for(; layer<allPts.length; layer++){
@@ -767,7 +769,6 @@ function drawAlerts(items){
     const [x,y] = proj(it.lon, it.lat, W, H);
     const pulse = 0.55 + 0.45*Math.sin(state.t*0.08);
 
-    // halo
     ctxA.shadowBlur = 22;
     ctxA.shadowColor = `rgba(${COLORS.alert[0]},${COLORS.alert[1]},${COLORS.alert[2]},0.85)`;
     ctxA.fillStyle = `rgba(${COLORS.alert[0]},${COLORS.alert[1]},${COLORS.alert[2]},${0.18 + 0.22*pulse})`;
@@ -775,7 +776,6 @@ function drawAlerts(items){
     ctxA.arc(x, y, 6 + pulse*8, 0, Math.PI*2);
     ctxA.fill();
 
-    // núcleo
     ctxA.shadowBlur = 10;
     ctxA.fillStyle = `rgba(255,255,255,${0.25 + 0.35*pulse})`;
     ctxA.beginPath();
@@ -797,47 +797,36 @@ const state = {
   micro:null,
   baseImg:null,
 
-  // pontos
-  pts: {
-    water: [],
-    vege: [],
-    trans: [],
-    desm: []
-  },
-  heat: {
-    water:null,
-    vege:null,
-    trans:null,
-    desm:null
-  },
+  pts: { water:[], vege:[], trans:[], desm:[] },
+  heat:{ water:null, vege:null, trans:null, desm:null },
   loadedFull:false,
   alerts: [],
 
   t:0,
-  raf:null
+  raf:null,
+
+  // mantém os FCs originais para reprojetar no resize
+  fcCache: { water:null, vege:null, trans:null, desm:null }
 };
 
 /* =========================
-   STATIC REDRAW (mapa sempre aparece)
+   STATIC REDRAW
 ========================= */
 function redrawStatic(){
   if(!bbox) return;
   clearC(ctxBase); clearC(ctxB); clearC(ctxL);
 
-  // base PNG (se existir)
   if(state.baseImg) drawBasePNG(state.baseImg);
 
-  // borda do Brasil
   strokePolygonsGlow(ctxB, state.brasil);
 
-  // linhas (água e limites)
   strokeLines(ctxL, state.macro, "rgba(0,234,255,0.70)", 1.00, 1);
   strokeLines(ctxL, state.micro, "rgba(0,120,255,0.45)", 0.55, 1);
   strokeLines(ctxL, state.uf,    "rgba(160,245,255,0.55)", 0.95, 1);
 }
 
 /* =========================
-   ANIMAÇÃO (infinita, leve)
+   ANIMAÇÃO
 ========================= */
 function startAnim(){
   if(state.raf) cancelAnimationFrame(state.raf);
@@ -847,7 +836,6 @@ function startAnim(){
     const H = cnvPoints.getBoundingClientRect().height;
     ctxP.clearRect(0,0,W,H);
 
-    // holografia por camadas (4 cores)
     const a = 0.22 + 0.10*Math.sin(state.t*0.018);
 
     if(state.heat.water) drawHeat(state.heat.water, a*0.95, 8, 0.55);
@@ -855,13 +843,11 @@ function startAnim(){
     if(state.heat.trans) drawHeat(state.heat.trans, a*0.85, 9, 0.60);
     if(state.heat.desm)  drawHeat(state.heat.desm,  a*0.90, 9, 0.60);
 
-    // sparkles por cima
     drawSparkles(
       [state.pts.water, state.pts.vege, state.pts.trans, state.pts.desm],
       [COLORS.water, COLORS.vege, COLORS.trans, COLORS.desm]
     );
 
-    // alertas
     drawAlerts(state.alerts);
 
     state.t++;
@@ -873,8 +859,6 @@ function startAnim(){
 function rebuildHeat(){
   const W = cnvPoints.getBoundingClientRect().width;
   const H = cnvPoints.getBoundingClientRect().height;
-
-  // cell maior = mais leve
   const cell = Math.max(2, Math.min(4, Math.round(Math.max(W,H)/520)));
 
   state.heat.water = state.pts.water.length ? buildHeatCanvas(state.pts.water, COLORS.water, cell) : null;
@@ -884,6 +868,21 @@ function rebuildHeat(){
 
   const total = state.pts.water.length + state.pts.vege.length + state.pts.trans.length + state.pts.desm.length;
   chipPts.textContent = `Pontos: ${total.toLocaleString('pt-BR')} (4 cores)`;
+}
+
+// reprojeta tudo (usado no resize)
+function rebuildAllPoints(){
+  if(!state.fcCache.water) return;
+
+  const W = cnvPoints.getBoundingClientRect().width;
+  const H = cnvPoints.getBoundingClientRect().height;
+
+  state.pts.water = projectPoints(state.fcCache.water, W, H);
+  state.pts.vege  = projectPoints(state.fcCache.vege,  W, H);
+  state.pts.trans = projectPoints(state.fcCache.trans, W, H);
+  state.pts.desm  = projectPoints(state.fcCache.desm,  W, H);
+
+  rebuildHeat();
 }
 
 /* =========================
@@ -971,7 +970,7 @@ document.getElementById("btnBuy").addEventListener("click", ()=>{
 });
 
 /* =========================
-   HUD (dados_cnt.json)
+   HUD
 ========================= */
 function applyHUD(d){
   const meta = d?.meta || {};
@@ -1019,14 +1018,11 @@ async function boot(){
   try{
     statusEl.textContent = "Status: carregando dados e camadas base…";
 
-    // size primeiro
     resizeAll();
 
-    // dados principais
     state.dados = await loadJSON(FILES.dados);
     applyHUD(state.dados);
 
-    // geometria BR
     state.brasil = await loadJSON(FILES.br);
     bbox = calcBBox(state.brasil);
 
@@ -1034,7 +1030,6 @@ async function boot(){
     state.macro = await loadJSON(FILES.macro);
     state.micro = await loadJSON(FILES.micro);
 
-    // base png (opcional)
     try{
       const img = new Image();
       img.decoding = "async";
@@ -1050,10 +1045,6 @@ async function boot(){
 
     statusEl.textContent = "Status: mapa base OK • carregando pontos sample (4 cores)…";
 
-    // pontos sample
-    const W = cnvPoints.getBoundingClientRect().width;
-    const H = cnvPoints.getBoundingClientRect().height;
-
     const [fcWater, fcVege, fcTrans, fcDesm] = await Promise.all([
       loadJSON(FILES.pts_water),
       loadJSON(FILES.pts_vege_sample),
@@ -1061,12 +1052,12 @@ async function boot(){
       loadJSON(FILES.pts_desm)
     ]);
 
-    state.pts.water = projectPoints(fcWater, W, H);
-    state.pts.vege  = projectPoints(fcVege,  W, H);
-    state.pts.trans = projectPoints(fcTrans, W, H);
-    state.pts.desm  = projectPoints(fcDesm,  W, H);
+    state.fcCache.water = fcWater;
+    state.fcCache.vege  = fcVege;
+    state.fcCache.trans = fcTrans;
+    state.fcCache.desm  = fcDesm;
 
-    rebuildHeat();
+    rebuildAllPoints();
     startAnim();
 
     statusEl.textContent = "Status: holografia OK (pontos contínuos)\nCores: verde=vegetação • azul=água • amarelo=transição • vermelho=desmatamento";
@@ -1078,19 +1069,17 @@ async function boot(){
   }
 }
 
-// FULL vegetation manual
 async function loadFullVege(){
   if(state.loadedFull) return;
   try{
     statusEl.textContent = "Status: carregando FULL de vegetação…";
-    const W = cnvPoints.getBoundingClientRect().width;
-    const H = cnvPoints.getBoundingClientRect().height;
 
     const fc = await loadJSON(FILES.pts_vege_full);
-    state.pts.vege = projectPoints(fc, W, H);
+    state.fcCache.vege = fc;
     state.loadedFull = true;
 
-    rebuildHeat();
+    rebuildAllPoints();
+
     statusEl.textContent = "Status: FULL de vegetação OK • holografia contínua";
     document.getElementById('btnFull').textContent = "FULL carregado";
   }catch(e){
@@ -1104,4 +1093,3 @@ boot();
 </script>
 </body>
 </html>
-
