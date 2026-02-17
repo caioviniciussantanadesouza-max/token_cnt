@@ -38,129 +38,43 @@ html,body{
   border-radius:22px;
   box-shadow: var(--shadow);
 }
-#header{
-  grid-column:1 / 4;
-  padding:14px 16px;
-  border-radius:24px;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  gap:8px;
-}
-#header h1{
-  margin:0;
-  font-size:26px;
-  letter-spacing:.6px;
-  font-weight:900;
-  color:#e9fdff;
-  text-align:center;
-}
-#header .sub{
-  margin:0;
-  text-align:center;
-  font-size:12px;
-  color:var(--muted);
-  opacity:.95;
-}
-#chips{
-  display:flex;
-  justify-content:center;
-  gap:10px;
-  flex-wrap:wrap;
-}
-.chip{
-  font-size:11px;
-  padding:7px 10px;
-  border-radius:999px;
-  border:1px solid rgba(110,210,255,.22);
-  background: rgba(0,0,0,.20);
-  color:#cfefff;
-  opacity:.95;
-}
-#left{
-  padding:12px;
-  display:flex;
-  flex-direction:column;
-  gap:8px;
-  min-height:0;
-  overflow:hidden;
-}
-.big{
-  font-size:56px;
-  line-height:1;
-  font-weight:260;
-  color:#e9fdff;
-  margin:0;
-}
-.small{
-  font-size:12px;
-  color:var(--muted);
-  opacity:.95;
-}
-.hr{
-  height:1px;
-  background:linear-gradient(90deg,transparent,rgba(110,210,255,.30),transparent);
-  margin:6px 0;
-}
+
+/* Header */
+#header{ grid-column:1 / 4; padding:14px 16px; border-radius:24px; display:flex; flex-direction:column; gap:8px; }
+#header h1{ margin:0; font-size:26px; font-weight:900; color:#e9fdff; text-align:center; letter-spacing:.6px; }
+#header .sub{ margin:0; text-align:center; font-size:12px; color:var(--muted); opacity:.95; }
+#chips{ display:flex; justify-content:center; gap:10px; flex-wrap:wrap; }
+.chip{ font-size:11px; padding:7px 10px; border-radius:999px; border:1px solid rgba(110,210,255,.22); background: rgba(0,0,0,.20); color:#cfefff; opacity:.95; }
+.chip.btn{ border-color: rgba(110,210,255,.45); background: rgba(0,0,0,.28); cursor:pointer; font-weight:900; }
+.chip.btn:hover{ box-shadow:0 0 18px rgba(110,210,255,.20); }
+
+/* Left */
+#left{ padding:12px; display:flex; flex-direction:column; gap:8px; min-height:0; overflow:hidden; }
+.big{ font-size:56px; line-height:1; font-weight:260; color:#e9fdff; margin:0; }
+.small{ font-size:12px; color:var(--muted); opacity:.95; }
+.hr{ height:1px; background:linear-gradient(90deg,transparent,rgba(110,210,255,.30),transparent); margin:6px 0; }
 .abclist{ display:grid; gap:8px; }
-.abcline{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:7px 10px;
-  border:1px solid rgba(110,210,255,.14);
-  background:rgba(0,0,0,.18);
-  border-radius:14px;
-  font-size:12px;
-}
+.abcline{ display:flex; justify-content:space-between; align-items:center; padding:7px 10px; border:1px solid rgba(110,210,255,.14); background:rgba(0,0,0,.18); border-radius:14px; font-size:12px; }
 .abcline b{ color:#e9fdff; font-weight:900; }
 .abcline span{ color:#d5fbff; font-weight:900; }
-
-.grid2{
-  display:grid;
-  grid-template-columns: 1fr 1fr;
-  gap:8px 10px;
-}
-.kv{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  font-size:12px;
-  padding:7px 10px;
-  border:1px solid rgba(110,210,255,.16);
-  border-radius:14px;
-  background:rgba(0,0,0,.18);
-}
+.grid2{ display:grid; grid-template-columns: 1fr 1fr; gap:8px 10px; }
+.kv{ display:flex; justify-content:space-between; align-items:center; font-size:12px; padding:7px 10px; border:1px solid rgba(110,210,255,.16); border-radius:14px; background:rgba(0,0,0,.18); }
 .kv b{ font-weight:900; color:#e9fdff; }
 .kv span{ color:#d0fbff; font-weight:900; }
-
 #status{
   margin-top:4px;
   font-size:10px;
-  color:rgba(180,245,255,.9);
-  opacity:.88;
-  line-height:1.25;
+  color:rgba(180,245,255,.92);
+  opacity:.95;
+  line-height:1.35;
   white-space:pre-line;
+  user-select:text;
 }
 
-/* center */
-#center{
-  position:relative;
-  overflow:hidden;
-  border-radius:26px;
-  min-height:0;
-}
-#mapWrap{
-  position:absolute; inset:0;
-  background: radial-gradient(900px 600px at 50% 40%, rgba(20,60,80,.35), rgba(0,0,0,1) 70%);
-}
-#mapStage{
-  position:absolute; inset:0;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  perspective: 900px;
-}
+/* Center */
+#center{ position:relative; overflow:hidden; border-radius:26px; min-height:0; }
+#mapWrap{ position:absolute; inset:0; background: radial-gradient(900px 600px at 50% 40%, rgba(20,60,80,.35), rgba(0,0,0,1) 70%); }
+#mapStage{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; perspective: 900px; }
 #map3d{
   position:relative;
   width: min(100%, 980px);
@@ -171,13 +85,7 @@ html,body{
   border-radius: 20px;
   filter: drop-shadow(0 0 18px rgba(110,210,255,.12));
 }
-.layer{
-  position:absolute; inset:0;
-  width:100%;
-  height:100%;
-  pointer-events:none;
-  border-radius:20px;
-}
+.layer{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; border-radius:20px; }
 #mapGlow{
   position:absolute; inset:-10%;
   pointer-events:none;
@@ -191,64 +99,30 @@ html,body{
   animation: glowPulse 6s ease-in-out infinite;
   border-radius:24px;
 }
-@keyframes glowPulse{
-  0%{ opacity:.16; transform:scale(1); }
-  50%{ opacity:.30; transform:scale(1.02); }
-  100%{ opacity:.16; transform:scale(1); }
-}
+@keyframes glowPulse{ 0%{opacity:.16; transform:scale(1);} 50%{opacity:.30; transform:scale(1.02);} 100%{opacity:.16; transform:scale(1);} }
 #scanlines{
-  position:absolute; inset:0;
-  pointer-events:none;
-  opacity:.14;
-  background:
-    repeating-linear-gradient(to bottom,
-      rgba(120,220,255,.06) 0px,
-      rgba(120,220,255,.06) 1px,
-      transparent 2px,
-      transparent 7px
-    );
+  position:absolute; inset:0; pointer-events:none; opacity:.14;
+  background: repeating-linear-gradient(to bottom, rgba(120,220,255,.06) 0px, rgba(120,220,255,.06) 1px, transparent 2px, transparent 7px);
   mix-blend-mode: overlay;
   animation: scan 3.2s linear infinite;
   border-radius:20px;
 }
 @keyframes scan{ 0%{ transform:translateY(-22px);} 100%{ transform:translateY(22px);} }
 
-#holoFX{
-  position:absolute; inset:0;
-  pointer-events:none;
-  mix-blend-mode: screen;
-  opacity:.7;
-  border-radius:20px;
-}
+#holoFX{ position:absolute; inset:0; pointer-events:none; mix-blend-mode: screen; opacity:.7; border-radius:20px; }
 #holoGrid{
-  position:absolute; inset:0;
-  border-radius:20px;
+  position:absolute; inset:0; border-radius:20px;
   background:
-    repeating-linear-gradient(0deg,
-      rgba(110,210,255,.08) 0px,
-      rgba(110,210,255,.08) 1px,
-      transparent 4px,
-      transparent 8px
-    ),
-    repeating-linear-gradient(90deg,
-      rgba(110,210,255,.05) 0px,
-      rgba(110,210,255,.05) 1px,
-      transparent 10px,
-      transparent 18px
-    );
+    repeating-linear-gradient(0deg, rgba(110,210,255,.08) 0px, rgba(110,210,255,.08) 1px, transparent 4px, transparent 8px),
+    repeating-linear-gradient(90deg, rgba(110,210,255,.05) 0px, rgba(110,210,255,.05) 1px, transparent 10px, transparent 18px);
   opacity:.22;
   animation: holoMove 6.5s linear infinite;
 }
-@keyframes holoMove{
-  0%{ transform: translate3d(-10px,-10px,0); }
-  100%{ transform: translate3d(10px,10px,0); }
-}
+@keyframes holoMove{ 0%{ transform: translate3d(-10px,-10px,0);} 100%{ transform: translate3d(10px,10px,0);} }
 #holoSheen{
   position:absolute; inset:-30%;
-  border-radius: 50%;
-  background: radial-gradient(circle at 30% 35%,
-    rgba(110,210,255,.20),
-    rgba(0,0,0,0) 55%);
+  border-radius:50%;
+  background: radial-gradient(circle at 30% 35%, rgba(110,210,255,.20), rgba(0,0,0,0) 55%);
   filter: blur(10px);
   opacity:.35;
   animation: sheen 4.5s ease-in-out infinite;
@@ -259,36 +133,16 @@ html,body{
   100%{ transform: translate3d(-6%, -4%, 0) scale(1); opacity:.26; }
 }
 #holoVignette{
-  position:absolute; inset:0;
-  border-radius:20px;
-  background: radial-gradient(70% 60% at 50% 45%,
-    rgba(0,0,0,0),
-    rgba(0,0,0,.60) 85%);
+  position:absolute; inset:0; border-radius:20px;
+  background: radial-gradient(70% 60% at 50% 45%, rgba(0,0,0,0), rgba(0,0,0,.60) 85%);
   opacity:.9;
 }
 
-/* right */
-#right{
-  display:flex;
-  flex-direction:column;
-  gap:14px;
-  min-height:0;
-}
+/* Right */
+#right{ display:flex; flex-direction:column; gap:14px; min-height:0; }
 #buy, #telemetry{ padding:14px; }
-#buy h2{
-  margin:0;
-  font-size:18px;
-  font-weight:900;
-  letter-spacing:.4px;
-  color:#e9fdff;
-}
-#buy .mut{
-  margin:8px 0 10px;
-  font-size:12px;
-  color:var(--muted);
-  opacity:.95;
-  line-height:1.35;
-}
+#buy h2{ margin:0; font-size:18px; font-weight:900; letter-spacing:.4px; color:#e9fdff; }
+#buy .mut{ margin:8px 0 10px; font-size:12px; color:var(--muted); opacity:.95; line-height:1.35; }
 label{ display:block; font-size:12px; color:var(--muted); margin:10px 0 6px; }
 .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
 input{
@@ -315,28 +169,9 @@ input{
 .valueLine b{ font-size:19px; color:#e9fdff; }
 .smallnote{ margin-top:6px; font-size:11px; color:var(--muted); opacity:.95; }
 
-#telemetryTitle{
-  font-size:12px;
-  letter-spacing:.8px;
-  color:#d4fbff;
-  opacity:.95;
-  margin-bottom:8px;
-  font-weight:900;
-}
-#wave{
-  width:100%;
-  height:74px;
-  display:block;
-  background: rgba(0,0,0,.22);
-  border:1px solid rgba(110,210,255,.14);
-  border-radius:14px;
-}
-#telemetryHint{
-  margin-top:8px;
-  font-size:11px;
-  color:var(--muted);
-  opacity:.92;
-}
+#telemetryTitle{ font-size:12px; letter-spacing:.8px; color:#d4fbff; opacity:.95; margin-bottom:8px; font-weight:900; }
+#wave{ width:100%; height:74px; display:block; background: rgba(0,0,0,.22); border:1px solid rgba(110,210,255,.14); border-radius:14px; }
+#telemetryHint{ margin-top:8px; font-size:11px; color:var(--muted); opacity:.92; }
 
 @media (max-width: 1100px){
   body{ overflow:auto; }
@@ -350,13 +185,12 @@ input{
 <div id="app">
   <div id="header" class="glass">
     <h1>CNT — Centro Natural TEC Amazônia</h1>
-    <p class="sub">Mapa ecológico real • Base + Holografia • Pontos contínuos (não trava)</p>
+    <p class="sub">Mapa base + holografia • pontos contínuos (não trava) • diagnóstico de carga</p>
     <div id="chips">
-      <div class="chip" id="chipFonte">Fonte: dados públicos governamentais</div>
-      <div class="chip" id="chipAno">Ano base: 2025</div>
-      <div class="chip" id="chipAOI">AOI: AMAZÔNIA</div>
-      <div class="chip" id="chipData">dados_cnt: ?</div>
+      <div class="chip" id="chipAOI">AOI: ?</div>
+      <div class="chip" id="chipDados">dados_cnt: ?</div>
       <div class="chip" id="chipPNG">PNG: ?</div>
+      <div class="chip btn" id="btnFull">Carregar FULL (manual)</div>
     </div>
   </div>
 
@@ -398,7 +232,6 @@ input{
           <canvas id="cnvHolo" class="layer"></canvas>
           <canvas id="cnvLines" class="layer"></canvas>
           <canvas id="cnvPoints" class="layer"></canvas>
-
           <div id="mapGlow"></div>
           <div id="scanlines"></div>
           <div id="holoFX">
@@ -435,35 +268,31 @@ input{
 </div>
 
 <script>
-/* =========================
-   CONFIG
-========================= */
+/* ============ CONFIG ============ */
 const DEFAULT_PUMP_URL = "https://pump.fun/coin/GCVyjNaCbXkwGUuktyNxSXad4ozmTp2fzQr2jieSpump";
 const rate = 147449130;
+let PUMP_URL = DEFAULT_PUMP_URL;
 
-const DADOS_CNT_URL = "./dados/dados_cnt.json";
-const AOI_AMAZONIA  = "./amazonia.geojson";              // <<<<< CRIAR
-const AOI_FALLBACK  = "./BR_IBGE_simplificado.geojson";  // fallback
-
-const ASSETS = {
-  basePNG: "./assets/mapa_base.png", // <<<<< CRIAR
-  holoPNG: "./assets/mapa_holo.png"  // <<<<< CRIAR
+/* IMPORTANTÍSSIMO:
+   - seu print mostra "biomas.gec" sendo editado.
+   - então eu coloco os DOIS: biomas.geojson e biomas.gec.
+   - idem PNG .png e .PNG
+*/
+const CAND = {
+  biomas: ["./biomas.geojson","./biomas.gec","./dados/biomas.geojson","./dados/biomas.gec"],
+  brasil: ["./BR_IBGE_simplificado.geojson","./BR_IBGE.geojson","./dados/BR_IBGE_simplificado.geojson","./dados/BR_IBGE.geojson"],
+  uf:     ["./uf.geojson","./dados/uf.geojson"],
+  macro:  ["./macro_rh.geojson","./dados/macro_rh.geojson"],
+  micro:  ["./micro_rh.geojson","./dados/micro_rh.geojson"],
+  dados:  ["./dados_cnt.json","./dados/dados_cnt.json","./dados_cnt.JSON","./dados/dados_cnt.JSON"],
+  base:   ["./mapa_base.png","./mapa_base.PNG","./assets/mapa_base.png","./assets/mapa_base.PNG","./img/mapa_base.png","./img/mapa_base.PNG"],
+  holo:   ["./mapa_holo.png","./mapa_holo.PNG","./assets/mapa_holo.png","./assets/mapa_holo.PNG","./img/mapa_holo.png","./img/mapa_holo.PNG"],
+  pts_sample:["./vege_pts_sample.geojson","./dados/vege_pts_sample.geojson"],
+  pts_full:  ["./vege_pts.geojson","./dados/vege_pts.geojson"]
 };
 
-const FILES = {
-  uf: "uf.geojson",
-  macro: "macro_rh.geojson",
-  micro: "micro_rh.geojson",
-  cnt_fallback: "CNT_FULL_10Y.geojson",
-  pts_sample: "vege_pts_sample.geojson",
-  pts_full: "vege_pts.geojson"
-};
-
-/* =========================
-   HELPERS
-========================= */
+/* ============ HELPERS ============ */
 const statusEl = document.getElementById("status");
-
 function fmt(n, d=2){
   if(n === null || n === undefined || !Number.isFinite(Number(n))) return "--";
   return Number(n).toFixed(d).replace(".", ",");
@@ -471,21 +300,45 @@ function fmt(n, d=2){
 function fmt1(n){ return fmt(n,1); }
 function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
 
-async function fetchJSON(url){
+async function tryFetchJSON(url){
   const res = await fetch(url + "?v=" + Date.now(), { cache:"no-store" });
-  if(!res.ok) throw new Error(`${url} HTTP ${res.status}`);
+  if(!res.ok) throw new Error(`HTTP ${res.status}`);
+  // se JSON inválido, aqui cai erro também
   return await res.json();
 }
-async function loadJSON(name){ return fetchJSON("./" + name); }
-
+async function fetchFirstJSON(list, label){
+  let last = null;
+  for(const url of list){
+    try{
+      const data = await tryFetchJSON(url);
+      diag.ok.push(`${label}: OK  ←  ${url}`);
+      return {url, data};
+    }catch(e){
+      last = e;
+      diag.fail.push(`${label}: FAIL (${e.message})  ←  ${url}`);
+    }
+  }
+  throw last || new Error(`${label} não encontrado`);
+}
 function loadImage(url){
   return new Promise((resolve)=>{
     const img = new Image();
     img.crossOrigin = "anonymous";
-    img.onload = ()=> resolve(img);
-    img.onerror = ()=> resolve(null);
+    img.onload = ()=> resolve({url, img});
+    img.onerror = ()=> resolve({url, img:null});
     img.src = url + "?v=" + Date.now();
   });
+}
+async function loadFirstImage(list, label){
+  for(const url of list){
+    const r = await loadImage(url);
+    if(r.img){
+      diag.ok.push(`${label}: OK  ←  ${url}`);
+      return r;
+    }
+    diag.fail.push(`${label}: FAIL  ←  ${url}`);
+  }
+  return {url:list[0], img:null};
 }
 
 function walkCoords(arr, cb){
@@ -507,8 +360,8 @@ function calcBBox(fc){
   return [minx, miny, maxx, maxy];
 }
 
-let bbox = null;    // bbox do AOI (Amazônia)
-let maskFC = null;  // máscara (Amazônia)
+let bbox = null;
+let maskFC = null;
 function proj(lon,lat,w,h){
   const [minx,miny,maxx,maxy] = bbox;
   return [
@@ -517,9 +370,7 @@ function proj(lon,lat,w,h){
   ];
 }
 
-/* =========================
-   CANVAS
-========================= */
+/* ============ CANVAS ============ */
 const cnvBase   = document.getElementById("cnvBase");
 const cnvHolo   = document.getElementById("cnvHolo");
 const cnvLines  = document.getElementById("cnvLines");
@@ -545,41 +396,8 @@ function clearAll(){
   ctxL.clearRect(0,0,W,H);
   ctxP.clearRect(0,0,W,H);
 }
-function resizeAll(){
-  resizeCanvas(cnvBase, ctxBase);
-  resizeCanvas(cnvHolo, ctxH);
-  resizeCanvas(cnvLines, ctxL);
-  resizeCanvas(cnvPoints, ctxP);
-  resizeWave();
-  if(state.ready){
-    redrawStatic();
-    if(state.ptsXY.length) buildHeatGrid();
-  }
-}
-window.addEventListener("resize", resizeAll);
 
-/* =========================
-   STATE
-========================= */
-const state = {
-  ready:false,
-  uf:null,
-  macro:null,
-  micro:null,
-
-  baseImg:null,
-  holoImg:null,
-
-  ptsXY:[],
-  heat:null,
-
-  t:0,
-  animStarted:false
-};
-
-/* =========================
-   MASK / CLIP
-========================= */
+/* ============ DRAW ============ */
 function clipToMask(ctx){
   const W = cnvBase.getBoundingClientRect().width;
   const H = cnvBase.getBoundingClientRect().height;
@@ -609,9 +427,6 @@ function clipToMask(ctx){
   ctx.globalCompositeOperation = "source-over";
 }
 
-/* =========================
-   DRAW IMAGES
-========================= */
 function drawCover(ctx, img){
   const W = cnvBase.getBoundingClientRect().width;
   const H = cnvBase.getBoundingClientRect().height;
@@ -629,10 +444,8 @@ function drawCover(ctx, img){
   ctx.restore();
 }
 
-/* =========================
-   LINES
-========================= */
 function strokeLines(ctx, fc, strokeStyle, width, alpha){
+  if(!fc) return;
   const W = cnvBase.getBoundingClientRect().width;
   const H = cnvBase.getBoundingClientRect().height;
 
@@ -665,21 +478,34 @@ function strokeLines(ctx, fc, strokeStyle, width, alpha){
   ctx.restore();
 }
 
+const state = {
+  baseImg:null,
+  holoImg:null,
+  uf:null,
+  macro:null,
+  micro:null,
+  ptsXY:[],
+  heat:null,
+  t:0,
+  animStarted:false,
+  fullLoaded:false
+};
+
 function redrawStatic(){
   if(!bbox || !maskFC) return;
+
   clearAll();
 
   // base
   if(state.baseImg){
     drawCover(ctxBase, state.baseImg);
-  }else{
-    // fallback preto
+  } else {
     ctxBase.fillStyle = "#000";
     ctxBase.fillRect(0,0, cnvBase.getBoundingClientRect().width, cnvBase.getBoundingClientRect().height);
   }
   clipToMask(ctxBase);
 
-  // holo
+  // holo (screen)
   if(state.holoImg){
     ctxH.save();
     ctxH.globalCompositeOperation = "screen";
@@ -689,16 +515,14 @@ function redrawStatic(){
     clipToMask(ctxH);
   }
 
-  // linhas
-  if(state.macro) strokeLines(ctxL, state.macro, "rgba(0,234,255,0.90)", 1.15, 1);
-  if(state.micro) strokeLines(ctxL, state.micro, "rgba(0,120,255,0.60)", 0.55, 1);
-  if(state.uf)    strokeLines(ctxL, state.uf,    "rgba(160,245,255,0.55)", 0.85, 1);
+  // linhas (se existirem)
+  strokeLines(ctxL, state.macro, "rgba(0,234,255,0.90)", 1.15, 1);
+  strokeLines(ctxL, state.micro, "rgba(0,120,255,0.60)", 0.55, 1);
+  strokeLines(ctxL, state.uf,    "rgba(160,245,255,0.55)", 0.85, 1);
   clipToMask(ctxL);
 }
 
-/* =========================
-   POINTS
-========================= */
+/* ============ HEAT (não trava) ============ */
 function buildProjectedPoints(fc){
   const W = cnvBase.getBoundingClientRect().width;
   const H = cnvBase.getBoundingClientRect().height;
@@ -711,7 +535,6 @@ function buildProjectedPoints(fc){
     pts.push({ x,y, ph: Math.random()*Math.PI*2, sp: 0.7+Math.random()*1.3, base: 0.6+Math.random()*0.8 });
   }
 
-  // cap real
   const MAX = 160000;
   if(pts.length > MAX){
     const step = Math.ceil(pts.length / MAX);
@@ -723,9 +546,6 @@ function buildProjectedPoints(fc){
   buildHeatGrid();
 }
 
-/* =========================
-   HEAT GRID (leve)
-========================= */
 function buildHeatGrid(){
   const W = cnvBase.getBoundingClientRect().width;
   const H = cnvBase.getBoundingClientRect().height;
@@ -735,7 +555,6 @@ function buildHeatGrid(){
   const rows = Math.ceil(H / cell);
 
   const g = new Uint16Array(cols * rows);
-
   for(const p of state.ptsXY){
     const cx = Math.max(0, Math.min(cols - 1, (p.x / cell) | 0));
     const cy = Math.max(0, Math.min(rows - 1, (p.y / cell) | 0));
@@ -777,9 +596,6 @@ function rgbForNorm(norm){
   return [255, 80, 60];
 }
 
-/* =========================
-   ANIM (infinita)
-========================= */
 function startAnim(){
   if(state.animStarted) return;
   state.animStarted = true;
@@ -791,7 +607,6 @@ function startAnim(){
 
     if(state.ptsXY.length && state.heat){
       ctxP.globalCompositeOperation = "lighter";
-
       const stride = 2;
       const t = state.t;
 
@@ -799,7 +614,6 @@ function startAnim(){
         const p = state.ptsXY[i];
         const norm = heatAt(p.x, p.y);
         const [r,g,b] = rgbForNorm(norm);
-
         const pulse = 0.55 + 0.45*Math.sin(p.ph + t*p.sp*0.022);
         const alpha = 0.06 + 0.22*pulse;
         const rad   = 0.30 + p.base*0.35;
@@ -818,13 +632,10 @@ function startAnim(){
         if(!p) continue;
         const norm = heatAt(p.x, p.y);
         const [r,g,b] = rgbForNorm(norm);
-
         const pulse = 0.55 + 0.45*Math.sin(p.ph + t*0.03);
         const alpha = 0.05 + 0.14*pulse;
-
         ctxP.shadowColor = `rgba(${r},${g},${b},${0.55})`;
         ctxP.fillStyle   = `rgba(${r},${g},${b},${alpha})`;
-
         ctxP.beginPath();
         ctxP.arc(p.x, p.y, 1.0 + pulse*1.3, 0, Math.PI*2);
         ctxP.fill();
@@ -838,57 +649,41 @@ function startAnim(){
     state.t += 1;
     requestAnimationFrame(loop);
   };
-
   requestAnimationFrame(loop);
 }
 
-/* =========================
-   BUY
-========================= */
-let PUMP_URL = DEFAULT_PUMP_URL;
+/* ============ UI ============ */
+function setText(id, v){ const el = document.getElementById(id); if(el) el.textContent = v; }
+function setNumber(id, n, dec=1){ setText(id, Number.isFinite(Number(n)) ? fmt(n,dec) : "--"); }
+
 const solInput = document.getElementById("sol");
 const out = document.getElementById("out");
-function updateOut(){
-  const sol = parseFloat(solInput.value) || 0;
-  out.textContent = (sol * rate).toLocaleString("pt-BR") + " CNT";
-}
-solInput.addEventListener("input", updateOut);
-updateOut();
-document.getElementById("btnBuy").addEventListener("click", ()=>{
-  window.open(PUMP_URL, "_blank", "noopener,noreferrer");
-});
+function updateOut(){ out.textContent = ((parseFloat(solInput.value)||0) * rate).toLocaleString("pt-BR") + " CNT"; }
+solInput.addEventListener("input", updateOut); updateOut();
+document.getElementById("btnBuy").addEventListener("click", ()=> window.open(PUMP_URL, "_blank", "noopener,noreferrer"));
 
-/* =========================
-   HOLO 3D TILT
-========================= */
+/* 3D tilt */
 (function holoTilt(){
   const box = document.getElementById("map3d");
   const wrap = document.getElementById("mapWrap");
-  if(!box || !wrap) return;
-
   let mx=0, my=0, rx=0, ry=0;
-  function onMove(ev){
+  window.addEventListener("mousemove", (ev)=>{
     const r = wrap.getBoundingClientRect();
     const x = (ev.clientX - r.left) / r.width;
     const y = (ev.clientY - r.top) / r.height;
     mx = (x - 0.5) * 2;
     my = (y - 0.5) * 2;
-  }
-  window.addEventListener("mousemove", onMove, { passive:true });
-
+  }, {passive:true});
   function tick(){
     ry += ((mx*8) - ry) * 0.08;
     rx += ((-my*6) - rx) * 0.08;
-    const z = 22;
-    box.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg) translateZ(${z}px)`;
+    box.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg) translateZ(22px)`;
     requestAnimationFrame(tick);
   }
   tick();
 })();
 
-/* =========================
-   TELEMETRY
-========================= */
+/* Telemetry (não depende do JSON) */
 const wave = document.getElementById("wave");
 const wctx = wave.getContext("2d");
 let tWave=0;
@@ -955,52 +750,71 @@ function startWave(series){
   draw();
 }
 
-/* =========================
-   HUD set
-========================= */
-function setText(id, value){
-  const el = document.getElementById(id);
-  if(el) el.textContent = value;
-}
-function setNumber(id, n, decimals=1){
-  setText(id, Number.isFinite(Number(n)) ? fmt(n, decimals) : "--");
+/* ============ DIAG ============ */
+const diag = { ok:[], fail:[] };
+function printDiag(){
+  const out =
+    "DIAG (o que carregou / o que falhou)\n" +
+    "OK:\n- " + (diag.ok.length ? diag.ok.join("\n- ") : "(nada)") + "\n\n" +
+    "FAIL:\n- " + (diag.fail.length ? diag.fail.join("\n- ") : "(nada)") + "\n";
+  statusEl.textContent = out;
 }
 
-/* =========================
-   BOOT
-========================= */
+/* ============ AOI Amazônia (exato) ============ */
+function amazonMaskFromBiomas(biomasFC){
+  const feats = (biomasFC?.features||[]);
+  const out = [];
+  for(const f of feats){
+    const p = f.properties || {};
+    // EXATO (o teu arquivo tem isso)
+    if(p.Bioma === "Amazônia" || Number(p.CD_Bioma) === 1) out.push(f);
+  }
+  return out.length ? {type:"FeatureCollection", features: out} : null;
+}
+
+/* ============ BOOT ============ */
 async function boot(){
   try{
-    statusEl.textContent = "Status: boot…";
+    // resize inicial
+    resizeCanvas(cnvBase, ctxBase);
+    resizeCanvas(cnvHolo, ctxH);
+    resizeCanvas(cnvLines, ctxL);
+    resizeCanvas(cnvPoints, ctxP);
+    resizeWave();
 
-    // 1) máscara AOI Amazônia
-    let aoi = null;
+    // 1) biomas → Amazônia
+    let biomas = null;
     try{
-      aoi = await fetchJSON(AOI_AMAZONIA);
-      document.getElementById("chipAOI").textContent = "AOI: AMAZÔNIA (geojson)";
-    }catch(e){
-      aoi = await fetchJSON(AOI_FALLBACK);
-      document.getElementById("chipAOI").textContent = "AOI: fallback (Brasil)";
+      biomas = (await fetchFirstJSON(CAND.biomas,"biomas")).data;
+    }catch(e){ biomas = null; }
+
+    if(biomas){
+      const amazon = amazonMaskFromBiomas(biomas);
+      if(amazon){
+        maskFC = amazon;
+        document.getElementById("chipAOI").textContent = "AOI: Amazônia (OK)";
+      }
     }
-    maskFC = aoi;
+
+    // 2) fallback Brasil
+    if(!maskFC){
+      const br = (await fetchFirstJSON(CAND.brasil,"brasil")).data;
+      maskFC = br;
+      document.getElementById("chipAOI").textContent = "AOI: Brasil (fallback)";
+    }
+
     bbox = calcBBox(maskFC);
 
-    // 2) linhas
-    state.uf = await loadJSON(FILES.uf);
-    state.macro = await loadJSON(FILES.macro);
-    state.micro = await loadJSON(FILES.micro);
+    // 3) linhas (se falhar, o mapa ainda aparece com PNG)
+    try{ state.uf = (await fetchFirstJSON(CAND.uf,"uf")).data; } catch(e){}
+    try{ state.macro = (await fetchFirstJSON(CAND.macro,"macro")).data; } catch(e){}
+    try{ state.micro = (await fetchFirstJSON(CAND.micro,"micro")).data; } catch(e){}
 
-    // 3) dados_cnt.json (painel)
+    // 4) dados_cnt.json (se inválido, vai falhar no parse e aparecer no DIAG)
     let series = [];
-    let dadosOK = false;
     try{
-      const dados = await fetchJSON(DADOS_CNT_URL);
-      dadosOK = true;
-      document.getElementById("chipData").textContent = "dados_cnt: OK";
-
-      if(dados?.meta?.source) document.getElementById("chipFonte").textContent = "Fonte: " + dados.meta.source;
-      if(dados?.meta?.year_base) document.getElementById("chipAno").textContent = "Ano base: " + dados.meta.year_base;
-      if(dados?.token?.pump_url) PUMP_URL = dados.token.pump_url;
+      const {data:dados} = await fetchFirstJSON(CAND.dados,"dados_cnt");
+      document.getElementById("chipDados").textContent = "dados_cnt: OK";
 
       const idx = dados?.indices || {};
       const A100 = Number.isFinite(Number(idx.cnt_A_0_100))
@@ -1025,52 +839,68 @@ async function boot(){
 
       series = Array.isArray(idx.series_10y) ? idx.series_10y.map(Number).filter(Number.isFinite) : [];
       document.getElementById("telemetryHint").textContent = series.length ? ("Histórico: " + series.length) : "Sem série 10y no JSON.";
+      if(dados?.token?.pump_url) PUMP_URL = dados.token.pump_url;
     }catch(e){
-      document.getElementById("chipData").textContent = "dados_cnt: OFF";
-      document.getElementById("telemetryHint").textContent = "dados_cnt.json não encontrado.";
+      document.getElementById("chipDados").textContent = "dados_cnt: OFF";
+      document.getElementById("telemetryHint").textContent = "dados_cnt.json não carregou (veja DIAG).";
     }
 
-    // 4) PNGs
-    const [baseImg, holoImg] = await Promise.all([ loadImage(ASSETS.basePNG), loadImage(ASSETS.holoPNG) ]);
-    state.baseImg = baseImg;
-    state.holoImg = holoImg;
-    document.getElementById("chipPNG").textContent = (baseImg && holoImg) ? "PNG: OK" : "PNG: OFF";
+    // 5) PNGs
+    const baseR = await loadFirstImage(CAND.base,"mapa_base.png");
+    const holoR = await loadFirstImage(CAND.holo,"mapa_holo.png");
+    state.baseImg = baseR.img;
+    state.holoImg = holoR.img;
+    document.getElementById("chipPNG").textContent = (state.baseImg && state.holoImg) ? "PNG: OK" : "PNG: OFF";
 
-    // 5) render base
-    resizeAll();
-    state.ready = true;
+    // 6) desenha
     redrawStatic();
     startWave(series);
 
-    // 6) pontos
-    statusEl.textContent =
-      "Status: AOI OK\n" +
-      `bbox: ${bbox.map(v=>fmt(v,2)).join(", ")}\n` +
-      `PNG base: ${state.baseImg?"OK":"OFF"} | PNG holo: ${state.holoImg?"OK":"OFF"}\n` +
-      `dados_cnt: ${dadosOK?"OK":"OFF"}\n` +
-      "carregando pontos sample…";
+    // 7) pontos SAMPLE
+    try{
+      const {data:ptsSample} = await fetchFirstJSON(CAND.pts_sample,"pts_sample");
+      buildProjectedPoints(ptsSample);
+      startAnim();
+    }catch(e){
+      diag.fail.push("pts_sample: FAIL (sem pontos)");
+    }
 
-    const ptsSample = await loadJSON(FILES.pts_sample);
-    const nSample = (ptsSample?.features?.length||0);
-    buildProjectedPoints(ptsSample);
-    startAnim();
-
-    statusEl.textContent += `\nSAMPLE: ${nSample.toLocaleString("pt-BR")} features -> render ${state.ptsXY.length.toLocaleString("pt-BR")}`;
-
-    setTimeout(async ()=>{
-      try{
-        const ptsFull = await loadJSON(FILES.pts_full);
-        const nFull = (ptsFull?.features?.length||0);
-        buildProjectedPoints(ptsFull);
-        statusEl.textContent += `\nFULL: ${nFull.toLocaleString("pt-BR")} features -> render ${state.ptsXY.length.toLocaleString("pt-BR")}`;
-      }catch(e){
-        statusEl.textContent += "\nFULL: indisponível (mantendo sample)";
+    // FULL manual
+    document.getElementById("btnFull").onclick = async ()=>{
+      if(state.fullLoaded){
+        diag.ok.push("FULL: já carregado");
+        printDiag();
+        return;
       }
-    }, 350);
+      try{
+        const {data:ptsFull} = await fetchFirstJSON(CAND.pts_full,"pts_full");
+        buildProjectedPoints(ptsFull);
+        state.fullLoaded = true;
+        diag.ok.push("FULL: OK (manual)");
+        printDiag();
+      }catch(e){
+        diag.fail.push("FULL: FAIL (não encontrado/erro)");
+        printDiag();
+      }
+    };
+
+    // 8) final: mostra diagnóstico na tela (é isso que vai te dizer o erro REAL)
+    printDiag();
+
+    // resize on window
+    window.addEventListener("resize", ()=>{
+      resizeCanvas(cnvBase, ctxBase);
+      resizeCanvas(cnvHolo, ctxH);
+      resizeCanvas(cnvLines, ctxL);
+      resizeCanvas(cnvPoints, ctxP);
+      resizeWave();
+      redrawStatic();
+      if(state.ptsXY.length) buildHeatGrid();
+    });
 
   }catch(err){
     console.error(err);
-    statusEl.textContent = "ERRO: " + (err?.message || err);
+    statusEl.textContent = "ERRO GERAL: " + (err?.message || err);
   }
 }
 boot();
