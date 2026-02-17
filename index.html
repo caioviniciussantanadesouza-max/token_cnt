@@ -493,14 +493,14 @@ input:focus{
 const DEFAULT_PUMP_URL = "https://pump.fun/coin/GCVyjNaCbXkwGUuktyNxSXad4ozmTp2fzQr2jieSpump";
 const rate = 147449130;
 
-// PNGs do GEE
+// Tudo em 1 arquivo (HUD + alertas + série)
+const DADOS_CNT_URL = "./dados/dados_cnt.json";
+
+// PNGs do GEE (se você tiver)
 const ASSETS = {
   basePNG: "./assets/mapa_base.png",
   holoPNG: "./assets/mapa_holo.png"
 };
-
-// Tudo em 1 arquivo
-const DADOS_CNT_URL = "./dados/dados_cnt.json";
 
 const FILES = {
   biomas: "biomas.geojson",
@@ -530,9 +530,7 @@ async function fetchJSON(url){
   if(!res.ok) throw new Error(`${url} HTTP ${res.status}`);
   return await res.json();
 }
-async function loadJSON(name){
-  return fetchJSON("./" + name);
-}
+async function loadJSON(name){ return fetchJSON("./" + name); }
 async function loadEither(a,b){
   try{ return await loadJSON(a); }
   catch(_){ return await loadJSON(b); }
@@ -546,7 +544,6 @@ function loadImage(url){
     img.src = url + "?v=" + Date.now();
   });
 }
-
 function walkCoords(arr, cb){
   if(!arr) return;
   if(typeof arr[0] === "number") cb(arr);
@@ -595,17 +592,6 @@ function resizeCanvas(cnv, ctx){
   cnv.height = Math.max(2, Math.floor(r.height * dpr));
   ctx.setTransform(dpr,0,0,dpr,0,0);
 }
-function resizeAll(){
-  resizeCanvas(cnvBase, ctxBase);
-  resizeCanvas(cnvBorder, ctxB);
-  resizeCanvas(cnvLines, ctxL);
-  resizeCanvas(cnvPoints, ctxP);
-  resizeWave();
-  if(state.ready) redrawStatic();
-  if(state.ready && state.alerts) renderAlertsFromDadosCNT(state.alerts);
-}
-window.addEventListener("resize", resizeAll);
-
 function clearAll(){
   const W = cnvBase.getBoundingClientRect().width;
   const H = cnvBase.getBoundingClientRect().height;
@@ -614,6 +600,22 @@ function clearAll(){
   ctxL.clearRect(0,0,W,H);
   ctxP.clearRect(0,0,W,H);
 }
+function resizeAll(){
+  resizeCanvas(cnvBase, ctxBase);
+  resizeCanvas(cnvBorder, ctxB);
+  resizeCanvas(cnvLines, ctxL);
+  resizeCanvas(cnvPoints, ctxP);
+  resizeWave();
+
+  if(state.ready){
+    redrawStatic();
+    if(state.ptsXY.length){
+      buildHeatGrid();
+    }
+    if(state.alerts) renderAlertsFromDadosCNT(state.alerts);
+  }
+}
+window.addEventListener("resize", resizeAll);
 
 /* =========================
    STATE
@@ -630,20 +632,17 @@ const state = {
   holoImg:null,
 
   ptsXY:[],
-  grid:null,
-  gridSize:22,
-  R:22,
-  target:11,
+  heat:null,
+
   t:0,
   animStarted:false,
 
-  // dados_cnt.json
   dados:null,
   alerts:null
 };
 
 /* =========================
-   DRAW HELPERS
+   DRAW
 ========================= */
 function drawImageCover(ctx, img){
   const W = cnvBase.getBoundingClientRect().width;
@@ -724,8 +723,39 @@ function maskCanvasToBrasil(ctx){
   ctx.globalCompositeOperation = "source-over";
 }
 
+function redrawStatic(){
+  if(!bbox) return;
+  clearAll();
+
+  // base
+  if(state.baseImg){
+    drawImageCover(ctxBase, state.baseImg);
+    maskCanvasToBrasil(ctxBase);
+  } else {
+    // fallback simples
+    ctxBase.fillStyle = "rgba(0,0,0,1)";
+    ctxBase.fillRect(0,0, cnvBase.getBoundingClientRect().width, cnvBase.getBoundingClientRect().height);
+  }
+
+  // holo overlay
+  if(state.holoImg){
+    ctxB.save();
+    ctxB.globalCompositeOperation = "screen";
+    ctxB.globalAlpha = 0.95;
+    drawImageCover(ctxB, state.holoImg);
+    ctxB.restore();
+    maskCanvasToBrasil(ctxB);
+  }
+
+  // lines
+  strokeLines(ctxL, state.macro, "rgba(0,234,255,0.90)", 1.15, 1);
+  strokeLines(ctxL, state.micro, "rgba(0,120,255,0.60)", 0.55, 1);
+  strokeLines(ctxL, state.uf,    "rgba(160,245,255,0.70)", 1.05, 1);
+  maskCanvasToBrasil(ctxL);
+}
+
 /* =========================
-   POINTS GRID
+   POINTS (projeção)
 ========================= */
 function buildProjectedPoints(fc){
   const W = cnvBase.getBoundingClientRect().width;
@@ -739,6 +769,7 @@ function buildProjectedPoints(fc){
     pts.push({ x,y, ph: Math.random()*Math.PI*2, sp: 0.7+Math.random()*1.3, base: 0.6+Math.random()*0.8 });
   }
 
+  // cap
   const MAX = 140000;
   if(pts.length > MAX){
     const step = Math.ceil(pts.length / MAX);
@@ -747,99 +778,65 @@ function buildProjectedPoints(fc){
     state.ptsXY = slim;
   } else state.ptsXY = pts;
 
-  buildGrid();
+  buildHeatGrid();
 }
-function buildGrid(){
+
+/* =========================
+   HEAT GRID (leve)
+========================= */
+function buildHeatGrid(){
   const W = cnvBase.getBoundingClientRect().width;
   const H = cnvBase.getBoundingClientRect().height;
-  const s = state.gridSize;
 
-  const cols = Math.ceil(W/s);
-  const rows = Math.ceil(H/s);
-  const grid = new Array(cols*rows);
-  for(let i=0;i<grid.length;i++) grid[i]=[];
+  const cell = 6;
+  const cols = Math.ceil(W / cell);
+  const rows = Math.ceil(H / cell);
 
-  const idxOf = (x,y)=>{
-    const cx = Math.max(0, Math.min(cols-1, (x/s)|0));
-    const cy = Math.max(0, Math.min(rows-1, (y/s)|0));
-    return cy*cols + cx;
-  };
+  const g = new Uint16Array(cols * rows);
 
-  for(let i=0;i<state.ptsXY.length;i++){
-    const p = state.ptsXY[i];
-    grid[idxOf(p.x,p.y)].push(i);
+  for(const p of state.ptsXY){
+    const cx = Math.max(0, Math.min(cols - 1, (p.x / cell) | 0));
+    const cy = Math.max(0, Math.min(rows - 1, (p.y / cell) | 0));
+    g[cy * cols + cx]++;
   }
 
-  state.grid = {grid, cols, rows, s};
-}
-function densityAt(x,y){
-  const g = state.grid;
-  if(!g) return 0;
-
-  const R = state.R;
-  const R2 = R*R;
-
-  const cx = (x/g.s)|0;
-  const cy = (y/g.s)|0;
-
-  let count = 0;
-  for(let oy=-1; oy<=1; oy++){
-    for(let ox=-1; ox<=1; ox++){
-      const nx = cx+ox, ny = cy+oy;
-      if(nx<0 || ny<0 || nx>=g.cols || ny>=g.rows) continue;
-      const bucket = g.grid[ny*g.cols + nx];
-      for(const pi of bucket){
-        const p = state.ptsXY[pi];
-        const dx = x - p.x, dy = y - p.y;
-        if(dx*dx + dy*dy <= R2) count++;
+  const out = new Uint16Array(cols * rows);
+  for(let y=0;y<rows;y++){
+    for(let x=0;x<cols;x++){
+      let sum = 0, n = 0;
+      for(let oy=-1; oy<=1; oy++){
+        const yy = y+oy; if(yy<0||yy>=rows) continue;
+        for(let ox=-1; ox<=1; ox++){
+          const xx = x+ox; if(xx<0||xx>=cols) continue;
+          sum += g[yy*cols + xx];
+          n++;
+        }
       }
+      out[y*cols + x] = (sum / Math.max(1,n)) | 0;
     }
   }
-  return count;
+
+  let max = 1;
+  for(let i=0;i<out.length;i++) if(out[i] > max) max = out[i];
+  state.heat = { cell, cols, rows, data: out, max };
 }
-function colorForDensity(count){
-  const norm = Math.min(1, count / state.target);
+
+function heatAt(x,y){
+  const h = state.heat;
+  if(!h) return 0;
+  const cx = Math.max(0, Math.min(h.cols - 1, (x / h.cell) | 0));
+  const cy = Math.max(0, Math.min(h.rows - 1, (y / h.cell) | 0));
+  const v = h.data[cy * h.cols + cx];
+  return Math.min(1, v / Math.max(1, h.max));
+}
+function rgbForNorm(norm){
   if(norm >= 0.70) return [60, 255, 180];
   if(norm >= 0.40) return [255, 235, 90];
   return [255, 80, 60];
 }
 
 /* =========================
-   MAP DRAW
-========================= */
-function redrawStatic(){
-  if(!bbox) return;
-  clearAll();
-
-  // BASE (PNG)
-  if(state.baseImg){
-    drawImageCover(ctxBase, state.baseImg);
-    if(state.brasilMask) maskCanvasToBrasil(ctxBase);
-  } else {
-    // se não tiver PNG, pelo menos não fica vazio
-    ctxBase.fillStyle = "rgba(0,0,0,1)";
-    ctxBase.fillRect(0,0, cnvBase.getBoundingClientRect().width, cnvBase.getBoundingClientRect().height);
-  }
-
-  // HOLO (PNG)
-  if(state.holoImg){
-    ctxB.save();
-    ctxB.globalCompositeOperation = "screen";
-    ctxB.globalAlpha = 0.95;
-    drawImageCover(ctxB, state.holoImg);
-    ctxB.restore();
-    if(state.brasilMask) maskCanvasToBrasil(ctxB);
-  }
-
-  // linhas
-  strokeLines(ctxL, state.macro, "rgba(0,234,255,0.90)", 1.15, 1);
-  strokeLines(ctxL, state.micro, "rgba(0,120,255,0.60)", 0.55, 1);
-  strokeLines(ctxL, state.uf,    "rgba(160,245,255,0.70)", 1.05, 1);
-  if(state.brasilMask) maskCanvasToBrasil(ctxL);
-}
-
-/* =========================
-   ANIMAÇÃO PONTOS
+   ANIMAÇÃO (infinita)
 ========================= */
 function startAnim(){
   if(state.animStarted) return;
@@ -850,15 +847,20 @@ function startAnim(){
     const H = cnvPoints.getBoundingClientRect().height;
     ctxP.clearRect(0,0,W,H);
 
-    if(state.ptsXY.length){
+    if(state.ptsXY.length && state.heat){
       ctxP.globalCompositeOperation = "lighter";
-      for(const p of state.ptsXY){
-        const count = densityAt(p.x, p.y);
-        const [r,g,b] = colorForDensity(count);
 
-        const pulse = 0.55 + 0.45*Math.sin(p.ph + state.t*p.sp*0.025);
-        const alpha = (0.08 + 0.28*pulse);
-        const rad   = 0.38 + p.base*0.42;
+      const stride = 2; // metade por frame (leve)
+      const t = state.t;
+
+      for(let i=0;i<state.ptsXY.length;i+=stride){
+        const p = state.ptsXY[i];
+        const norm = heatAt(p.x, p.y);
+        const [r,g,b] = rgbForNorm(norm);
+
+        const pulse = 0.55 + 0.45*Math.sin(p.ph + t*p.sp*0.022);
+        const alpha = 0.06 + 0.22*pulse;
+        const rad   = 0.30 + p.base*0.35;
 
         ctxP.beginPath();
         ctxP.fillStyle = `rgba(${r},${g},${b},${alpha})`;
@@ -866,40 +868,40 @@ function startAnim(){
         ctxP.fill();
       }
 
-      const glowCount = Math.min(1800, Math.max(500, (state.ptsXY.length/14)|0));
+      const glowCount = 650;
       ctxP.save();
       ctxP.shadowBlur = 10;
       for(let i=0;i<glowCount;i++){
         const p = state.ptsXY[(Math.random()*state.ptsXY.length)|0];
         if(!p) continue;
+        const norm = heatAt(p.x, p.y);
+        const [r,g,b] = rgbForNorm(norm);
 
-        const count = densityAt(p.x, p.y);
-        const [r,g,b] = colorForDensity(count);
-
-        const pulse = 0.55 + 0.45*Math.sin(p.ph + state.t*0.03);
-        const alpha = 0.06 + 0.18*pulse;
+        const pulse = 0.55 + 0.45*Math.sin(p.ph + t*0.03);
+        const alpha = 0.05 + 0.14*pulse;
 
         ctxP.shadowColor = `rgba(${r},${g},${b},${0.55})`;
         ctxP.fillStyle   = `rgba(${r},${g},${b},${alpha})`;
 
         ctxP.beginPath();
-        ctxP.arc(p.x, p.y, 1.2 + pulse*1.5, 0, Math.PI*2);
+        ctxP.arc(p.x, p.y, 1.0 + pulse*1.3, 0, Math.PI*2);
         ctxP.fill();
       }
       ctxP.restore();
 
-      if(state.brasilMask) maskCanvasToBrasil(ctxP);
+      maskCanvasToBrasil(ctxP);
       ctxP.globalCompositeOperation = "source-over";
     }
 
-    state.t++;
+    state.t += 1;
     requestAnimationFrame(loop);
   };
-  loop();
+
+  requestAnimationFrame(loop);
 }
 
 /* =========================
-   ALERTAS do dados_cnt.json
+   ALERTAS
 ========================= */
 const alertsLayer = document.getElementById("alertsLayer");
 function clearAlerts(){ alertsLayer.innerHTML = ""; }
@@ -1061,85 +1063,111 @@ document.getElementById("btnBuy").addEventListener("click", ()=>{
 })();
 
 /* =========================
+   HUD helpers
+========================= */
+function setText(id, value){
+  const el = document.getElementById(id);
+  if(el) el.textContent = value;
+}
+function setNumber(id, n, decimals=1){
+  setText(id, Number.isFinite(Number(n)) ? fmt(n, decimals) : "--");
+}
+
+/* =========================
    BOOT
 ========================= */
 async function boot(){
   try{
-    statusEl.textContent = "Status: carregando base…";
+    statusEl.textContent = "Status: carregando camadas…";
 
-    // GeoJSON de linhas / máscara
+    // base linhas/máscara
     state.biomas = await loadJSON(FILES.biomas);
     state.brasilMask = await loadEither(FILES.br_simpl, FILES.br_full);
     state.uf = await loadJSON(FILES.uf);
     state.macro = await loadJSON(FILES.macro);
     state.micro = await loadJSON(FILES.micro);
 
-    // bbox default
     bbox = calcBBox(state.biomas);
 
-    // dados_cnt.json (HUD + alertas + meta)
+    // dados_cnt.json (principal)
+    let series = [];
     try{
       const dados = await fetchJSON(DADOS_CNT_URL);
       state.dados = dados;
 
-      // chips
       if(dados?.meta?.source) document.getElementById("chipFonte").textContent = "Fonte: " + dados.meta.source;
       if(dados?.meta?.year_base) document.getElementById("chipAno").textContent = "Ano base: " + dados.meta.year_base;
 
-      // bbox vindo do json (se existir)
       if(Array.isArray(dados?.meta?.projection_bbox) && dados.meta.projection_bbox.length===4){
         bbox = dados.meta.projection_bbox;
       }
 
-      // token
       if(dados?.token?.pump_url) PUMP_URL = dados.token.pump_url;
 
-      // índices
       const idx = dados?.indices || {};
-      const A100 = Number.isFinite(Number(idx.cnt_A_0_100)) ? Number(idx.cnt_A_0_100)
-                 : (Number.isFinite(Number(idx.cnt_A_raw)) ? clamp(Number(idx.cnt_A_raw)*4,0,100) : NaN);
+      const A100 = Number.isFinite(Number(idx.cnt_A_0_100))
+        ? Number(idx.cnt_A_0_100)
+        : (Number.isFinite(Number(idx.cnt_A_raw)) ? clamp(Number(idx.cnt_A_raw)*4,0,100) : NaN);
 
-      document.getElementById("raw").textContent = fmt(idx.cnt_A_raw,2);
-      document.getElementById("eco").textContent = fmt1(A100);
-      document.getElementById("A").textContent   = fmt(A100,2);
-
+      setText("raw", fmt(idx.cnt_A_raw,2));
+      setText("eco", fmt1(A100));
+      setText("A", fmt(A100,2));
       const b = Number(idx.cnt_B);
-      document.getElementById("B").textContent = Number.isFinite(b) ? ((b>=0?"+":"") + fmt(b,2)) : "--";
-      document.getElementById("C").textContent = fmt(idx.cnt_C,2);
-      document.getElementById("R").textContent = idx.grade || "--";
+      setText("B", Number.isFinite(b) ? ((b>=0?"+":"") + fmt(b,2)) : "--");
+      setText("C", fmt(idx.cnt_C,2));
+      setText("R", idx.grade || "--");
 
       const sub = idx.sub || {};
-      document.getElementById("ibe").textContent = Number.isFinite(Number(sub.IBE)) ? fmt(sub.IBE,1) : "--";
-      document.getElementById("iab").textContent = Number.isFinite(Number(sub.IAB)) ? fmt(sub.IAB,1) : "--";
-      document.getElementById("ibi").textContent = Number.isFinite(Number(sub.IBI)) ? fmt(sub.IBI,1) : "--";
-      document.getElementById("hid").textContent = Number.isFinite(Number(sub.HID)) ? fmt(sub.HID,1) : "--";
-      document.getElementById("ent").textContent = Number.isFinite(Number(sub.ENT)) ? fmt(sub.ENT,1) : "--";
-      document.getElementById("pan").textContent = Number.isFinite(Number(sub.PAN)) ? fmt(sub.PAN,1) : "--";
+      setNumber("ibe", sub.IBE, 1);
+      setNumber("iab", sub.IAB, 1);
+      setNumber("ibi", sub.IBI, 1);
+      setNumber("hid", sub.HID, 1);
+      setNumber("ent", sub.ENT, 1);
+      setNumber("pan", sub.PAN, 1);
 
-      const series = Array.isArray(idx.series_10y) ? idx.series_10y.map(Number).filter(Number.isFinite) : [];
+      series = Array.isArray(idx.series_10y) ? idx.series_10y.map(Number).filter(Number.isFinite) : [];
       document.getElementById("telemetryHint").textContent = series.length
-        ? ("Histórico: " + series.length + " • Último (A/100): " + fmt(A100,1))
+        ? ("Histórico: " + series.length + " • Último A/100: " + fmt(A100,1))
         : "Sem série 10y no dados_cnt.json.";
 
-      // alertas
       if(dados?.alerts){
         state.alerts = dados.alerts;
-        renderAlertsFromDadosCNT(dados.alerts);
       }else{
         document.getElementById("chipAlerts").textContent = "Alertas: OFF";
       }
 
-      // telemetria
-      startWave(series);
-
     }catch(e){
-      // fallback se não tiver dados_cnt.json
+      // fallback CNT_FULL_10Y.geojson se dados_cnt.json não existir
       document.getElementById("chipAlerts").textContent = "Alertas: OFF";
-      document.getElementById("telemetryHint").textContent = "dados_cnt.json não encontrado.";
+      document.getElementById("telemetryHint").textContent = "dados_cnt.json não encontrado — usando fallback.";
+      try{
+        const cnt = await loadJSON(FILES.cnt_fallback);
+        const props = cnt?.features?.[0]?.properties || {};
+        const rawA = Number(props.cnt_A);
+        const A100 = Number.isFinite(rawA) ? clamp(rawA * 4, 0, 100) : NaN;
+
+        setText("raw", fmt(rawA,2));
+        setText("eco", fmt1(A100));
+        setText("A", fmt(A100,2));
+
+        const bb = Number(props.cnt_B);
+        setText("B", Number.isFinite(bb) ? ((bb>=0?"+":"") + fmt(bb,2)) : "--");
+        setText("C", fmt(props.cnt_C,2));
+        setText("R", props.grade || "--");
+
+        setNumber("ibe", props.FUNC, 1);
+        setNumber("iab", props.IAB, 1);
+        setNumber("ibi", props.IBI, 1);
+        setNumber("hid", props.HID, 1);
+        setNumber("ent", props.ENT, 1);
+        setNumber("pan", props.PAN, 1);
+
+        series = Array.isArray(props.series_10y) ? props.series_10y.map(Number).filter(Number.isFinite) : [];
+      }catch(_){}
     }
 
-    // PNGs do GEE
-    statusEl.textContent = "Status: carregando PNG (GEE)…";
+    // PNGs (opcional)
+    statusEl.textContent = "Status: carregando PNG…";
     const [baseImg, holoImg] = await Promise.all([
       loadImage(ASSETS.basePNG),
       loadImage(ASSETS.holoPNG)
@@ -1147,18 +1175,28 @@ async function boot(){
     state.baseImg = baseImg;
     state.holoImg = holoImg;
 
-    // canvas + draw
+    // render base
     resizeAll();
     state.ready = true;
     redrawStatic();
 
-    // pontos sample -> full
+    // alertas render (depois do bbox)
+    if(state.alerts){
+      renderAlertsFromDadosCNT(state.alerts);
+    }
+
+    // telemetria
+    startWave(series);
+
+    // pontos sample
     statusEl.textContent = "Status: mapa OK • carregando pontos (sample)…";
     const ptsSample = await loadJSON(FILES.pts_sample);
     buildProjectedPoints(ptsSample);
     startAnim();
 
     statusEl.textContent = `Status: sample OK • ${state.ptsXY.length.toLocaleString("pt-BR")} pts • tentando FULL…`;
+
+    // tenta FULL
     setTimeout(async ()=>{
       try{
         const ptsFull = await loadJSON(FILES.pts_full);
@@ -1167,7 +1205,7 @@ async function boot(){
       }catch(_){
         statusEl.textContent = `Status: FULL indisponível • mantendo sample (${state.ptsXY.length.toLocaleString("pt-BR")} pts)`;
       }
-    }, 250);
+    }, 350);
 
   }catch(err){
     console.error(err);
