@@ -30,6 +30,7 @@ html,body{
   grid-template-rows: 120px minmax(0,1fr);
   gap:14px;
   padding:14px;
+  align-items:stretch;
 }
 .glass{
   background: var(--glass);
@@ -40,29 +41,113 @@ html,body{
 }
 
 /* Header */
-#header{ grid-column:1 / 4; padding:14px 16px; border-radius:24px; display:flex; flex-direction:column; gap:8px; }
-#header h1{ margin:0; font-size:26px; font-weight:900; color:#e9fdff; text-align:center; letter-spacing:.6px; }
-#header .sub{ margin:0; text-align:center; font-size:12px; color:var(--muted); opacity:.95; }
-#chips{ display:flex; justify-content:center; gap:10px; flex-wrap:wrap; }
-.chip{ font-size:11px; padding:7px 10px; border-radius:999px; border:1px solid rgba(110,210,255,.22); background: rgba(0,0,0,.20); color:#cfefff; opacity:.95; }
-.chip.btn{ border-color: rgba(110,210,255,.45); background: rgba(0,0,0,.28); cursor:pointer; font-weight:900; }
-.chip.btn:hover{ box-shadow:0 0 18px rgba(110,210,255,.20); }
+#header{
+  grid-column:1 / 4;
+  padding:14px 16px;
+  border-radius:24px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:8px;
+}
+#header h1{
+  margin:0;
+  font-size:26px;
+  letter-spacing:.6px;
+  font-weight:900;
+  color:#e9fdff;
+  text-align:center;
+}
+#header .sub{
+  margin:0;
+  text-align:center;
+  font-size:12px;
+  color:var(--muted);
+  opacity:.95;
+}
+#chips{
+  display:flex;
+  justify-content:center;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.chip{
+  font-size:11px;
+  padding:7px 10px;
+  border-radius:999px;
+  border:1px solid rgba(110,210,255,.22);
+  background: rgba(0,0,0,.20);
+  color:#cfefff;
+  opacity:.95;
+}
+.chip.btn{
+  cursor:pointer;
+  border-color: rgba(110,210,255,.45);
+  background: rgba(0,0,0,.28);
+  font-weight:900;
+}
+.chip.btn:hover{ box-shadow:0 0 18px rgba(110,210,255,.22); }
 
 /* Left */
-#left{ padding:12px; display:flex; flex-direction:column; gap:8px; min-height:0; overflow:hidden; }
-.big{ font-size:56px; line-height:1; font-weight:260; color:#e9fdff; margin:0; }
-.small{ font-size:12px; color:var(--muted); opacity:.95; }
-.hr{ height:1px; background:linear-gradient(90deg,transparent,rgba(110,210,255,.30),transparent); margin:6px 0; }
+#left{
+  padding:12px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  min-height:0;
+  overflow:hidden;
+}
+.big{
+  font-size:56px;
+  line-height:1;
+  font-weight:260;
+  color:#e9fdff;
+  margin:0;
+}
+.small{
+  font-size:12px;
+  color:var(--muted);
+  opacity:.95;
+}
+.hr{
+  height:1px;
+  background:linear-gradient(90deg,transparent,rgba(110,210,255,.30),transparent);
+  margin:6px 0;
+}
 .abclist{ display:grid; gap:8px; }
-.abcline{ display:flex; justify-content:space-between; align-items:center; padding:7px 10px; border:1px solid rgba(110,210,255,.14); background:rgba(0,0,0,.18); border-radius:14px; font-size:12px; }
+.abcline{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:7px 10px;
+  border:1px solid rgba(110,210,255,.14);
+  background:rgba(0,0,0,.18);
+  border-radius:14px;
+  font-size:12px;
+}
 .abcline b{ color:#e9fdff; font-weight:900; }
 .abcline span{ color:#d5fbff; font-weight:900; }
-.grid2{ display:grid; grid-template-columns: 1fr 1fr; gap:8px 10px; }
-.kv{ display:flex; justify-content:space-between; align-items:center; font-size:12px; padding:7px 10px; border:1px solid rgba(110,210,255,.16); border-radius:14px; background:rgba(0,0,0,.18); }
+
+.grid2{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:8px 10px;
+}
+.kv{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-size:12px;
+  padding:7px 10px;
+  border:1px solid rgba(110,210,255,.16);
+  border-radius:14px;
+  background:rgba(0,0,0,.18);
+}
 .kv b{ font-weight:900; color:#e9fdff; }
 .kv span{ color:#d0fbff; font-weight:900; }
+
 #status{
-  margin-top:4px;
+  margin-top:6px;
   font-size:10px;
   color:rgba(180,245,255,.92);
   opacity:.95;
@@ -72,9 +157,23 @@ html,body{
 }
 
 /* Center */
-#center{ position:relative; overflow:hidden; border-radius:26px; min-height:0; }
-#mapWrap{ position:absolute; inset:0; background: radial-gradient(900px 600px at 50% 40%, rgba(20,60,80,.35), rgba(0,0,0,1) 70%); }
-#mapStage{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; perspective: 900px; }
+#center{
+  position:relative;
+  overflow:hidden;
+  border-radius:26px;
+  min-height:0;
+}
+#mapWrap{
+  position:absolute; inset:0;
+  background: radial-gradient(900px 600px at 50% 40%, rgba(20,60,80,.35), rgba(0,0,0,1) 70%);
+}
+#mapStage{
+  position:absolute; inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  perspective: 950px;
+}
 #map3d{
   position:relative;
   width: min(100%, 980px);
@@ -85,7 +184,14 @@ html,body{
   border-radius: 20px;
   filter: drop-shadow(0 0 18px rgba(110,210,255,.12));
 }
-.layer{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; border-radius:20px; }
+.layer{
+  position:absolute; inset:0;
+  width:100%;
+  height:100%;
+  pointer-events:none;
+  border-radius:20px;
+}
+
 #mapGlow{
   position:absolute; inset:-10%;
   pointer-events:none;
@@ -99,17 +205,31 @@ html,body{
   animation: glowPulse 6s ease-in-out infinite;
   border-radius:24px;
 }
-@keyframes glowPulse{ 0%{opacity:.16; transform:scale(1);} 50%{opacity:.30; transform:scale(1.02);} 100%{opacity:.16; transform:scale(1);} }
+@keyframes glowPulse{
+  0%{ opacity:.16; transform:scale(1); }
+  50%{ opacity:.30; transform:scale(1.02); }
+  100%{ opacity:.16; transform:scale(1); }
+}
 #scanlines{
-  position:absolute; inset:0; pointer-events:none; opacity:.14;
-  background: repeating-linear-gradient(to bottom, rgba(120,220,255,.06) 0px, rgba(120,220,255,.06) 1px, transparent 2px, transparent 7px);
+  position:absolute; inset:0;
+  pointer-events:none;
+  opacity:.14;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      rgba(120,220,255,.06) 0px,
+      rgba(120,220,255,.06) 1px,
+      transparent 2px,
+      transparent 7px
+    );
   mix-blend-mode: overlay;
   animation: scan 3.2s linear infinite;
   border-radius:20px;
 }
 @keyframes scan{ 0%{ transform:translateY(-22px);} 100%{ transform:translateY(22px);} }
 
-#holoFX{ position:absolute; inset:0; pointer-events:none; mix-blend-mode: screen; opacity:.7; border-radius:20px; }
+/* hologram FX overlay */
+#holoFX{ position:absolute; inset:0; pointer-events:none; mix-blend-mode: screen; opacity:.75; border-radius:20px; }
 #holoGrid{
   position:absolute; inset:0; border-radius:20px;
   background:
@@ -139,10 +259,27 @@ html,body{
 }
 
 /* Right */
-#right{ display:flex; flex-direction:column; gap:14px; min-height:0; }
+#right{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  min-height:0;
+}
 #buy, #telemetry{ padding:14px; }
-#buy h2{ margin:0; font-size:18px; font-weight:900; letter-spacing:.4px; color:#e9fdff; }
-#buy .mut{ margin:8px 0 10px; font-size:12px; color:var(--muted); opacity:.95; line-height:1.35; }
+#buy h2{
+  margin:0;
+  font-size:18px;
+  font-weight:900;
+  letter-spacing:.4px;
+  color:#e9fdff;
+}
+#buy .mut{
+  margin:8px 0 10px;
+  font-size:12px;
+  color:var(--muted);
+  opacity:.95;
+  line-height:1.35;
+}
 label{ display:block; font-size:12px; color:var(--muted); margin:10px 0 6px; }
 .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
 input{
@@ -153,6 +290,10 @@ input{
   background:rgba(0,0,0,.18);
   color:#e9fbff;
   outline:none;
+}
+input:focus{
+  border-color: rgba(110,210,255,.70);
+  box-shadow: 0 0 16px rgba(110,210,255,.18);
 }
 .btn{
   background:linear-gradient(180deg,rgba(110,210,255,.20),rgba(0,0,0,.16));
@@ -165,13 +306,34 @@ input{
   letter-spacing:.2px;
   min-width:160px;
 }
+.btn:hover{ box-shadow:0 0 18px rgba(110,210,255,.30); }
+
 .valueLine{ margin-top:10px; font-size:12px; color:#bdf4ff; }
 .valueLine b{ font-size:19px; color:#e9fdff; }
 .smallnote{ margin-top:6px; font-size:11px; color:var(--muted); opacity:.95; }
 
-#telemetryTitle{ font-size:12px; letter-spacing:.8px; color:#d4fbff; opacity:.95; margin-bottom:8px; font-weight:900; }
-#wave{ width:100%; height:74px; display:block; background: rgba(0,0,0,.22); border:1px solid rgba(110,210,255,.14); border-radius:14px; }
-#telemetryHint{ margin-top:8px; font-size:11px; color:var(--muted); opacity:.92; }
+#telemetryTitle{
+  font-size:12px;
+  letter-spacing:.8px;
+  color:#d4fbff;
+  opacity:.95;
+  margin-bottom:8px;
+  font-weight:900;
+}
+#wave{
+  width:100%;
+  height:74px;
+  display:block;
+  background: rgba(0,0,0,.22);
+  border:1px solid rgba(110,210,255,.14);
+  border-radius:14px;
+}
+#telemetryHint{
+  margin-top:8px;
+  font-size:11px;
+  color:var(--muted);
+  opacity:.92;
+}
 
 @media (max-width: 1100px){
   body{ overflow:auto; }
@@ -185,11 +347,12 @@ input{
 <div id="app">
   <div id="header" class="glass">
     <h1>CNT — Centro Natural TEC Amazônia</h1>
-    <p class="sub">Mapa base + holografia • pontos contínuos (não trava) • diagnóstico de carga</p>
+    <p class="sub">Mapa base + holografia 3D • Brasil inteiro • pontos contínuos • alertas reais</p>
     <div id="chips">
-      <div class="chip" id="chipAOI">AOI: ?</div>
-      <div class="chip" id="chipDados">dados_cnt: ?</div>
-      <div class="chip" id="chipPNG">PNG: ?</div>
+      <div class="chip" id="chipAOI">AOI: Brasil</div>
+      <div class="chip" id="chipDados">dados_cnt: …</div>
+      <div class="chip" id="chipPNG">PNG: …</div>
+      <div class="chip" id="chipAlerts">alerts_2024: …</div>
       <div class="chip btn" id="btnFull">Carregar FULL (manual)</div>
     </div>
   </div>
@@ -228,12 +391,16 @@ input{
     <div id="mapWrap">
       <div id="mapStage">
         <div id="map3d">
+          <!-- ordem: base -> holo -> linhas -> pontos -> alertas -->
           <canvas id="cnvBase" class="layer"></canvas>
           <canvas id="cnvHolo" class="layer"></canvas>
           <canvas id="cnvLines" class="layer"></canvas>
           <canvas id="cnvPoints" class="layer"></canvas>
+          <canvas id="cnvAlerts" class="layer"></canvas>
+
           <div id="mapGlow"></div>
           <div id="scanlines"></div>
+
           <div id="holoFX">
             <div id="holoGrid"></div>
             <div id="holoSheen"></div>
@@ -268,31 +435,45 @@ input{
 </div>
 
 <script>
-/* ============ CONFIG ============ */
-const DEFAULT_PUMP_URL = "https://pump.fun/coin/GCVyjNaCbXkwGUuktyNxSXad4ozmTp2fzQr2jieSpump";
-const rate = 147449130;
-let PUMP_URL = DEFAULT_PUMP_URL;
+/* =========================
+   CONFIG (ajuste só aqui)
+========================= */
+const PUMP_FALLBACK = "https://pump.fun/coin/GCVyjNaCbXkwGUuktyNxSXad4ozmTp2fzQr2jieSpump";
+const RATE_DEMO = 147449130;
 
-/* IMPORTANTÍSSIMO:
-   - seu print mostra "biomas.gec" sendo editado.
-   - então eu coloco os DOIS: biomas.geojson e biomas.gec.
-   - idem PNG .png e .PNG
-*/
+// arquivos (não inventa pasta — mantém compatível com teu repo)
 const CAND = {
-  biomas: ["./biomas.geojson","./biomas.gec","./dados/biomas.geojson","./dados/biomas.gec"],
-  brasil: ["./BR_IBGE_simplificado.geojson","./BR_IBGE.geojson","./dados/BR_IBGE_simplificado.geojson","./dados/BR_IBGE.geojson"],
-  uf:     ["./uf.geojson","./dados/uf.geojson"],
-  macro:  ["./macro_rh.geojson","./dados/macro_rh.geojson"],
-  micro:  ["./micro_rh.geojson","./dados/micro_rh.geojson"],
-  dados:  ["./dados_cnt.json","./dados/dados_cnt.json","./dados_cnt.JSON","./dados/dados_cnt.JSON"],
-  base:   ["./mapa_base.png","./mapa_base.PNG","./assets/mapa_base.png","./assets/mapa_base.PNG","./img/mapa_base.png","./img/mapa_base.PNG"],
-  holo:   ["./mapa_holo.png","./mapa_holo.PNG","./assets/mapa_holo.png","./assets/mapa_holo.PNG","./img/mapa_holo.png","./img/mapa_holo.PNG"],
-  pts_sample:["./vege_pts_sample.geojson","./dados/vege_pts_sample.geojson"],
-  pts_full:  ["./vege_pts.geojson","./dados/vege_pts.geojson"]
+  // Brasil (mask)
+  brasil: [
+    "./BR_IBGE_simplificado.geojson",
+    "./BR_IBGE.geojson",
+    "./dados/BR_IBGE_simplificado.geojson",
+    "./dados/BR_IBGE.geojson",
+  ],
+  // linhas
+  uf:    ["./uf.geojson","./dados/uf.geojson"],
+  macro: ["./macro_rh.geojson","./dados/macro_rh.geojson"],
+  micro: ["./micro_rh.geojson","./dados/micro_rh.geojson"],
+
+  // base/holo PNG
+  basePNG: ["./mapa_base.png","./mapa_base.PNG","./assets/mapa_base.png","./img/mapa_base.png"],
+  holoPNG: ["./mapa_holo.png","./mapa_holo.PNG","./assets/mapa_holo.png","./img/mapa_holo.png"],
+
+  // pontos
+  pts_sample: ["./vege_pts_sample.geojson","./dados/vege_pts_sample.geojson"],
+  pts_full:   ["./vege_pts.geojson","./dados/vege_pts.geojson"],
+
+  // índices e alertas
+  dados_cnt: ["./dados_cnt.json","./dados/dados_cnt.json"],
+  alerts:    ["./dados/alerts_2024.geojson","./alerts_2024.geojson"]
 };
 
-/* ============ HELPERS ============ */
+/* =========================
+   HELPERS
+========================= */
 const statusEl = document.getElementById("status");
+const diag = { ok:[], fail:[] };
+
 function fmt(n, d=2){
   if(n === null || n === undefined || !Number.isFinite(Number(n))) return "--";
   return Number(n).toFixed(d).replace(".", ",");
@@ -303,19 +484,18 @@ function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
 async function tryFetchJSON(url){
   const res = await fetch(url + "?v=" + Date.now(), { cache:"no-store" });
   if(!res.ok) throw new Error(`HTTP ${res.status}`);
-  // se JSON inválido, aqui cai erro também
   return await res.json();
 }
 async function fetchFirstJSON(list, label){
-  let last = null;
+  let last=null;
   for(const url of list){
     try{
       const data = await tryFetchJSON(url);
-      diag.ok.push(`${label}: OK  ←  ${url}`);
+      diag.ok.push(`${label}: OK  ← ${url}`);
       return {url, data};
     }catch(e){
-      last = e;
-      diag.fail.push(`${label}: FAIL (${e.message})  ←  ${url}`);
+      last=e;
+      diag.fail.push(`${label}: FAIL (${e.message}) ← ${url}`);
     }
   }
   throw last || new Error(`${label} não encontrado`);
@@ -333,12 +513,18 @@ async function loadFirstImage(list, label){
   for(const url of list){
     const r = await loadImage(url);
     if(r.img){
-      diag.ok.push(`${label}: OK  ←  ${url}`);
+      diag.ok.push(`${label}: OK  ← ${url}`);
       return r;
     }
-    diag.fail.push(`${label}: FAIL  ←  ${url}`);
+    diag.fail.push(`${label}: FAIL ← ${url}`);
   }
   return {url:list[0], img:null};
+}
+function printDiag(){
+  statusEl.textContent =
+    "DIAG (o que carregou / o que falhou)\n\n" +
+    "OK:\n- " + (diag.ok.length ? diag.ok.join("\n- ") : "(nada)") + "\n\n" +
+    "FAIL:\n- " + (diag.fail.length ? diag.fail.join("\n- ") : "(nada)") + "\n";
 }
 
 function walkCoords(arr, cb){
@@ -360,8 +546,7 @@ function calcBBox(fc){
   return [minx, miny, maxx, maxy];
 }
 
-let bbox = null;
-let maskFC = null;
+let bbox=null, maskFC=null;
 function proj(lon,lat,w,h){
   const [minx,miny,maxx,maxy] = bbox;
   return [
@@ -370,34 +555,49 @@ function proj(lon,lat,w,h){
   ];
 }
 
-/* ============ CANVAS ============ */
+/* =========================
+   CANVAS
+========================= */
 const cnvBase   = document.getElementById("cnvBase");
 const cnvHolo   = document.getElementById("cnvHolo");
 const cnvLines  = document.getElementById("cnvLines");
 const cnvPoints = document.getElementById("cnvPoints");
+const cnvAlerts = document.getElementById("cnvAlerts");
 
 const ctxBase = cnvBase.getContext("2d");
 const ctxH    = cnvHolo.getContext("2d");
 const ctxL    = cnvLines.getContext("2d");
 const ctxP    = cnvPoints.getContext("2d");
+const ctxA    = cnvAlerts.getContext("2d");
 
 function resizeCanvas(cnv, ctx){
   const dpr = Math.max(1, window.devicePixelRatio || 1);
   const r = cnv.getBoundingClientRect();
-  cnv.width  = Math.max(2, Math.floor(r.width * dpr));
+  cnv.width  = Math.max(2, Math.floor(r.width  * dpr));
   cnv.height = Math.max(2, Math.floor(r.height * dpr));
   ctx.setTransform(dpr,0,0,dpr,0,0);
 }
-function clearAll(){
+function resizeAll(){
+  resizeCanvas(cnvBase, ctxBase);
+  resizeCanvas(cnvHolo, ctxH);
+  resizeCanvas(cnvLines, ctxL);
+  resizeCanvas(cnvPoints, ctxP);
+  resizeCanvas(cnvAlerts, ctxA);
+  resizeWave();
+  if(state.ready) {
+    redrawStatic();
+    if(state.ptsXY.length) buildHeatGrid();
+  }
+}
+window.addEventListener("resize", resizeAll);
+
+function clear(ctx){
   const W = cnvBase.getBoundingClientRect().width;
   const H = cnvBase.getBoundingClientRect().height;
-  ctxBase.clearRect(0,0,W,H);
-  ctxH.clearRect(0,0,W,H);
-  ctxL.clearRect(0,0,W,H);
-  ctxP.clearRect(0,0,W,H);
+  ctx.clearRect(0,0,W,H);
 }
 
-/* ============ DRAW ============ */
+/* recorte Brasil */
 function clipToMask(ctx){
   const W = cnvBase.getBoundingClientRect().width;
   const H = cnvBase.getBoundingClientRect().height;
@@ -444,6 +644,7 @@ function drawCover(ctx, img){
   ctx.restore();
 }
 
+/* linhas geojson */
 function strokeLines(ctx, fc, strokeStyle, width, alpha){
   if(!fc) return;
   const W = cnvBase.getBoundingClientRect().width;
@@ -478,51 +679,87 @@ function strokeLines(ctx, fc, strokeStyle, width, alpha){
   ctx.restore();
 }
 
+/* =========================
+   STATE
+========================= */
 const state = {
-  baseImg:null,
-  holoImg:null,
-  uf:null,
-  macro:null,
-  micro:null,
+  ready:false,
+  uf:null, macro:null, micro:null,
+  baseImg:null, holoImg:null,
   ptsXY:[],
   heat:null,
+  alerts:[],
   t:0,
   animStarted:false,
-  fullLoaded:false
+  alertsStarted:false,
+  fullLoaded:false,
+  pumpUrl:PUMP_FALLBACK
 };
+
+/* =========================
+   MAPA: static layers
+========================= */
+function drawProceduralHolo(ctx){
+  // fallback se mapa_holo.png não existir: holograma procedural
+  const W = cnvBase.getBoundingClientRect().width;
+  const H = cnvBase.getBoundingClientRect().height;
+
+  const g1 = ctx.createRadialGradient(W*0.35,H*0.35,10, W*0.45,H*0.45, Math.max(W,H)*0.8);
+  g1.addColorStop(0, "rgba(0,255,220,0.18)");
+  g1.addColorStop(0.35, "rgba(0,140,255,0.12)");
+  g1.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.save();
+  ctx.globalCompositeOperation = "screen";
+  ctx.fillStyle = g1;
+  ctx.fillRect(0,0,W,H);
+
+  // scan bands
+  ctx.globalAlpha = 0.25;
+  ctx.fillStyle = "rgba(0,255,220,0.10)";
+  for(let y=0; y<H; y+=18){
+    ctx.fillRect(0,y, W, 1);
+  }
+  ctx.restore();
+}
 
 function redrawStatic(){
   if(!bbox || !maskFC) return;
 
-  clearAll();
+  clear(ctxBase); clear(ctxH); clear(ctxL);
 
   // base
   if(state.baseImg){
     drawCover(ctxBase, state.baseImg);
   } else {
+    const W = cnvBase.getBoundingClientRect().width;
+    const H = cnvBase.getBoundingClientRect().height;
     ctxBase.fillStyle = "#000";
-    ctxBase.fillRect(0,0, cnvBase.getBoundingClientRect().width, cnvBase.getBoundingClientRect().height);
+    ctxBase.fillRect(0,0,W,H);
   }
   clipToMask(ctxBase);
 
-  // holo (screen)
+  // holo overlay (png ou procedural)
   if(state.holoImg){
     ctxH.save();
     ctxH.globalCompositeOperation = "screen";
     ctxH.globalAlpha = 0.95;
     drawCover(ctxH, state.holoImg);
     ctxH.restore();
-    clipToMask(ctxH);
+  } else {
+    drawProceduralHolo(ctxH);
   }
+  clipToMask(ctxH);
 
-  // linhas (se existirem)
-  strokeLines(ctxL, state.macro, "rgba(0,234,255,0.90)", 1.15, 1);
-  strokeLines(ctxL, state.micro, "rgba(0,120,255,0.60)", 0.55, 1);
-  strokeLines(ctxL, state.uf,    "rgba(160,245,255,0.55)", 0.85, 1);
+  // linhas
+  strokeLines(ctxL, state.macro, "rgba(0,234,255,0.85)", 1.15, 1);
+  strokeLines(ctxL, state.micro, "rgba(0,120,255,0.55)", 0.55, 1);
+  strokeLines(ctxL, state.uf,    "rgba(160,245,255,0.45)", 0.85, 1);
   clipToMask(ctxL);
 }
 
-/* ============ HEAT (não trava) ============ */
+/* =========================
+   PONTOS: leve, contínuo, não trava
+========================= */
 function buildProjectedPoints(fc){
   const W = cnvBase.getBoundingClientRect().width;
   const H = cnvBase.getBoundingClientRect().height;
@@ -535,7 +772,8 @@ function buildProjectedPoints(fc){
     pts.push({ x,y, ph: Math.random()*Math.PI*2, sp: 0.7+Math.random()*1.3, base: 0.6+Math.random()*0.8 });
   }
 
-  const MAX = 160000;
+  // cap pra não explodir
+  const MAX = 170000;
   if(pts.length > MAX){
     const step = Math.ceil(pts.length / MAX);
     const slim = [];
@@ -546,29 +784,31 @@ function buildProjectedPoints(fc){
   buildHeatGrid();
 }
 
+// heat-grid: cor por densidade local sem custo alto
 function buildHeatGrid(){
   const W = cnvBase.getBoundingClientRect().width;
   const H = cnvBase.getBoundingClientRect().height;
 
-  const cell = 6;
+  const cell = 6; // fino o bastante e leve
   const cols = Math.ceil(W / cell);
   const rows = Math.ceil(H / cell);
-
   const g = new Uint16Array(cols * rows);
+
   for(const p of state.ptsXY){
     const cx = Math.max(0, Math.min(cols - 1, (p.x / cell) | 0));
     const cy = Math.max(0, Math.min(rows - 1, (p.y / cell) | 0));
     g[cy * cols + cx]++;
   }
 
+  // blur 3x3 simples
   const out = new Uint16Array(cols * rows);
   for(let y=0;y<rows;y++){
     for(let x=0;x<cols;x++){
-      let sum = 0, n = 0;
+      let sum=0, n=0;
       for(let oy=-1; oy<=1; oy++){
-        const yy = y+oy; if(yy<0||yy>=rows) continue;
+        const yy=y+oy; if(yy<0||yy>=rows) continue;
         for(let ox=-1; ox<=1; ox++){
-          const xx = x+ox; if(xx<0||xx>=cols) continue;
+          const xx=x+ox; if(xx<0||xx>=cols) continue;
           sum += g[yy*cols + xx];
           n++;
         }
@@ -577,7 +817,7 @@ function buildHeatGrid(){
     }
   }
 
-  let max = 1;
+  let max=1;
   for(let i=0;i<out.length;i++) if(out[i] > max) max = out[i];
   state.heat = { cell, cols, rows, data: out, max };
 }
@@ -590,15 +830,18 @@ function heatAt(x,y){
   const v = h.data[cy * h.cols + cx];
   return Math.min(1, v / Math.max(1, h.max));
 }
+
 function rgbForNorm(norm){
-  if(norm >= 0.70) return [60, 255, 180];
-  if(norm >= 0.40) return [255, 235, 90];
-  return [255, 80, 60];
+  if(norm >= 0.70) return [60, 255, 180];  // verde
+  if(norm >= 0.40) return [255, 235, 90];  // amarelo
+  return [255, 80, 60];                    // vermelho
 }
 
-function startAnim(){
+function startPointsAnim(){
   if(state.animStarted) return;
   state.animStarted = true;
+
+  let cursor = 0;
 
   const loop = ()=>{
     const W = cnvPoints.getBoundingClientRect().width;
@@ -607,14 +850,24 @@ function startAnim(){
 
     if(state.ptsXY.length && state.heat){
       ctxP.globalCompositeOperation = "lighter";
-      const stride = 2;
-      const t = state.t;
 
-      for(let i=0;i<state.ptsXY.length;i+=stride){
-        const p = state.ptsXY[i];
+      // budget de tempo por frame (evita travar em PC fraco)
+      const start = performance.now();
+      const budgetMs = 7.5;
+
+      // stride dinâmico (se tiver MUITO ponto, ele pula mais)
+      const N = state.ptsXY.length;
+      let stride = 1;
+      if(N > 120000) stride = 2;
+      if(N > 160000) stride = 3;
+
+      // desenha em “anéis” usando cursor (não tenta desenhar tudo todo frame)
+      while(performance.now() - start < budgetMs){
+        const p = state.ptsXY[cursor];
         const norm = heatAt(p.x, p.y);
         const [r,g,b] = rgbForNorm(norm);
-        const pulse = 0.55 + 0.45*Math.sin(p.ph + t*p.sp*0.022);
+
+        const pulse = 0.55 + 0.45*Math.sin(p.ph + state.t*p.sp*0.022);
         const alpha = 0.06 + 0.22*pulse;
         const rad   = 0.30 + p.base*0.35;
 
@@ -622,17 +875,19 @@ function startAnim(){
         ctxP.fillStyle = `rgba(${r},${g},${b},${alpha})`;
         ctxP.arc(p.x, p.y, rad, 0, Math.PI*2);
         ctxP.fill();
+
+        cursor = (cursor + stride) % N;
       }
 
-      const glowCount = 650;
+      // sparkles (fixo e leve)
+      const glowCount = 520;
       ctxP.save();
       ctxP.shadowBlur = 10;
       for(let i=0;i<glowCount;i++){
         const p = state.ptsXY[(Math.random()*state.ptsXY.length)|0];
-        if(!p) continue;
         const norm = heatAt(p.x, p.y);
         const [r,g,b] = rgbForNorm(norm);
-        const pulse = 0.55 + 0.45*Math.sin(p.ph + t*0.03);
+        const pulse = 0.55 + 0.45*Math.sin(p.ph + state.t*0.03);
         const alpha = 0.05 + 0.14*pulse;
         ctxP.shadowColor = `rgba(${r},${g},${b},${0.55})`;
         ctxP.fillStyle   = `rgba(${r},${g},${b},${alpha})`;
@@ -649,52 +904,129 @@ function startAnim(){
     state.t += 1;
     requestAnimationFrame(loop);
   };
+
   requestAnimationFrame(loop);
 }
 
-/* ============ UI ============ */
-function setText(id, v){ const el = document.getElementById(id); if(el) el.textContent = v; }
-function setNumber(id, n, dec=1){ setText(id, Number.isFinite(Number(n)) ? fmt(n,dec) : "--"); }
+/* =========================
+   ALERTAS reais (alerts_2024.geojson)
+========================= */
+function parseAlerts(fc){
+  const W = cnvBase.getBoundingClientRect().width;
+  const H = cnvBase.getBoundingClientRect().height;
+  const out = [];
 
-const solInput = document.getElementById("sol");
-const out = document.getElementById("out");
-function updateOut(){ out.textContent = ((parseFloat(solInput.value)||0) * rate).toLocaleString("pt-BR") + " CNT"; }
-solInput.addEventListener("input", updateOut); updateOut();
-document.getElementById("btnBuy").addEventListener("click", ()=> window.open(PUMP_URL, "_blank", "noopener,noreferrer"));
+  for(const f of (fc.features||[])){
+    const g = f.geometry;
+    if(!g) continue;
 
-/* 3D tilt */
-(function holoTilt(){
-  const box = document.getElementById("map3d");
-  const wrap = document.getElementById("mapWrap");
-  let mx=0, my=0, rx=0, ry=0;
-  window.addEventListener("mousemove", (ev)=>{
-    const r = wrap.getBoundingClientRect();
-    const x = (ev.clientX - r.left) / r.width;
-    const y = (ev.clientY - r.top) / r.height;
-    mx = (x - 0.5) * 2;
-    my = (y - 0.5) * 2;
-  }, {passive:true});
-  function tick(){
-    ry += ((mx*8) - ry) * 0.08;
-    rx += ((-my*6) - rx) * 0.08;
-    box.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg) translateZ(22px)`;
-    requestAnimationFrame(tick);
+    // suportar Point e Polygon (usa centroid aproximado)
+    let lonlat = null;
+
+    if(g.type === "Point"){
+      lonlat = g.coordinates;
+    } else {
+      // centroid simples (média) para Polygon/MultiPolygon
+      let sx=0, sy=0, n=0;
+      walkCoords(g.coordinates, (c)=>{
+        sx += c[0]; sy += c[1]; n++;
+      });
+      if(n>0) lonlat = [sx/n, sy/n];
+    }
+
+    if(!lonlat) continue;
+    const [x,y] = proj(lonlat[0], lonlat[1], W, H);
+
+    const p = f.properties || {};
+    const sev = String(p.severity || p.nivel || p.level || "medium").toLowerCase();
+    const kind = String(p.type || p.tipo || "alert").toLowerCase();
+
+    out.push({
+      x,y,
+      sev,
+      kind,
+      ph: Math.random()*Math.PI*2
+    });
   }
-  tick();
-})();
+  return out;
+}
 
-/* Telemetry (não depende do JSON) */
+function colorForAlert(sev){
+  if(sev.includes("high") || sev.includes("alto") || sev.includes("crit")) return [255,70,55];
+  if(sev.includes("med")  || sev.includes("moder")) return [255,185,70];
+  return [110,210,255];
+}
+
+function startAlertsAnim(){
+  if(state.alertsStarted) return;
+  state.alertsStarted = true;
+
+  const loop = ()=>{
+    const W = cnvAlerts.getBoundingClientRect().width;
+    const H = cnvAlerts.getBoundingClientRect().height;
+    ctxA.clearRect(0,0,W,H);
+
+    if(state.alerts.length){
+      ctxA.globalCompositeOperation = "lighter";
+
+      const t = state.t * 0.06;
+      for(const a of state.alerts){
+        const [r,g,b] = colorForAlert(a.sev);
+        const pulse = 0.5 + 0.5*Math.sin(a.ph + t);
+
+        // ponto central
+        ctxA.beginPath();
+        ctxA.fillStyle = `rgba(${r},${g},${b},${0.45 + 0.35*pulse})`;
+        ctxA.arc(a.x, a.y, 1.8 + 0.8*pulse, 0, Math.PI*2);
+        ctxA.fill();
+
+        // anel pulsante
+        const rad = 10 + 22*pulse;
+        ctxA.lineWidth = 1.4;
+        ctxA.strokeStyle = `rgba(${r},${g},${b},${0.18 + 0.18*pulse})`;
+        ctxA.beginPath();
+        ctxA.arc(a.x, a.y, rad, 0, Math.PI*2);
+        ctxA.stroke();
+
+        // glow
+        ctxA.save();
+        ctxA.shadowBlur = 18;
+        ctxA.shadowColor = `rgba(${r},${g},${b},${0.55})`;
+        ctxA.strokeStyle = `rgba(${r},${g},${b},${0.10 + 0.16*pulse})`;
+        ctxA.lineWidth = 2.0;
+        ctxA.beginPath();
+        ctxA.arc(a.x, a.y, rad*1.15, 0, Math.PI*2);
+        ctxA.stroke();
+        ctxA.restore();
+      }
+
+      clipToMask(ctxA);
+      ctxA.globalCompositeOperation = "source-over";
+    }
+
+    requestAnimationFrame(loop);
+  };
+
+  requestAnimationFrame(loop);
+}
+
+/* =========================
+   TELEMETRIA (wave)
+========================= */
 const wave = document.getElementById("wave");
 const wctx = wave.getContext("2d");
 let tWave=0;
+
 function resizeWave(){
   const dpr = Math.max(1, window.devicePixelRatio || 1);
-  wave.width = Math.max(2, Math.floor(wave.clientWidth * dpr));
+  wave.width  = Math.max(2, Math.floor(wave.clientWidth  * dpr));
   wave.height = Math.max(2, Math.floor(wave.clientHeight * dpr));
   wctx.setTransform(dpr,0,0,dpr,0,0);
 }
+
 function startWave(series){
   const s = Array.isArray(series) ? series : [];
+
   const draw = ()=>{
     const W = wave.clientWidth, H = wave.clientHeight;
     wctx.clearRect(0,0,W,H);
@@ -750,130 +1082,148 @@ function startWave(series){
   draw();
 }
 
-/* ============ DIAG ============ */
-const diag = { ok:[], fail:[] };
-function printDiag(){
-  const out =
-    "DIAG (o que carregou / o que falhou)\n" +
-    "OK:\n- " + (diag.ok.length ? diag.ok.join("\n- ") : "(nada)") + "\n\n" +
-    "FAIL:\n- " + (diag.fail.length ? diag.fail.join("\n- ") : "(nada)") + "\n";
-  statusEl.textContent = out;
+/* =========================
+   BUY
+========================= */
+const solInput = document.getElementById("sol");
+const out = document.getElementById("out");
+function updateOut(){
+  const sol = parseFloat(solInput.value) || 0;
+  out.textContent = (sol * RATE_DEMO).toLocaleString("pt-BR") + " CNT";
 }
+solInput.addEventListener("input", updateOut);
+updateOut();
+document.getElementById("btnBuy").addEventListener("click", ()=>{
+  window.open(state.pumpUrl || PUMP_FALLBACK, "_blank", "noopener,noreferrer");
+});
 
-/* ============ AOI Amazônia (exato) ============ */
-function amazonMaskFromBiomas(biomasFC){
-  const feats = (biomasFC?.features||[]);
-  const out = [];
-  for(const f of feats){
-    const p = f.properties || {};
-    // EXATO (o teu arquivo tem isso)
-    if(p.Bioma === "Amazônia" || Number(p.CD_Bioma) === 1) out.push(f);
+/* =========================
+   3D tilt
+========================= */
+(function holoTilt(){
+  const box = document.getElementById("map3d");
+  const wrap = document.getElementById("mapWrap");
+  let mx=0, my=0, rx=0, ry=0;
+
+  window.addEventListener("mousemove", (ev)=>{
+    const r = wrap.getBoundingClientRect();
+    const x = (ev.clientX - r.left) / r.width;
+    const y = (ev.clientY - r.top) / r.height;
+    mx = (x - 0.5) * 2;
+    my = (y - 0.5) * 2;
+  }, {passive:true});
+
+  function tick(){
+    ry += ((mx*8) - ry) * 0.08;
+    rx += ((-my*6) - rx) * 0.08;
+    box.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg) translateZ(22px)`;
+    requestAnimationFrame(tick);
   }
-  return out.length ? {type:"FeatureCollection", features: out} : null;
-}
+  tick();
+})();
 
-/* ============ BOOT ============ */
+/* =========================
+   BOOT (Brasil inteiro)
+========================= */
+function setChip(id, text){ document.getElementById(id).textContent = text; }
+
+function setText(id, v){ const el = document.getElementById(id); if(el) el.textContent = v; }
+function setNumber(id, n, dec=1){ setText(id, Number.isFinite(Number(n)) ? fmt(n,dec) : "--"); }
+
 async function boot(){
   try{
-    // resize inicial
-    resizeCanvas(cnvBase, ctxBase);
-    resizeCanvas(cnvHolo, ctxH);
-    resizeCanvas(cnvLines, ctxL);
-    resizeCanvas(cnvPoints, ctxP);
-    resizeWave();
+    resizeAll();
+    setChip("chipAOI", "AOI: Brasil");
+    setChip("chipDados", "dados_cnt: …");
+    setChip("chipPNG", "PNG: …");
+    setChip("chipAlerts", "alerts_2024: …");
 
-    // 1) biomas → Amazônia
-    let biomas = null;
-    try{
-      biomas = (await fetchFirstJSON(CAND.biomas,"biomas")).data;
-    }catch(e){ biomas = null; }
-
-    if(biomas){
-      const amazon = amazonMaskFromBiomas(biomas);
-      if(amazon){
-        maskFC = amazon;
-        document.getElementById("chipAOI").textContent = "AOI: Amazônia (OK)";
-      }
-    }
-
-    // 2) fallback Brasil
-    if(!maskFC){
-      const br = (await fetchFirstJSON(CAND.brasil,"brasil")).data;
-      maskFC = br;
-      document.getElementById("chipAOI").textContent = "AOI: Brasil (fallback)";
-    }
-
+    // 1) Brasil mask (sempre)
+    const br = (await fetchFirstJSON(CAND.brasil, "brasil")).data;
+    maskFC = br;
     bbox = calcBBox(maskFC);
 
-    // 3) linhas (se falhar, o mapa ainda aparece com PNG)
-    try{ state.uf = (await fetchFirstJSON(CAND.uf,"uf")).data; } catch(e){}
-    try{ state.macro = (await fetchFirstJSON(CAND.macro,"macro")).data; } catch(e){}
-    try{ state.micro = (await fetchFirstJSON(CAND.micro,"micro")).data; } catch(e){}
+    // 2) linhas (opcional)
+    try{ state.uf    = (await fetchFirstJSON(CAND.uf, "uf")).data; } catch(e){}
+    try{ state.macro = (await fetchFirstJSON(CAND.macro, "macro")).data; } catch(e){}
+    try{ state.micro = (await fetchFirstJSON(CAND.micro, "micro")).data; } catch(e){}
 
-    // 4) dados_cnt.json (se inválido, vai falhar no parse e aparecer no DIAG)
+    // 3) dados_cnt.json (painel)
     let series = [];
     try{
-      const {data:dados} = await fetchFirstJSON(CAND.dados,"dados_cnt");
-      document.getElementById("chipDados").textContent = "dados_cnt: OK";
+      const {data:dados} = await fetchFirstJSON(CAND.dados_cnt, "dados_cnt");
+      setChip("chipDados", "dados_cnt: OK");
 
-      const idx = dados?.indices || {};
+      const idx = dados?.indices || dados || {};
+      // compatível com formatos diferentes
+      const raw = Number(idx.cnt_A_raw ?? idx.RAW ?? idx.raw ?? idx.cnt_A ?? NaN);
       const A100 = Number.isFinite(Number(idx.cnt_A_0_100))
         ? Number(idx.cnt_A_0_100)
-        : (Number.isFinite(Number(idx.cnt_A_raw)) ? clamp(Number(idx.cnt_A_raw)*4,0,100) : NaN);
+        : (Number.isFinite(raw) ? clamp(raw * 4, 0, 100) : NaN);
 
-      setText("raw", fmt(idx.cnt_A_raw,2));
+      setText("raw", fmt(raw,2));
       setText("eco", fmt1(A100));
       setText("A", fmt(A100,2));
-      const b = Number(idx.cnt_B);
-      setText("B", Number.isFinite(b) ? ((b>=0?"+":"") + fmt(b,2)) : "--");
-      setText("C", fmt(idx.cnt_C,2));
-      setText("R", idx.grade || "--");
 
-      const sub = idx.sub || {};
-      setNumber("ibe", sub.IBE, 1);
-      setNumber("iab", sub.IAB, 1);
-      setNumber("ibi", sub.IBI, 1);
-      setNumber("hid", sub.HID, 1);
-      setNumber("ent", sub.ENT, 1);
-      setNumber("pan", sub.PAN, 1);
+      const b = Number(idx.cnt_B ?? idx.B ?? 0);
+      setText("B", Number.isFinite(b) ? ((b>=0?"+":"") + fmt(b,2)) : "--");
+      setText("C", fmt(idx.cnt_C ?? idx.C, 2));
+      setText("R", idx.grade ?? idx.GRAU ?? idx.grau ?? "--");
+
+      // sub-índices: aceita diferentes nomes
+      const sub = idx.sub || idx.subindices || idx.sub_indices || {};
+      setNumber("ibe", sub.IBE ?? idx.IBE ?? idx.FUNC, 1);
+      setNumber("iab", sub.IAB ?? idx.IAB, 1);
+      setNumber("ibi", sub.IBI ?? idx.IBI, 1);
+      setNumber("hid", sub.HID ?? idx.HID, 1);
+      setNumber("ent", sub.ENT ?? idx.ENT, 1);
+      setNumber("pan", sub.PAN ?? idx.PAN, 1);
 
       series = Array.isArray(idx.series_10y) ? idx.series_10y.map(Number).filter(Number.isFinite) : [];
       document.getElementById("telemetryHint").textContent = series.length ? ("Histórico: " + series.length) : "Sem série 10y no JSON.";
-      if(dados?.token?.pump_url) PUMP_URL = dados.token.pump_url;
+
+      // pump url
+      state.pumpUrl = dados?.token?.pump_url || dados?.pump_url || PUMP_FALLBACK;
     }catch(e){
-      document.getElementById("chipDados").textContent = "dados_cnt: OFF";
+      setChip("chipDados", "dados_cnt: OFF");
       document.getElementById("telemetryHint").textContent = "dados_cnt.json não carregou (veja DIAG).";
     }
 
-    // 5) PNGs
-    const baseR = await loadFirstImage(CAND.base,"mapa_base.png");
-    const holoR = await loadFirstImage(CAND.holo,"mapa_holo.png");
+    // 4) PNG base + holo
+    const baseR = await loadFirstImage(CAND.basePNG, "mapa_base.png");
+    const holoR = await loadFirstImage(CAND.holoPNG, "mapa_holo.png");
     state.baseImg = baseR.img;
     state.holoImg = holoR.img;
-    document.getElementById("chipPNG").textContent = (state.baseImg && state.holoImg) ? "PNG: OK" : "PNG: OFF";
 
-    // 6) desenha
+    // PNG status: base obrigatório pra ficar “perfeito”, mas se faltar ainda roda
+    if(state.baseImg) setChip("chipPNG", state.holoImg ? "PNG: OK" : "PNG: base OK / holo OFF");
+    else setChip("chipPNG", "PNG: OFF (sem base)");
+
+    // 5) desenha mapa
+    state.ready = true;
     redrawStatic();
     startWave(series);
 
-    // 7) pontos SAMPLE
+    // 6) pontos sample primeiro
+    const ptsSample = (await fetchFirstJSON(CAND.pts_sample, "pts_sample")).data;
+    buildProjectedPoints(ptsSample);
+    startPointsAnim();
+
+    // 7) alertas
     try{
-      const {data:ptsSample} = await fetchFirstJSON(CAND.pts_sample,"pts_sample");
-      buildProjectedPoints(ptsSample);
-      startAnim();
+      const alertsFC = (await fetchFirstJSON(CAND.alerts, "alerts_2024")).data;
+      state.alerts = parseAlerts(alertsFC);
+      setChip("chipAlerts", state.alerts.length ? `alerts_2024: OK (${state.alerts.length})` : "alerts_2024: OK (0)");
+      startAlertsAnim();
     }catch(e){
-      diag.fail.push("pts_sample: FAIL (sem pontos)");
+      setChip("chipAlerts", "alerts_2024: OFF");
     }
 
-    // FULL manual
-    document.getElementById("btnFull").onclick = async ()=>{
-      if(state.fullLoaded){
-        diag.ok.push("FULL: já carregado");
-        printDiag();
-        return;
-      }
+    // FULL manual (não trava automático)
+    document.getElementById("btnFull").addEventListener("click", async ()=>{
+      if(state.fullLoaded) return;
       try{
-        const {data:ptsFull} = await fetchFirstJSON(CAND.pts_full,"pts_full");
+        const ptsFull = (await fetchFirstJSON(CAND.pts_full, "pts_full")).data;
         buildProjectedPoints(ptsFull);
         state.fullLoaded = true;
         diag.ok.push("FULL: OK (manual)");
@@ -882,25 +1232,15 @@ async function boot(){
         diag.fail.push("FULL: FAIL (não encontrado/erro)");
         printDiag();
       }
-    };
-
-    // 8) final: mostra diagnóstico na tela (é isso que vai te dizer o erro REAL)
-    printDiag();
-
-    // resize on window
-    window.addEventListener("resize", ()=>{
-      resizeCanvas(cnvBase, ctxBase);
-      resizeCanvas(cnvHolo, ctxH);
-      resizeCanvas(cnvLines, ctxL);
-      resizeCanvas(cnvPoints, ctxP);
-      resizeWave();
-      redrawStatic();
-      if(state.ptsXY.length) buildHeatGrid();
     });
+
+    // final: diag
+    printDiag();
 
   }catch(err){
     console.error(err);
     statusEl.textContent = "ERRO GERAL: " + (err?.message || err);
+    printDiag();
   }
 }
 boot();
