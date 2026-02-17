@@ -528,8 +528,10 @@ function fillPolygons(ctx, fc, fillStyle, alpha){
   ctx.restore();
 }
 
+/* ✅ FIX AQUI: usar W e H corretos */
 function strokePolygonsGlow(ctx, fc){
   const W = cnvBorder.getBoundingClientRect().width;
+  const H = cnvBorder.getBoundingClientRect().height;
 
   ctx.save();
   ctx.lineJoin="round";
@@ -545,7 +547,7 @@ function strokePolygonsGlow(ctx, fc){
         if(!outer || outer.length<3) continue;
         ctx.beginPath();
         for(let i=0;i<outer.length;i++){
-          const [x,y] = proj(outer[i][0], outer[i][1], W, W); // H não importa aqui, proj usa bbox
+          const [x,y] = proj(outer[i][0], outer[i][1], W, H);
           if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
         }
         ctx.closePath();
@@ -629,7 +631,7 @@ function maskCanvasToBrasil(ctx){
 }
 
 /* =========================
-   GRID (densidade)
+   GRID / PONTOS
 ========================= */
 function buildGrid(){
   const W = cnvBase.getBoundingClientRect().width;
@@ -681,9 +683,6 @@ function densityAt(x,y){
   return count;
 }
 
-/* =========================
-   PONTOS TERRA (sample/full)
-========================= */
 function buildProjectedPointsFromGeoJSON(fc){
   const W = cnvBase.getBoundingClientRect().width;
   const H = cnvBase.getBoundingClientRect().height;
@@ -696,7 +695,6 @@ function buildProjectedPointsFromGeoJSON(fc){
     pts.push({ x,y, ph: Math.random()*Math.PI*2, sp: 0.7+Math.random()*1.3, base: 0.6+Math.random()*0.8, cls: 0 });
   }
 
-  // cap pra não travar
   const MAX = 65000;
   if(pts.length > MAX){
     const step = Math.ceil(pts.length / MAX);
@@ -714,9 +712,6 @@ function buildProjectedPointsFromGeoJSON(fc){
   }
 }
 
-/* =========================
-   PONTOS ÁGUA (azul) a partir das linhas
-========================= */
 function buildWaterPointsFromLines(fc, step=26){
   const W = cnvBase.getBoundingClientRect().width;
   const H = cnvBase.getBoundingClientRect().height;
@@ -748,7 +743,7 @@ function buildWaterPointsFromLines(fc, step=26){
 }
 
 /* =========================
-   HOLO CACHE (offscreen) — não some
+   HOLO CACHE
 ========================= */
 const holoCache = {
   water: document.createElement("canvas"),
@@ -774,7 +769,6 @@ function rebuildHoloCache(){
   wctx.clearRect(0,0,W,H);
   lctx.clearRect(0,0,W,H);
 
-  // Água (azul)
   wctx.globalCompositeOperation = "lighter";
   wctx.shadowBlur = 14;
   for(const p of state.waterXY){
@@ -786,7 +780,6 @@ function rebuildHoloCache(){
   }
   wctx.shadowBlur = 0;
 
-  // Terra (verde/amarelo/vermelho)
   lctx.globalCompositeOperation = "lighter";
   lctx.shadowBlur = 10;
   for(const p of state.ptsXY){
@@ -815,10 +808,8 @@ function redrawStatic(){
   fillPolygons(ctxBase, state.biomas, "rgba(0,255,200,1)", 0.035);
   maskCanvasToBrasil(ctxBase);
 
-  // borda
   strokePolygonsGlow(ctxB, state.brasilMask);
 
-  // linhas
   strokeLines(ctxL, state.macro, "rgba(0,234,255,0.90)", 1.15, 1);
   strokeLines(ctxL, state.micro, "rgba(0,120,255,0.60)", 0.55, 1);
   strokeLines(ctxL, state.uf,    "rgba(160,245,255,0.70)", 1.05, 1);
@@ -826,7 +817,7 @@ function redrawStatic(){
 }
 
 /* =========================
-   ANIMAÇÃO HOLO (não morre)
+   ANIMAÇÃO HOLO
 ========================= */
 function startHoloAnim(){
   if(state.animStarted) return;
@@ -843,18 +834,12 @@ function startHoloAnim(){
       if(holoCache.ready){
         ctxH.globalCompositeOperation = "lighter";
 
-        // cache base holo
-        ctxH.globalAlpha = 0.95;
-        ctxH.drawImage(holoCache.water, 0,0);
+        ctxH.globalAlpha = 0.95; ctxH.drawImage(holoCache.water, 0,0);
+        ctxH.globalAlpha = 0.95; ctxH.drawImage(holoCache.land,  0,0);
 
-        ctxH.globalAlpha = 0.95;
-        ctxH.drawImage(holoCache.land,  0,0);
-
-        // sparkles vivos
         const glowCount = 900;
         ctxH.save();
         ctxH.shadowBlur = 14;
-
         for(let i=0;i<glowCount;i++){
           const pick = state.ptsXY[(Math.random()*state.ptsXY.length)|0];
           if(!pick) continue;
@@ -883,7 +868,6 @@ function startHoloAnim(){
       state.t++;
     }catch(e){
       console.error("HOLO loop error:", e);
-      // não para a animação
     }
     requestAnimationFrame(loop);
   };
@@ -991,9 +975,6 @@ solInput.addEventListener("input", updateOut);
 updateOut();
 document.getElementById("btnBuy").addEventListener("click", ()=>window.open(PUMP_URL,"_blank","noopener,noreferrer"));
 
-/* =========================
-   FULL manual (não trava sozinho)
-========================= */
 let fullLoading = false;
 document.getElementById("btnFull").addEventListener("click", async ()=>{
   if(fullLoading) return;
@@ -1025,10 +1006,8 @@ async function boot(){
     state.micro = await loadJSON(FILES.micro);
     state.cnt = await loadJSON(FILES.cnt);
 
-    // bbox deve cobrir o BR inteiro (mask), não só biomas
     bbox = calcBBox(state.brasilMask);
 
-    // HUD CNT
     const props = state.cnt?.features?.[0]?.properties || {};
     const rawA = Number(props.cnt_A);
     const A100 = Number.isFinite(rawA) ? clamp(rawA * 4, 0, 100) : NaN;
@@ -1057,23 +1036,19 @@ async function boot(){
     resizeAll();
     state.ready = true;
 
-    // base
     redrawStatic();
     startWave(series);
 
-    // água
     statusEl.textContent = "Status: gerando água (azul)…";
     state.waterXY = [
       ...buildWaterPointsFromLines(state.macro, 24),
       ...buildWaterPointsFromLines(state.micro, 38)
     ];
 
-    // sample (liso)
     statusEl.textContent = "Status: carregando pontos (sample)…";
     const ptsSample = await loadJSON(FILES.pts_sample);
     buildProjectedPointsFromGeoJSON(ptsSample);
 
-    // cache e animação
     rebuildHoloCache();
     startHoloAnim();
 
