@@ -9,133 +9,127 @@
 <style>
 :root{
 --bg:#02070b;
---panel:#06131a;
+--bg2:#03141c;
 --accent:#6ee2ff;
 --accent2:#19ffa0;
 --text:#d7f6ff;
 --muted:#7aa6b5;
+--glass:rgba(0,20,28,.7);
 }
 
 body{
 margin:0;
-background:radial-gradient(circle at center,#03141c,#02070b 70%);
+background:radial-gradient(circle at center,var(--bg2),var(--bg));
 color:var(--text);
 font-family:Arial, Helvetica, sans-serif;
 }
 
-/* HEADER */
+/* header */
 header{
 padding:18px 30px;
 display:flex;
 justify-content:space-between;
 align-items:center;
-border-bottom:1px solid rgba(110,226,255,.15);
+border-bottom:1px solid rgba(110,226,255,.12);
 }
 
 .logo{
-font-size:18px;
 letter-spacing:2px;
 color:var(--accent);
+font-size:18px;
 }
 
 nav a{
 margin-left:20px;
-text-decoration:none;
 color:var(--muted);
+text-decoration:none;
 font-size:13px;
 }
-
 nav a:hover{color:var(--accent);}
 
-/* MAP AREA */
-.map-area{
+/* mapa */
+.map-wrapper{
 width:95%;
 max-width:1100px;
 margin:40px auto;
 position:relative;
-border-radius:14px;
+border-radius:16px;
 overflow:hidden;
-border:1px solid rgba(110,226,255,.25);
+border:1px solid rgba(110,226,255,.2);
 background:#010c11;
 }
 
-/* MAP BASE */
+/* mapa base (sua imagem entra aqui) */
 .map-base{
 width:100%;
 display:block;
-opacity:.55;
 }
 
-/* HOLOGRAMA */
-.hud{
+/* holograma */
+.hologram{
 position:absolute;
-top:0;
-left:0;
-width:100%;
-height:100%;
-pointer-events:none;
+inset:0;
 background:
-linear-gradient(rgba(110,226,255,.08) 1px, transparent 1px),
-linear-gradient(90deg, rgba(110,226,255,.08) 1px, transparent 1px);
-background-size:40px 40px;
-animation:scan 6s linear infinite;
+linear-gradient(rgba(110,226,255,.06) 1px, transparent 1px),
+linear-gradient(90deg, rgba(110,226,255,.06) 1px, transparent 1px);
+background-size:50px 50px;
+animation:scan 8s linear infinite;
+pointer-events:none;
 }
 
 @keyframes scan{
 0%{background-position:0 0,0 0}
-100%{background-position:0 200px,200px 0}
+100%{background-position:0 300px,300px 0}
 }
 
-/* INDEX PANEL */
+/* painel indice */
 .panel{
 position:absolute;
-bottom:15px;
-left:15px;
-background:rgba(0,20,28,.8);
-padding:15px 18px;
+bottom:18px;
+left:18px;
+background:var(--glass);
+padding:16px 18px;
 border-radius:10px;
 border:1px solid rgba(110,226,255,.25);
 }
 
-.value{
-font-size:30px;
+.index{
+font-size:32px;
 color:var(--accent2);
 }
-
 .label{
 font-size:12px;
 color:var(--muted);
 }
 
-/* BUY BUTTON */
-.buy{
+/* botao mercado */
+.market{
 position:absolute;
-bottom:15px;
-right:15px;
-padding:10px 16px;
+bottom:18px;
+right:18px;
 background:linear-gradient(90deg,#19ffa0,#6ee2ff);
 color:#001015;
-font-weight:bold;
+padding:10px 16px;
 border-radius:8px;
-text-decoration:none;
+font-weight:bold;
 font-size:13px;
+text-decoration:none;
 }
 
-/* TEXT */
+/* textos */
 section{
 max-width:900px;
 margin:70px auto;
 padding:0 20px;
 }
-
 h2{color:var(--accent);}
 
 footer{
 text-align:center;
 padding:30px;
 color:#557a88;
+border-top:1px solid rgba(110,226,255,.12);
 font-size:13px;
-border-top:1px solid rgba(110,226,255,.15);
 }
 </style>
 
@@ -144,60 +138,56 @@ border-top:1px solid rgba(110,226,255,.15);
 <body>
 
 <header>
-<div class="logo">CNT Observatório Ecológico</div>
+<div class="logo">CNT Observatório</div>
 <nav>
-<a href="#sobre">O Índice</a>
+<a href="#sobre">Índice</a>
 <a href="#metodo">Metodologia</a>
 </nav>
 </header>
 
-<div class="map-area">
+<div class="map-wrapper">
 
-<!-- MAPA BRASIL SIMPLES -->
+<!-- SUBSTITUA PELO SEU MAPA -->
 
-<svg class="map-base" viewBox="0 0 500 500">
-<path d="M90 120 L200 60 L310 110 L390 200 L350 310 L250 420 L140 360 L80 250 Z"
-fill="#2b6f7f"/>
-</svg>
+<img class="map-base" src="mapa.png">
 
-<div class="hud"></div>
+<div class="hologram"></div>
 
 <div class="panel">
-<div class="value" id="indice">72.4</div>
-<div class="label">Índice de Funcionalidade Agroecológica</div>
+<div class="index" id="indice">72.4</div>
+<div class="label">Funcionalidade ecológica do sistema produtivo</div>
 </div>
 
-<a class="buy" target="_blank"
+<a class="market" target="_blank"
 href="https://pump.fun/coin/GCVyjNaCbXkwGUuktyNxSXad4ozmTp2fzQr2jieSpump">
 Mercado CNT </a>
 
 </div>
 
 <section id="sobre">
-<h2>O que é o CNT</h2>
+<h2>O Índice CNT</h2>
 <p>
-Infraestrutura de monitoramento da funcionalidade ecológica dos sistemas produtivos ao longo do tempo.
-O índice representa tendência operacional do sistema agrícola e não produtividade direta.
+Monitoramento contínuo da estabilidade ecológica do sistema produtivo brasileiro ao longo do tempo.
+O valor representa tendência operacional do sistema, não produtividade direta.
 </p>
 </section>
 
 <section id="metodo">
 <h2>Metodologia</h2>
 <p>
-O cálculo considera estabilidade biológica, consistência temporal do sistema e variação estrutural do solo.
-O valor indica tendência de regeneração, estabilidade ou degradação funcional.
+O índice considera consistência temporal, estabilidade biológica e variação estrutural do solo,
+indicando regeneração, estabilidade ou degradação funcional.
 </p>
 </section>
 
 <footer>
-Centro Natural TEC • Monitoramento Ecológico Produtivo do Brasil
+Centro Natural TEC • Infraestrutura de Monitoramento Ecológico Produtivo
 </footer>
 
 <script>
-// simulação dinâmica do índice
 setInterval(()=>{
-let base=70+Math.sin(Date.now()/4000)*3+Math.random();
-document.getElementById("indice").innerText=base.toFixed(2);
+let v=70+Math.sin(Date.now()/4000)*3+Math.random();
+document.getElementById("indice").innerText=v.toFixed(2);
 },2000);
 </script>
 
