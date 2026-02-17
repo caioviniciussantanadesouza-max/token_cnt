@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>CNT — Brasil (Todos os Biomas)</title>
+
 <style>
 :root{
   --bg0:#000;
@@ -282,6 +283,7 @@ input:focus{
   opacity:.92;
   white-space:pre-line;
 }
+
 @media (max-width: 1100px){
   body{ overflow:auto; }
   #app{ position:relative; grid-template-columns: 1fr; grid-template-rows: auto auto auto auto; }
@@ -289,6 +291,7 @@ input:focus{
 }
 </style>
 </head>
+
 <body>
 <div id="app">
   <div id="header" class="glass">
@@ -305,8 +308,10 @@ input:focus{
 
   <div id="left" class="glass">
     <div class="small"><b>CNT</b> (índice único Brasil)</div>
+
     <div class="big"><span id="eco">--</span><span style="font-size:16px; opacity:.9;">/100</span></div>
     <div class="small">RAW auditável: <b id="raw">--</b></div>
+
     <div class="hr"></div>
 
     <div class="abclist">
@@ -333,10 +338,10 @@ input:focus{
 
   <div id="center" class="glass">
     <div id="mapWrap">
-      <canvas id="cnvBase" class="layer"></canvas>
-      <canvas id="cnvFill" class="layer"></canvas>
+      <canvas id="cnvBase"   class="layer"></canvas>
+      <canvas id="cnvFill"   class="layer"></canvas>
       <canvas id="cnvBorder" class="layer"></canvas>
-      <canvas id="cnvLines" class="layer"></canvas>
+      <canvas id="cnvLines"  class="layer"></canvas>
       <canvas id="cnvPoints" class="layer"></canvas>
       <canvas id="cnvAlerts" class="layer"></canvas>
       <div id="mapGlow"></div>
@@ -381,7 +386,6 @@ const FILES = {
   macro: "macro_rh.geojson",
   micro: "micro_rh.geojson",
 
-  // pontos por camada (sample)
   pts_water: "agua_pts_sample.geojson",
   pts_vege_sample: "vege_pts_sample.geojson",
   pts_vege_full: "vege_pts.geojson",
@@ -389,7 +393,6 @@ const FILES = {
   pts_desm: "desm_pts_sample.geojson",
 };
 
-// 4 cores fixas
 const COLORS = {
   water: [0, 190, 255],
   vege:  [60, 255, 180],
@@ -440,7 +443,7 @@ function calcBBox(fc){
 }
 
 /* =========================
-   PROJEÇÃO (tudo em cima do IBGE)
+   PROJEÇÃO (TUDO EM CIMA DO IBGE)
 ========================= */
 let bbox = null;
 function proj(lon, lat, w, h){
@@ -493,10 +496,11 @@ function resizeAll(){
   resizeCanvas(cnvPoints, ctxP);
   resizeCanvas(cnvAlerts, ctxA);
   resizeWave();
+
   if(state.ready){
-    brPath2D = null; // refaz path no novo size
+    brPath2D = null;
     redrawStatic();
-    rebuildAllPoints();
+    rebuildAllPoints(); // recalcula pontos e reconstroi dots
   }
 }
 window.addEventListener("resize", resizeAll);
@@ -509,7 +513,6 @@ let brPath2D = null;
 function buildBrasilPath2D(fc){
   const W = cnvBase.getBoundingClientRect().width;
   const H = cnvBase.getBoundingClientRect().height;
-
   const p = new Path2D();
 
   for(const f of (fc.features||[])){
@@ -531,7 +534,6 @@ function buildBrasilPath2D(fc){
       p.closePath();
     }
   }
-
   brPath2D = p;
 }
 
@@ -560,23 +562,23 @@ function fillBrasilHolografico(){
   ctxF.save();
   ctxF.clip(brPath2D);
 
-  // base leve
+  // base leve (não “forte”)
   const g = ctxF.createLinearGradient(W*0.20, H*0.20, W*0.85, H*0.80);
-  g.addColorStop(0.00, "rgba(0, 170, 255, 0.14)");
-  g.addColorStop(0.45, "rgba(0, 255, 210, 0.10)");
-  g.addColorStop(1.00, "rgba(0, 120, 255, 0.12)");
+  g.addColorStop(0.00, "rgba(0, 170, 255, 0.10)");
+  g.addColorStop(0.45, "rgba(0, 255, 210, 0.08)");
+  g.addColorStop(1.00, "rgba(0, 120, 255, 0.10)");
   ctxF.fillStyle = g;
   ctxF.fillRect(0,0,W,H);
 
   // textura holográfica suave
   ctxF.globalCompositeOperation = "screen";
-  ctxF.globalAlpha = 0.09;
+  ctxF.globalAlpha = 0.08;
   for(let i=0;i<220;i++){
     const x = Math.random()*W;
     const y = Math.random()*H;
     const r = 8 + Math.random()*28;
     const gg = ctxF.createRadialGradient(x,y, 0, x,y, r);
-    gg.addColorStop(0, "rgba(120,220,255,0.55)");
+    gg.addColorStop(0, "rgba(120,220,255,0.45)");
     gg.addColorStop(1, "rgba(0,0,0,0)");
     ctxF.fillStyle = gg;
     ctxF.beginPath();
@@ -587,7 +589,7 @@ function fillBrasilHolografico(){
   // scanlines dentro do Brasil
   ctxF.globalCompositeOperation = "overlay";
   ctxF.globalAlpha = 0.10;
-  ctxF.fillStyle = "rgba(120,220,255,0.22)";
+  ctxF.fillStyle = "rgba(120,220,255,0.20)";
   for(let y=0; y<H; y+=8){
     ctxF.fillRect(0,y,W,1);
   }
@@ -627,14 +629,14 @@ function strokePolygonsGlow(ctx, fc){
     }
   };
 
-  // glow externo menor (pra não “inchar”)
+  // glow controlado
   ctx.shadowColor = "rgba(0,255,220,0.90)";
   ctx.shadowBlur  = 18;
   ctx.lineWidth   = 3.6;
   ctx.strokeStyle = "rgba(0,255,220,0.45)";
   drawOuter();
 
-  // linha principal nítida
+  // linha nítida
   ctx.shadowBlur  = 8;
   ctx.lineWidth   = 1.9;
   ctx.strokeStyle = "rgba(0,255,220,0.95)";
@@ -676,9 +678,11 @@ function strokeLines(ctx, fc, strokeStyle, width, alpha){
 }
 
 /* =========================
-   HOLOGRAFIA (PONTOS)
+   PONTOS (DOT FIELD IGUAL “IMAGEM_BASE”)
 ========================= */
-function projectPoints(fc, W, H){
+function projectPoints(fc){
+  const W = cnvPoints.getBoundingClientRect().width;
+  const H = cnvPoints.getBoundingClientRect().height;
   const pts = [];
   for(const f of (fc.features||[])){
     const g = f.geometry;
@@ -689,55 +693,66 @@ function projectPoints(fc, W, H){
   return pts;
 }
 
-function buildHeatCanvas(points, colorRGB, cell){
+// cria uma camada única de “pontos nítidos + glow” (pré-render)
+// fica igual a estética de dot holográfico
+function buildDotLayer(points, colorRGB){
+  const W = Math.max(1, Math.floor(cnvPoints.getBoundingClientRect().width));
+  const H = Math.max(1, Math.floor(cnvPoints.getBoundingClientRect().height));
+
+  const off = document.createElement("canvas");
+  off.width = W;
+  off.height = H;
+  const octx = off.getContext("2d", { alpha:true });
+
+  const [r,g,b] = colorRGB;
+
+  octx.clearRect(0,0,W,H);
+  octx.save();
+  octx.globalCompositeOperation = "source-over";
+
+  // dots com glow (um pouco mais forte, mas controlado)
+  octx.fillStyle = `rgba(${r},${g},${b},0.62)`;
+  octx.shadowColor = `rgba(${r},${g},${b},0.82)`;
+  octx.shadowBlur = 10;
+
+  for(const p of points){
+    octx.beginPath();
+    octx.arc(p.x, p.y, 1.05, 0, Math.PI*2);
+    octx.fill();
+  }
+
+  // centro “pixel” nítido (sem blur)
+  octx.shadowBlur = 0;
+  octx.fillStyle = `rgba(${r},${g},${b},0.45)`;
+  for(const p of points){
+    octx.fillRect(p.x, p.y, 1, 1);
+  }
+
+  octx.restore();
+  return off;
+}
+
+function rebuildDots(){
+  state.dots.water = state.pts.water.length ? buildDotLayer(state.pts.water, COLORS.water) : null;
+  state.dots.vege  = state.pts.vege.length  ? buildDotLayer(state.pts.vege,  COLORS.vege)  : null;
+  state.dots.trans = state.pts.trans.length ? buildDotLayer(state.pts.trans, COLORS.trans) : null;
+  state.dots.desm  = state.pts.desm.length  ? buildDotLayer(state.pts.desm,  COLORS.desm)  : null;
+
+  const total = state.pts.water.length + state.pts.vege.length + state.pts.trans.length + state.pts.desm.length;
+  chipPts.textContent = `Pontos: ${total.toLocaleString('pt-BR')} (4 cores)`;
+}
+
+function drawDotLayer(offCanvas, alpha, blurPx){
+  if(!offCanvas) return;
   const W = cnvPoints.getBoundingClientRect().width;
   const H = cnvPoints.getBoundingClientRect().height;
 
-  const cols = Math.ceil(W/cell);
-  const rows = Math.ceil(H/cell);
-  const grid = new Uint16Array(cols*rows);
-
-  for(const p of points){
-    const cx = Math.max(0, Math.min(cols-1, (p.x/cell)|0));
-    const cy = Math.max(0, Math.min(rows-1, (p.y/cell)|0));
-    grid[cy*cols + cx]++;
-  }
-
-  let max=0;
-  for(let i=0;i<grid.length;i++) if(grid[i]>max) max=grid[i];
-  max = Math.max(1, max);
-
-  const off = document.createElement("canvas");
-  off.width = cols;
-  off.height = rows;
-  const octx = off.getContext("2d", {alpha:true});
-  const img = octx.createImageData(cols, rows);
-
-  const [r,g,b] = colorRGB;
-  for(let i=0;i<grid.length;i++){
-    const v = grid[i];
-    if(v===0) continue;
-    const a = Math.min(255, Math.round(255 * Math.pow(v/max, 0.65)));
-    const j = i*4;
-    img.data[j]   = r;
-    img.data[j+1] = g;
-    img.data[j+2] = b;
-    img.data[j+3] = a;
-  }
-  octx.putImageData(img,0,0);
-  return {off, cols, rows, cell, max};
-}
-
-function drawHeat(heat, alpha, blurPx=8, jitter=0){
   ctxP.save();
   ctxP.globalCompositeOperation = "lighter";
   ctxP.globalAlpha = alpha;
-  ctxP.filter = `blur(${blurPx}px)`;
 
-  const dx = jitter ? (Math.sin(state.t*0.03)*jitter) : 0;
-  const dy = jitter ? (Math.cos(state.t*0.021)*jitter) : 0;
-
-  ctxP.drawImage(heat.off, 0,0, heat.cols, heat.rows, dx,dy, heat.cols*heat.cell, heat.rows*heat.cell);
+  if(blurPx > 0) ctxP.filter = `blur(${blurPx}px)`;
+  ctxP.drawImage(offCanvas, 0, 0, W, H);
 
   ctxP.filter = "none";
   ctxP.globalAlpha = 1;
@@ -745,39 +760,9 @@ function drawHeat(heat, alpha, blurPx=8, jitter=0){
   ctxP.restore();
 }
 
-function drawSparkles(allPts, allColors){
-  const total = allPts.reduce((s,a)=>s+a.length, 0);
-  if(!total) return;
-
-  const N = Math.min(1300, Math.max(420, (total/14)|0));
-  ctxP.save();
-  ctxP.globalCompositeOperation = "lighter";
-  ctxP.shadowBlur = 10;
-
-  for(let i=0;i<N;i++){
-    let pick = Math.random()*total;
-    let layer = 0;
-    for(; layer<allPts.length; layer++){
-      if(pick < allPts[layer].length) break;
-      pick -= allPts[layer].length;
-    }
-    const arr = allPts[Math.min(allPts.length-1, layer)];
-    const p = arr[(Math.random()*arr.length)|0];
-    const c = allColors[Math.min(allColors.length-1, layer)];
-
-    const pulse = 0.55 + 0.45*Math.sin(p.ph + state.t*p.sp*0.045);
-    const a = 0.06 + 0.18*pulse;
-
-    ctxP.shadowColor = `rgba(${c[0]},${c[1]},${c[2]},0.60)`;
-    ctxP.fillStyle   = `rgba(${c[0]},${c[1]},${c[2]},${a})`;
-    ctxP.beginPath();
-    ctxP.arc(p.x, p.y, 0.8 + pulse*1.6, 0, Math.PI*2);
-    ctxP.fill();
-  }
-
-  ctxP.restore();
-}
-
+/* =========================
+   ALERTAS
+========================= */
 function drawAlerts(items){
   const W = cnvAlerts.getBoundingClientRect().width;
   const H = cnvAlerts.getBoundingClientRect().height;
@@ -791,6 +776,7 @@ function drawAlerts(items){
     const [x,y] = proj(it.lon, it.lat, W, H);
     const pulse = 0.55 + 0.45*Math.sin(state.t*0.08);
 
+    // halo
     ctxA.shadowBlur = 22;
     ctxA.shadowColor = `rgba(${COLORS.alert[0]},${COLORS.alert[1]},${COLORS.alert[2]},0.85)`;
     ctxA.fillStyle = `rgba(${COLORS.alert[0]},${COLORS.alert[1]},${COLORS.alert[2]},${0.18 + 0.22*pulse})`;
@@ -798,6 +784,7 @@ function drawAlerts(items){
     ctxA.arc(x, y, 6 + pulse*8, 0, Math.PI*2);
     ctxA.fill();
 
+    // núcleo
     ctxA.shadowBlur = 10;
     ctxA.fillStyle = `rgba(255,255,255,${0.25 + 0.35*pulse})`;
     ctxA.beginPath();
@@ -818,15 +805,18 @@ const state = {
   macro:null,
   micro:null,
 
-  pts: { water:[], vege:[], trans:[], desm:[] },
-  heat:{ water:null, vege:null, trans:null, desm:null },
+  // pontos
+  pts: { water: [], vege: [], trans: [], desm: [] },
+  dots:{ water:null, vege:null, trans:null, desm:null },
+
   loadedFull:false,
   alerts: [],
 
-  t:0,
-  raf:null,
+  // cache dos geojson de pontos (pra rebuild em resize)
+  fcCache: { water:null, vege:null, trans:null, desm:null },
 
-  fcCache: { water:null, vege:null, trans:null, desm:null }
+  t:0,
+  raf:null
 };
 
 /* =========================
@@ -844,13 +834,14 @@ function redrawStatic(){
 
   strokePolygonsGlow(ctxB, state.brasil);
 
+  // linhas (água e limites)
   strokeLines(ctxL, state.macro, "rgba(0,234,255,0.70)", 1.00, 1);
   strokeLines(ctxL, state.micro, "rgba(0,120,255,0.45)", 0.55, 1);
   strokeLines(ctxL, state.uf,    "rgba(160,245,255,0.55)", 0.95, 1);
 }
 
 /* =========================
-   ANIMAÇÃO
+   ANIMAÇÃO — DOT HOLOGRÁFICO (IGUAL IMAGEM_BASE)
 ========================= */
 function startAnim(){
   if(state.raf) cancelAnimationFrame(state.raf);
@@ -860,18 +851,22 @@ function startAnim(){
     const H = cnvPoints.getBoundingClientRect().height;
     ctxP.clearRect(0,0,W,H);
 
-    const a = 0.22 + 0.10*Math.sin(state.t*0.018);
+    // pulso controlado (não estoura as cores)
+    const pulse = 0.70 + 0.30*Math.sin(state.t*0.03);
 
-    if(state.heat.water) drawHeat(state.heat.water, a*0.95, 8, 0.55);
-    if(state.heat.vege)  drawHeat(state.heat.vege,  a*1.05, 10, 0.65);
-    if(state.heat.trans) drawHeat(state.heat.trans, a*0.85, 9, 0.60);
-    if(state.heat.desm)  drawHeat(state.heat.desm,  a*0.90, 9, 0.60);
+    // 1) halo suave (blur)
+    drawDotLayer(state.dots.water, 0.16 * pulse, 12);
+    drawDotLayer(state.dots.vege,  0.18 * pulse, 14);
+    drawDotLayer(state.dots.trans, 0.14 * pulse, 13);
+    drawDotLayer(state.dots.desm,  0.14 * pulse, 13);
 
-    drawSparkles(
-      [state.pts.water, state.pts.vege, state.pts.trans, state.pts.desm],
-      [COLORS.water, COLORS.vege, COLORS.trans, COLORS.desm]
-    );
+    // 2) pontos nítidos por cima (sem blur) — “igual imagem_base”
+    drawDotLayer(state.dots.water, 0.28 * pulse, 0);
+    drawDotLayer(state.dots.vege,  0.30 * pulse, 0);
+    drawDotLayer(state.dots.trans, 0.24 * pulse, 0);
+    drawDotLayer(state.dots.desm,  0.24 * pulse, 0);
 
+    // 3) alertas
     drawAlerts(state.alerts);
 
     state.t++;
@@ -880,32 +875,15 @@ function startAnim(){
   state.raf = requestAnimationFrame(loop);
 }
 
-function rebuildHeat(){
-  const W = cnvPoints.getBoundingClientRect().width;
-  const H = cnvPoints.getBoundingClientRect().height;
-  const cell = Math.max(2, Math.min(4, Math.round(Math.max(W,H)/520)));
-
-  state.heat.water = state.pts.water.length ? buildHeatCanvas(state.pts.water, COLORS.water, cell) : null;
-  state.heat.vege  = state.pts.vege.length  ? buildHeatCanvas(state.pts.vege,  COLORS.vege,  cell) : null;
-  state.heat.trans = state.pts.trans.length ? buildHeatCanvas(state.pts.trans, COLORS.trans, cell) : null;
-  state.heat.desm  = state.pts.desm.length  ? buildHeatCanvas(state.pts.desm,  COLORS.desm,  cell) : null;
-
-  const total = state.pts.water.length + state.pts.vege.length + state.pts.trans.length + state.pts.desm.length;
-  chipPts.textContent = `Pontos: ${total.toLocaleString('pt-BR')} (4 cores)`;
-}
-
 function rebuildAllPoints(){
-  if(!state.fcCache.water) return;
+  if(!state.fcCache.water || !bbox) return;
 
-  const W = cnvPoints.getBoundingClientRect().width;
-  const H = cnvPoints.getBoundingClientRect().height;
+  state.pts.water = projectPoints(state.fcCache.water);
+  state.pts.vege  = projectPoints(state.fcCache.vege);
+  state.pts.trans = projectPoints(state.fcCache.trans);
+  state.pts.desm  = projectPoints(state.fcCache.desm);
 
-  state.pts.water = projectPoints(state.fcCache.water, W, H);
-  state.pts.vege  = projectPoints(state.fcCache.vege,  W, H);
-  state.pts.trans = projectPoints(state.fcCache.trans, W, H);
-  state.pts.desm  = projectPoints(state.fcCache.desm,  W, H);
-
-  rebuildHeat();
+  rebuildDots();
 }
 
 /* =========================
@@ -921,6 +899,7 @@ function resizeWave(){
   wave.height = Math.floor(wave.clientHeight * dpr);
   wctx.setTransform(dpr,0,0,dpr,0,0);
 }
+
 function startWave(series){
   const s = Array.isArray(series) ? series : [];
   const draw = ()=>{
@@ -1041,8 +1020,10 @@ function applyHUD(d){
 async function boot(){
   try{
     statusEl.textContent = "Status: carregando dados e camadas base…";
+
     resizeAll();
 
+    // dados HUD
     state.dados = await loadJSON(FILES.dados);
     applyHUD(state.dados);
 
@@ -1058,7 +1039,7 @@ async function boot(){
     brPath2D = null;
     redrawStatic();
 
-    statusEl.textContent = "Status: base IBGE OK • carregando pontos sample (4 cores)…";
+    statusEl.textContent = "Status: base IBGE OK • carregando pontos (dot holográfico)…";
 
     const [fcWater, fcVege, fcTrans, fcDesm] = await Promise.all([
       loadJSON(FILES.pts_water),
@@ -1076,7 +1057,7 @@ async function boot(){
     startAnim();
 
     statusEl.textContent =
-      "Status: holografia OK (base IBGE alinhada)\n" +
+      "Status: holografia OK (dot-field igual base)\n" +
       "Cores: verde=vegetação • azul=água • amarelo=transição • vermelho=desmatamento";
 
   }catch(err){
@@ -1094,7 +1075,9 @@ async function loadFullVege(){
     const fc = await loadJSON(FILES.pts_vege_full);
     state.fcCache.vege = fc;
     state.loadedFull = true;
+
     rebuildAllPoints();
+
     statusEl.textContent = "Status: FULL de vegetação OK • holografia contínua";
     document.getElementById('btnFull').textContent = "FULL carregado";
   }catch(e){
