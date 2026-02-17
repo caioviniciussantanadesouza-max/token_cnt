@@ -1,1 +1,45 @@
-{"meta": {"source": "MapBiomas Collection 10 (integration) + sua serie 10y", "year_end": 2024, "region": "Brasil", "notes": "A=estado atual, B=tendencia (pontos/ano), C=estabilidade (sigma 10y). ENT e PAN sao fatores de ajuste."}, "cnt": {"A": 68.0, "B": -0.11, "C": 0.32, "rating": "A"}, "indices": {"IBI": 23.5, "IAB": null, "HID": 1.0, "ENT": 32.2, "PAN": 11.7}, "telemetry_10y": [9.35, 9.22, 9.41, 9.18, 9.06, 9.11, 9.2, 9.27, 9.16, 9.35], "telemetry_30d": [9.33, 9.31, 9.36, 9.35, 9.34, 9.37, 9.36, 9.38, 9.35, 9.35]}
+{
+  "meta": {
+    "title": "CNT — Centro Natural TEC Amazônia",
+    "year_base": 2025,
+    "source": "dados públicos governamentais + MapBiomas",
+    "updated_at": "2026-02-17",
+    "projection_bbox": [-74.0, -34.0, -34.0, 6.0]
+  },
+  "token": {
+    "symbol": "CNT",
+    "chain": "Solana",
+    "pump_url": "https://pump.fun/coin/GCVyjNaCbXkwGUuktyNxSXad4ozmTp2fzQr2jieSpump"
+  },
+  "indices": {
+    "cnt_A_raw": 17.01,
+    "cnt_A_0_100": 68.0,
+    "cnt_B": 0.84,
+    "cnt_C": 0.62,
+    "grade": "Média",
+    "sub": {
+      "IBE": 88,
+      "IAB": 88,
+      "IBI": 11,
+      "HID": 83,
+      "ENT": 2,
+      "PAN": 1
+    },
+    "series_10y": [52, 54, 53, 55, 58, 60, 62, 64, 66, 68]
+  },
+  "alerts": {
+    "note": "Alertas reais (ex: queimadas MapBiomas Fire).",
+    "max_render": 220,
+    "items": [
+      {
+        "id": "fire_0001",
+        "type": "fire",
+        "severity": "high",
+        "title": "Queimada detectada",
+        "detail": "MapBiomas Fire mensal 2024",
+        "lon": -60.12,
+        "lat": -3.10
+      }
+    ]
+  }
+}
