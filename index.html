@@ -1,12 +1,10 @@
-<!doctype html>
+<!DOCTYPE html>
 
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>cnt — centro natural tec amazônia</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-
+<title>CNT — Centro Natural TEC Amazônia</title>
 
 <style>
 :root{
@@ -164,9 +162,6 @@ html,body{
   justify-content:center;
   background: radial-gradient(900px 600px at 50% 40%, rgba(20,60,80,.35), rgba(0,0,0,1) 70%);
 }
-#leaflet{ z-index:0; }
-#holo{ z-index:2; }
-#dots{ z-index:3; }
 .layer{
   position:absolute; inset:0;
   width:100%;
@@ -289,25 +284,14 @@ input:focus{
   #app{ position:relative; grid-template-columns: 1fr; grid-template-rows: auto auto auto auto; }
   #center{ height:48vh; }
 }
-
-#leaflet{ position:absolute; inset:0; z-index:0; }
-#cnvBase{ z-index:1; }
-#cnvBorder{ z-index:2; }
-#cnvLines{ z-index:3; }
-#cnvPoints{ z-index:4; }
-#wave{ z-index:5; }
-
 </style>
-
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
 </head>
 
 <body>
 <div id="app">
   <div id="header" class="glass">
-    <h1>CNT — centro natural tec amazônia</h1>
+    <h1>CNT — Centro Natural TEC Amazônia</h1>
     <p class="sub">Mapa ecológico real • Água (azul) • Vegetação (verde) • Transição (amarelo) • Desmatamento (vermelho)</p>
     <div id="chips">
       <div class="chip">Fonte: dados públicos governamentais</div>
@@ -345,18 +329,13 @@ input:focus{
   <div class="kv"><b>PAN</b><span id="pan">--</span></div>
 </div>
 
-<div style="display:flex; gap:10px; align-items:center;">
-  <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-<div id="status">status: iniciando…</div>
-<div id="yearchip" class="chip">ano: 2000</div>
-</div>
+<div id="status">Status: iniciando…</div>
 ```
 
   </div>
 
   <div id="center" class="glass">
     <div id="mapWrap">
-      <div id="leaflet" class="layer"></div>
       <canvas id="cnvBase" class="layer"></canvas>
       <canvas id="cnvBorder" class="layer"></canvas>
       <canvas id="cnvLines" class="layer"></canvas>
@@ -777,12 +756,7 @@ function startAnim(){
   if(state.animStarted) return;
   state.animStarted = true;
 
-  let _last = performance.now();
-
   const loop = ()=>{
-    const _now = performance.now();
-    const _dt = Math.min(0.05, (_now - _last)/1000);
-    _last = _now;
     const W = cnvPoints.getBoundingClientRect().width;
     const H = cnvPoints.getBoundingClientRect().height;
     ctxP.clearRect(0,0,W,H);
@@ -827,9 +801,6 @@ function startAnim(){
         ctxP.fill();
       }
       ctxP.restore();
-
-      // 3) pings infinitos (cidades/rios)
-      try{ stepPings(_dt); drawPings(ctxP); }catch(e){}
 
       // recorte BR
       maskCanvasToBrasil(ctxP);
@@ -1001,238 +972,7 @@ async function boot(){
     document.getElementById("telemetryHint").textContent = "Erro: arquivos não carregaram. Veja o console (F12).";
   }
 }
-
-/* =========================
-   year loop 2000–2025 + camadas reais (wms)
-   - verde: mapbiomas (uso/cobertura) via wms do plugin (solved)
-   - amarelo: terrabrasilis (prodes/deter) via wms
-   - azul: ibge hidrografia via wms
-   - vermelho: capitais (centros urbanos reais) + ping infinito
-========================= */
-const yearChip = document.getElementById("yearchip");
-
-const YEAR_MIN = 2000;
-const YEAR_MAX = 2025;
-let year = YEAR_MIN;
-
-// wms endpoints (https pra funcionar no github pages)
-const WMS = {
-  mapbiomas: "https://azure.solved.eco.br:8080/geoserver/solved/wms",
-  terrabrasilis: "https://terrabrasilis.dpi.inpe.br/geoserver/ows",
-  ibge: "https://geoservicos.ibge.gov.br/geoserver/ows"
-};
-
-// escolha automática de layer por getcapabilities (evita “nome errado”)
-async function pickLayer(wmsUrl, preferRegexList){
-  const url = wmsUrl + (wmsUrl.includes("?") ? "&" : "?") + "service=wms&request=getcapabilities&version=1.3.0&_=" + Date.now();
-  const res = await fetch(url, { cache:"no-store" });
-  if(!res.ok) throw new Error("getcapabilities falhou: " + wmsUrl);
-  const xml = await res.text();
-  const doc = new DOMParser().parseFromString(xml, "text/xml");
-  const names = Array.from(doc.getElementsByTagName("Name")).map(n=>n.textContent||"").filter(Boolean);
-  // remove “wms”/“ows” repetidos e pega só prováveis layers (contendo :)
-  const layerNames = names.filter(n => n.includes(":") || n.length > 3);
-  for(const rgx of preferRegexList){
-    const hit = layerNames.find(n => rgx.test(n));
-    if(hit) return hit;
-  }
-  // fallback: primeiro layer “provável”
-  return layerNames.find(n=>n.includes(":")) || layerNames[layerNames.length-1];
-}
-
-let map, lyrVeg, lyrDef, lyrHyd;
-let lyrVegName=null, lyrDefName=null, lyrHydName=null;
-
-function initLeaflet(){
-  map = L.map("leaflet", {
-    zoomControl:false,
-    attributionControl:false,
-    worldCopyJump:true
-  }).setView([-14.5, -55.5], 4);
-
-  // fundo preto (sem tiles externos)
-  const pane = map.getPane("tilePane");
-  if(pane) pane.style.filter = "brightness(.9) contrast(1.05)";
-}
-
-// capitais (centros urbanos reais) para ping infinito
-const capitais = [
-  ["rio branco",-9.9754,-67.8249],["maceio",-9.6658,-35.7353],["macapa",0.0349,-51.0694],
-  ["manaus",-3.1190,-60.0217],["salvador",-12.9714,-38.5014],["fortaleza",-3.7319,-38.5267],
-  ["brasilia",-15.7939,-47.8828],["vitoria",-20.3155,-40.3128],["goiania",-16.6869,-49.2648],
-  ["sao luis",-2.5307,-44.3068],["cuiaba",-15.6014,-56.0979],["campo grande",-20.4697,-54.6201],
-  ["belo horizonte",-19.9167,-43.9345],["belem",-1.4558,-48.5039],["joao pessoa",-7.1195,-34.8450],
-  ["curitiba",-25.4284,-49.2733],["recife",-8.0476,-34.8770],["teresina",-5.0919,-42.8034],
-  ["rio de janeiro",-22.9068,-43.1729],["natal",-5.7793,-35.2009],["porto alegre",-30.0346,-51.2177],
-  ["porto velho",-8.7608,-63.8999],["boa vista",2.8235,-60.6758],["florianopolis",-27.5949,-48.5482],
-  ["sao paulo",-23.5505,-46.6333],["aracaju",-10.9472,-37.0731],["palmas",-10.1840,-48.3336]
-];
-
-// “ping” infinito: a cada frame, cria anéis que expandem e reiniciam
-const ping = { red:[], blue:[] };
-function spawnPing(list, lat, lng, kind){
-  list.push({ lat, lng, r:0, a:1, kind });
-}
-function stepPings(dt){
-  const speed = 180 * dt;      // px/s
-  const fade  = 0.55 * dt;     // alpha/s
-  for(const arr of [ping.red, ping.blue]){
-    for(const p of arr){
-      p.r += speed;
-      p.a -= fade;
-    }
-    for(let i=arr.length-1;i>=0;i--){
-      if(arr[i].a <= 0) arr.splice(i,1);
-    }
-  }
-}
-function drawPings(ctx){
-  const w = ctx.canvas.width, h = ctx.canvas.height;
-  for(const p of ping.red){
-    const pt = map.latLngToContainerPoint([p.lat,p.lng]);
-    if(pt.x< -50 || pt.y< -50 || pt.x> w+50 || pt.y> h+50) continue;
-    ctx.globalAlpha = Math.max(0, p.a);
-    ctx.strokeStyle = "rgba(255,60,60,1)";
-    ctx.lineWidth = 1.25;
-    ctx.beginPath();
-    ctx.arc(pt.x, pt.y, p.r, 0, Math.PI*2);
-    ctx.stroke();
-  }
-  for(const p of ping.blue){
-    const pt = map.latLngToContainerPoint([p.lat,p.lng]);
-    if(pt.x< -50 || pt.y< -50 || pt.x> w+50 || pt.y> h+50) continue;
-    ctx.globalAlpha = Math.max(0, p.a);
-    ctx.strokeStyle = "rgba(60,160,255,1)";
-    ctx.lineWidth = 1.1;
-    ctx.beginPath();
-    ctx.arc(pt.x, pt.y, p.r, 0, Math.PI*2);
-    ctx.stroke();
-  }
-  ctx.globalAlpha = 1;
-}
-
-function setWmsYear(layer, y){
-  if(!layer) return;
-  const yEff = y > 2024 ? 2024 : y; // 2025 ainda pode não existir em todos serviços
-  layer.setParams({
-    // TIME é padrão WMS para dimensão temporal (se o servidor suportar)
-    time: `${yEff}-01-01`,
-    // fallback comum em camadas do inpe/ibge: cql_filter
-    cql_filter: `year=${yEff} OR ano=${yEff} OR anoref=${yEff}`,
-    _: Date.now()
-  });
-}
-
-async function ensureLayers(){
-  if(!map) initLeaflet();
-
-  // seleciona nomes uma vez
-  if(!lyrVegName){
-    try{
-      lyrVegName = await pickLayer(WMS.mapbiomas, [
-        /mapbiomas/i,
-        /cobertura|lulc|land.?use|collection/i
-      ]);
-    }catch(e){
-      console.warn("mapbiomas wms indisponível", e);
-      lyrVegName = null;
-    }
-  }
-  if(!lyrDefName){
-    try{
-      lyrDefName = await pickLayer(WMS.terrabrasilis, [
-        /prodes.*(desmat|defor)/i,
-        /(deter).*alert/i,
-        /prodes/i,
-        /deter/i
-      ]);
-    }catch(e){
-      console.warn("terrabrasilis wms indisponível", e);
-      lyrDefName = null;
-    }
-  }
-  if(!lyrHydName){
-    try{
-      lyrHydName = await pickLayer(WMS.ibge, [
-        /hidro|hidrograf/i,
-        /rios|drenagem/i,
-        /water/i
-      ]);
-    }catch(e){
-      console.warn("ibge wms indisponível", e);
-      lyrHydName = null;
-    }
-  }
-
-  // cria layers wms (se tiver)
-  if(lyrVegName && !lyrVeg){
-    lyrVeg = L.tileLayer.wms(WMS.mapbiomas, {
-      layers: lyrVegName,
-      format: "image/png",
-      transparent: true,
-      opacity: 0.58
-    }).addTo(map);
-  }
-  if(lyrDefName && !lyrDef){
-    lyrDef = L.tileLayer.wms(WMS.terrabrasilis, {
-      layers: lyrDefName,
-      format: "image/png",
-      transparent: true,
-      opacity: 0.62
-    }).addTo(map);
-  }
-  if(lyrHydName && !lyrHyd){
-    lyrHyd = L.tileLayer.wms(WMS.ibge, {
-      layers: lyrHydName,
-      format: "image/png",
-      transparent: true,
-      opacity: 0.55
-    }).addTo(map);
-  }
-}
-
-function tickYear(){
-  year++;
-  if(year > YEAR_MAX) year = YEAR_MIN;
-
-  // 2025: se serviços não tiverem, reaproveita 2024 e deixa explícito
-  const shown = (year > 2024) ? 2024 : year;
-  yearChip.textContent = `ano: ${year} ${year>2024 ? "(usando 2024)" : ""}`;
-
-  setWmsYear(lyrVeg, year);
-  setWmsYear(lyrDef, year);
-  setWmsYear(lyrHyd, year);
-
-  // pings infinitos (vermelho e azul)
-  // vermelho: capitais sempre
-  for(const c of capitais) spawnPing(ping.red, c[1], c[2], "red");
-
-  // azul: 30 pings/ano em pontos pseudoaleatórios na amazônia legal (aprox bbox)
-  for(let i=0;i<30;i++){
-    const lat = -2 + (Math.random()*(-18+2));      // -2 a -18
-    const lng = -44 + (Math.random()*(-30+44));    // -44 a -30
-    spawnPing(ping.blue, lat, lng, "blue");
-  }
-}
-
-// roda o loop quando tudo inicializar
-let yearTimer=null;
-async function startYearLoop(){
-  try{
-    await ensureLayers();
-    if(yearTimer) clearInterval(yearTimer);
-    year = YEAR_MIN;
-    tickYear();
-    yearTimer = setInterval(tickYear, 1000); // 1s por ano
-  }catch(e){
-    console.warn("loop de anos falhou", e);
-  }
-}
-
 boot();
-// inicia o loop de anos após o boot
-setTimeout(()=>{ startYearLoop(); }, 600);
-
 </script>
 
 </body>
