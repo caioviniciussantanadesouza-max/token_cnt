@@ -1,201 +1,109 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html>
 <head>
 <meta charset="UTF-8">
-<title>CNT â€” Centro Natural TEC AmazÃ´nia</title>
-
+<title>MapBiomas 100M GPU</title>
 <style>
-html,body{
-  margin:0;
-  height:100%;
-  background:#020912;
-  font-family:Arial, Helvetica, sans-serif;
-  overflow:hidden;
-  color:#8ffcff;
-}
-
-header{
-  text-align:center;
-  padding:20px;
-  font-size:26px;
-  font-weight:bold;
-  color:#7ef9ff;
-  text-shadow:0 0 20px #00f7ff;
-}
-
-#mapWrap{
-  position:relative;
-  width:100vw;
-  height:90vh;
-}
-
-canvas{
-  position:absolute;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
-}
-
-.legend{
-  position:absolute;
-  bottom:30px;
-  left:30px;
-  background:#000c;
-  padding:15px;
-  border-radius:15px;
-  box-shadow:0 0 20px #00f7ff;
-}
-
-.legend div{ margin:5px 0; }
-
-.dot{
-  width:12px;
-  height:12px;
-  display:inline-block;
-  border-radius:50%;
-  margin-right:8px;
-}
-.green{background:#00ff8c;}
-.blue{background:#0078ff;}
-.red{background:#ff2828;}
-.yellow{background:#ffdc00;}
+body{margin:0;background:#000;overflow:hidden;}
+canvas{display:block;}
 </style>
 </head>
-
 <body>
-
-<header>
-CNT â€” Centro Natural TEC AmazÃ´nia
-</header>
-
-<div id="mapWrap">
-  <canvas id="base"></canvas>
-  <canvas id="particles"></canvas>
-
-  <div class="legend">
-    <div><span class="dot green"></span> ðŸŒ³ VegetaÃ§Ã£o</div>
-    <div><span class="dot blue"></span> ðŸ’§ Ãgua</div>
-    <div><span class="dot red"></span> ðŸ”´ Desmatamento</div>
-    <div><span class="dot yellow"></span> ðŸŸ¡ Urbano</div>
-  </div>
-</div>
+<canvas id="gl"></canvas>
 
 <script>
+const canvas = document.getElementById("gl");
+const gl = canvas.getContext("webgl2");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+gl.viewport(0,0,canvas.width,canvas.height);
 
-const cnvBase = document.getElementById("base");
-const cnvPart = document.getElementById("particles");
-const ctxBase = cnvBase.getContext("2d");
-const ctxPart = cnvPart.getContext("2d");
+const vs = `#version 300 es
+in vec2 position;
+in float classe;
+uniform float zoom;
+out float vClasse;
+void main(){
+  gl_Position = vec4(position*zoom,0,1);
+  gl_PointSize = 2.0;
+  vClasse = classe;
+}`;
 
-let pts = [];
+const fs = `#version 300 es
+precision highp float;
+in float vClasse;
+out vec4 fragColor;
 
-function resize(){
-  cnvBase.width = cnvPart.width = window.innerWidth;
-  cnvBase.height = cnvPart.height = window.innerHeight*0.9;
-}
-window.addEventListener("resize", resize);
-resize();
-
-/* PROJEÃ‡ÃƒO MERCATOR SIMPLIFICADA */
-function project(lon, lat, W, H){
-  const x = (lon + 74) * (W / 40);
-  const y = ( -lat + 34) * (H / 48);
-  return [x,y];
-}
-
-/* DESENHAR BRASIL */
-function drawBrasil(geo){
-  ctxBase.clearRect(0,0,cnvBase.width,cnvBase.height);
-  ctxBase.strokeStyle="#00f7ff";
-  ctxBase.lineWidth=1.5;
-  ctxBase.shadowBlur=20;
-  ctxBase.shadowColor="#00f7ff";
-
-  geo.features.forEach(f=>{
-    const coords = f.geometry.coordinates;
-    coords.forEach(poly=>{
-      poly.forEach(ring=>{
-        ctxBase.beginPath();
-        ring.forEach((c,i)=>{
-          const [x,y]=project(c[0],c[1],cnvBase.width,cnvBase.height);
-          if(i==0) ctxBase.moveTo(x,y);
-          else ctxBase.lineTo(x,y);
-        });
-        ctxBase.stroke();
-      });
-    });
-  });
+vec3 color(float c){
+  if(c==1.0) return vec3(0.0,1.0,0.5);
+  if(c==2.0) return vec3(0.0,0.5,1.0);
+  if(c==3.0) return vec3(1.0,0.1,0.1);
+  return vec3(1.0,1.0,0.0);
 }
 
-/* CORES POR CLASSE */
-function colorForClass(classe){
-  switch(classe){
-    case "vegetacao":
-    case "floresta":
-      return {r:0,g:255,b:140};
-    case "agua":
-      return {r:0,g:120,b:255};
-    case "desmatamento":
-      return {r:255,g:40,b:40};
-    case "urbano":
-      return {r:255,g:220,b:0};
-    default:
-      return {r:120,g:200,b:255};
-  }
+void main(){
+  float d = length(gl_PointCoord-vec2(0.5));
+  float glow = smoothstep(0.5,0.0,d);
+  fragColor = vec4(color(vClasse), glow);
+}`;
+
+function compile(type,src){
+  const s=gl.createShader(type);
+  gl.shaderSource(s,src);
+  gl.compileShader(s);
+  return s;
 }
 
-/* CONSTRUIR PONTOS */
-function buildPoints(fc){
-  pts = [];
-  fc.features.forEach(f=>{
-    if(f.geometry.type!=="Point") return;
-    const [x,y]=project(
-      f.geometry.coordinates[0],
-      f.geometry.coordinates[1],
-      cnvBase.width,
-      cnvBase.height
-    );
+const program = gl.createProgram();
+gl.attachShader(program,compile(gl.VERTEX_SHADER,vs));
+gl.attachShader(program,compile(gl.FRAGMENT_SHADER,fs));
+gl.linkProgram(program);
+gl.useProgram(program);
 
-    pts.push({
-      x,y,
-      classe:(f.properties?.classe||"").toLowerCase(),
-      ph:Math.random()*Math.PI*2,
-      sp:0.8+Math.random()*1.2
-    });
-  });
-}
-
-/* ANIMAÃ‡ÃƒO */
-function animate(t){
-  ctxPart.clearRect(0,0,cnvPart.width,cnvPart.height);
-
-  pts.forEach(p=>{
-    const col = colorForClass(p.classe);
-    const pulse = 0.5 + 0.5*Math.sin(t*0.002*p.sp + p.ph);
-
-    ctxPart.beginPath();
-    ctxPart.arc(p.x,p.y,2+2*pulse,0,Math.PI*2);
-    ctxPart.fillStyle=`rgba(${col.r},${col.g},${col.b},${0.2+0.3*pulse})`;
-    ctxPart.shadowBlur=18;
-    ctxPart.shadowColor=`rgb(${col.r},${col.g},${col.b})`;
-    ctxPart.fill();
-  });
-
-  requestAnimationFrame(animate);
-}
-
-/* LOAD DADOS */
-Promise.all([
-  fetch("brasil.geojson").then(r=>r.json()),
-  fetch("dados.geojson").then(r=>r.json())
-]).then(([brasil,dados])=>{
-  drawBrasil(brasil);
-  buildPoints(dados);
-  requestAnimationFrame(animate);
+let zoom=1;
+window.addEventListener("wheel",e=>{
+  zoom+=e.deltaY*-0.001;
+  zoom=Math.max(0.5,Math.min(5,zoom));
 });
 
-</script>
+fetch("points.bin")
+.then(r=>r.arrayBuffer())
+.then(buf=>{
+  const data = new Float32Array(buf);
 
+  const positions=[];
+  const classes=[];
+
+  for(let i=0;i<data.length;i+=3){
+    positions.push(data[i],data[i+1]);
+    classes.push(data[i+2]);
+  }
+
+  const posBuffer=gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER,posBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(positions),gl.STATIC_DRAW);
+  const posLoc=gl.getAttribLocation(program,"position");
+  gl.enableVertexAttribArray(posLoc);
+  gl.vertexAttribPointer(posLoc,2,gl.FLOAT,false,0,0);
+
+  const classBuffer=gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER,classBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(classes),gl.STATIC_DRAW);
+  const classLoc=gl.getAttribLocation(program,"classe");
+  gl.enableVertexAttribArray(classLoc);
+  gl.vertexAttribPointer(classLoc,1,gl.FLOAT,false,0,0);
+
+  const zoomLoc=gl.getUniformLocation(program,"zoom");
+
+  function render(){
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.uniform1f(zoomLoc,zoom);
+    gl.drawArrays(gl.POINTS,0,classes.length);
+    requestAnimationFrame(render);
+  }
+
+  render();
+});
+</script>
 </body>
 </html>
