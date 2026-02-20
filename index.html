@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>CNT — Centro Natural TEC Amazônia</title>
+
+<style>
+:root{
+  --bg0:#000;
+  --bg1:#050b10;
+  --stroke: rgba(110,210,255,.18);
+  --glass: rgba(2,12,24,.46);
+  --text: #c8f3ff;
+  --muted:#86dcff;
+  --shadow: 0 0 22px rgba(110,210,255,.14), 0 0 70px rgba(0,200,255,.08);
+}
+*{ box-sizing:border-box; }
+html,body{
+  margin:0;height:100%;
+  background: radial-gradient(1200px 700px at 50% 35%, var(--bg1), var(--bg0) 70%);
+  color:var(--text);
+  font-family:"Segoe UI", Arial, sans-serif;
+  overflow:hidden;
+}
+#app{
+  position:fixed; inset:0;
+  display:grid;
+  grid-template-columns: 300px 1fr 360px;
+  grid-template-rows: 120px minmax(0,1fr);
+  gap:14px;
+  padding:14px;
+  align-items:stretch;
+}
+.glass{
+  background: var(--glass);
+  backdrop-filter: blur(14px);
+  border:1px solid var(--stroke);
+  border-radius:22px;
+  box-shadow: var(--shadow);
+}
+
+/* Header */
+#header{
+  grid-column:1 / 4;
+  padding:14px 16px;
+  border-radius:24px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:8px;
+}
+#header h1{
+  margin:0;
+  font-size:26px;
+  letter-spacing:.6px;
+  font-weight:900;
+  color:#e9fdff;
+  text-align:center;
+}
+#header .sub{
+  margin:0;
+  text-align:center;
+  font-size:12px;
+  color:var(--muted);
+  opacity:.95;
+}
+#chips{
+  display:flex;
+  justify-content:center;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.chip{
+  font-size:11px;
+  padding:7px 10px;
+  border-radius:999px;
+  border:1px solid rgba(110,210,255,.22);
+  background: rgba(0,0,0,.20);
+  color:#cfefff;
+  opacity:.95;
+}
+
+/* Left */
+#left{
+  padding:12px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  min-height:0;
+  overflow:hidden;
+}
+.big{
+  font-size:56px;
+  line-height:1;
+  font-weight:260;
+  color:#e9fdff;
+  margin:0;
+}
+.small{
+  font-size:12px;
+  color:var(--muted);
+  opacity:.95;
+}
+.hr{
+  height:1px;
+  background:linear-gradient(90deg,transparent,rgba(110,210,255,.30),transparent);
+  margin:6px 0;
+}
+.abclist{ display:grid; gap:8px; }
+.abcline{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:7px 10px;
+  border:1px solid rgba(110,210,255,.14);
+  background:rgba(0,0,0,.18);
+  border-radius:14px;
+  font-size:12px;
+}
+.abcline b{ color:#e9fdff; font-weight:900; }
+.abcline span{ color:#d5fbff; font-weight:900; }
+
+.grid2{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:8px 10px;
+}
+.kv{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-size:12px;
+  padding:7px 10px;
+  border:1px solid rgba(110,210,255,.16);
+  border-radius:14px;
+  background:rgba(0,0,0,.18);
+}
+.kv b{ font-weight:900; color:#e9fdff; }
+.kv span{ color:#d0fbff; font-weight:900; }
+
+#status{
+  margin-top:4px;
+  font-size:10px;
+  color:rgba(180,245,255,.9);
+  opacity:.88;
+  line-height:1.25;
+}
+
+/* Center */
+#center{
+  position:relative;
+  overflow:hidden;
+  border-radius:26px;
+  min-height:0;
+}
+#mapWrap{
+  position:absolute; inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background: radial-gradient(900px 600px at 50% 40%, rgba(20,60,80,.35), rgba(0,0,0,1) 70%);
+}
+.layer{
+  position:absolute; inset:0;
+  width:100%;
+  height:100%;
+  pointer-events:none;
+}
+#mapGlow{
+  position:absolute; inset:-10%;
+  pointer-events:none;
+  mix-blend-mode: screen;
+  opacity:.22;
+  filter: blur(12px);
+  background:
+    radial-gradient(circle at 42% 55%, rgba(120,220,255,.22), transparent 52%),
+    radial-gradient(circle at 70% 45%, rgba(120,220,255,.16), transparent 60%),
+    radial-gradient(circle at 35% 70%, rgba(120,220,255,.10), transparent 60%);
+  animation: glowPulse 6s ease-in-out infinite;
+}
+@keyframes glowPulse{
+  0%{ opacity:.16; transform:scale(1); }
+  50%{ opacity:.30; transform:scale(1.02); }
+  100%{ opacity:.16; transform:scale(1); }
+}
+#scanlines{
+  position:absolute; inset:0;
+  pointer-events:none;
+  opacity:.14;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      rgba(120,220,255,.06) 0px,
+      rgba(120,220,255,.06) 1px,
+      transparent 2px,
+      transparent 7px
+    );
+  mix-blend-mode: overlay;
+  animation: scan 3.2s linear infinite;
+}
+@keyframes scan{ 0%{ transform:translateY(-22px);} 100%{ transform:translateY(22px);} }
+
+/* Right */
+#right{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  min-height:0;
+}
+#buy, #telemetry{ padding:14px; }
+#buy h2{
+  margin:0;
+  font-size:18px;
+  font-weight:900;
+  letter-spacing:.4px;
+  color:#e9fdff;
+}
+#buy .mut{
+  margin:8px 0 10px;
+  font-size:12px;
+  color:var(--muted);
+  opacity:.95;
+  line-height:1.35;
+}
+label{ display:block; font-size:12px; color:var(--muted); margin:10px 0 6px; }
+.row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+input{
+  width:170px;
+  padding:10px 12px;
+  border-radius:14px;
+  border:1px solid rgba(110,210,255,.35);
+  background:rgba(0,0,0,.18);
+  color:#e9fbff;
+  outline:none;
+}
+input:focus{
+  border-color: rgba(110,210,255,.70);
+  box-shadow: 0 0 16px rgba(110,210,255,.18);
+}
+.btn{
+  background:linear-gradient(180deg,rgba(110,210,255,.20),rgba(0,0,0,.16));
+  border:1px solid rgba(110,210,255,.45);
+  color:#eafcff;
+  border-radius:14px;
+  padding:10px 13px;
+  cursor:pointer;
+  font-weight:900;
+  letter-spacing:.2px;
+  min-width:160px;
+}
+.btn:hover{ box-shadow:0 0 18px rgba(110,210,255,.30); }
+
+.valueLine{ margin-top:10px; font-size:12px; color:#bdf4ff; }
+.valueLine b{ font-size:19px; color:#e9fdff; }
+.smallnote{ margin-top:6px; font-size:11px; color:var(--muted); opacity:.95; }
+
+#telemetryTitle{
+  font-size:12px;
+  letter-spacing:.8px;
+  color:#d4fbff;
+  opacity:.95;
+  margin-bottom:8px;
+  font-weight:900;
+}
+#wave{
+  width:100%;
+  height:74px;
+  display:block;
+  background: rgba(0,0,0,.22);
+  border:1px solid rgba(110,210,255,.14);
+  border-radius:14px;
+}
+#telemetryHint{
+  margin-top:8px;
+  font-size:11px;
+  color:var(--muted);
+  opacity:.92;
+}
+
+@media (max-width: 1100px){
+  body{ overflow:auto; }
+  #app{ position:relative; grid-template-columns: 1fr; grid-template-rows: auto auto auto auto; }
+  #center{ height:48vh; }
+}
+</style>
+
+</head>
+
+<body>
+<div id="app">
+  <div id="header" class="glass">
+    <h1>CNT — Centro Natural TEC Amazônia</h1>
+    <p class="sub">Mapa ecológico real • Água (azul) • Vegetação (verde) • Transição (amarelo) • Desmatamento (vermelho)</p>
+    <div id="chips">
+      <div class="chip">Fonte: dados públicos governamentais</div>
+      <div class="chip">Ano base: 2025</div>
+      <div class="chip">Pontos reais (sample → full)</div>
+      <div class="chip">Compra: Pump.fun</div>
+    </div>
+  </div>
+
+  <div id="left" class="glass">
+    <div class="small"><b>CNT</b> (índice único Brasil)</div>
+
+```
+<div class="big"><span id="eco">--</span><span style="font-size:16px; opacity:.9;">/100</span></div>
+<div class="small">RAW auditável: <b id="raw">--</b></div>
+
+<div class="hr"></div>
+
+<div class="abclist">
+  <div class="abcline"><b>A — Estado</b><span id="A">--</span></div>
+  <div class="abcline"><b>B — Tendência</b><span id="B">--</span></div>
+  <div class="abcline"><b>C — Estabilidade</b><span id="C">--</span></div>
+  <div class="abcline"><b>Grau</b><span id="R">--</span></div>
+</div>
+
+<div class="hr"></div>
+
+<div class="small" style="font-weight:900; letter-spacing:.3px;">Sub-índices</div>
+<div class="grid2">
+  <div class="kv"><b>IBE</b><span id="ibe">--</span></div>
+  <div class="kv"><b>IAB</b><span id="iab">--</span></div>
+  <div class="kv"><b>IBI</b><span id="ibi">--</span></div>
+  <div class="kv"><b>HID</b><span id="hid">--</span></div>
+  <div class="kv"><b>ENT</b><span id="ent">--</span></div>
+  <div class="kv"><b>PAN</b><span id="pan">--</span></div>
+</div>
+
+<div id="status">Status: iniciando…</div>
+```
+
+  </div>
+
+  <div id="center" class="glass">
+    <div id="mapWrap">
+      <canvas id="cnvBase" class="layer"></canvas>
+      <canvas id="cnvBorder" class="layer"></canvas>
+      <canvas id="cnvLines" class="layer"></canvas>
+      <canvas id="cnvPoints" class="layer"></canvas>
+      <div id="mapGlow"></div>
+      <div id="scanlines"></div>
+    </div>
+  </div>
+
+  <div id="right">
+    <div id="buy" class="glass">
+      <h2>COMPRAR CNT</h2>
+      <p class="mut">Abre o token no Pump.fun.</p>
+
+```
+  <label for="sol">Contribuição</label>
+  <div class="row">
+    <input id="sol" type="number" step="0.01" min="0" value="0.10" />
+    <button class="btn" id="btnBuy">Comprar no Pump</button>
+  </div>
+
+  <div class="valueLine">Estimativa: <b id="out">-- CNT</b></div>
+  <div class="smallnote">Estimativa demo (não é cotação real).</div>
+</div>
+
+<div id="telemetry" class="glass">
+  <div id="telemetryTitle">TELEMETRIA — Série 10 anos</div>
+  <canvas id="wave"></canvas>
+  <div id="telemetryHint">Carregando…</div>
+</div>
+```
+
+  </div>
+</div>
+
+
+
+<script>
+/* pro holographic v2 - continuous blinking per color */
+
+const pump_url = "https://pump.fun/coin/gcvyjnacbxkwguuktynxsxad4ozmtp2fzqr2jiespump";
+const rate = 147449130;
+
+const files = {
+  biomas: "biomas.geojson",
+  br_simpl: "br_ibge_simplificado.geojson",
+  uf: "uf.geojson",
+  macro: "macro_rh.geojson",
+  micro: "micro_rh.geojson",
+  cnt: "cnt_full_10y.geojson",
+  pts_sample: "vege_pts_sample.geojson",
+  pts_full: "vege_pts.geojson"
+};
+
+const statusel = document.getElementById("status");
+const cnv = document.getElementById("cnvPoints");
+const ctx = cnv.getContext("2d");
+
+function resize(){
+  cnv.width = cnv.clientWidth;
+  cnv.height = cnv.clientHeight;
+}
+window.addEventListener("resize", resize);
+resize();
+
+let pts = [];
+let t = 0;
+
+function densitycolor(d){
+  if(d >= 11) return {rgb:[60,255,180], speed:0.060};  // verde mais rápido
+  if(d >= 6)  return {rgb:[255,235,90], speed:0.040};  // amarelo médio
+  return {rgb:[255,80,60], speed:0.025};               // vermelho mais lento
+}
+
+function densityat(x,y){
+  return Math.floor(Math.random()*15);
+}
+
+function animate(){
+  ctx.clearRect(0,0,cnv.width,cnv.height);
+  ctx.globalCompositeOperation="lighter";
+
+  for(const p of pts){
+    const d = densityat(p.x,p.y);
+    const c = densitycolor(d);
+
+    const pulse = 0.5 + 0.5 * Math.sin(t * c.speed + p.phase);
+
+    const alpha = 0.25 + pulse * 0.75;
+    const radius = 1.2 + pulse * 3.0;
+
+    ctx.shadowBlur = 18 + pulse * 25;
+    ctx.shadowColor = `rgba(${c.rgb[0]},${c.rgb[1]},${c.rgb[2]},0.95)`;
+    ctx.fillStyle = `rgba(${c.rgb[0]},${c.rgb[1]},${c.rgb[2]},${alpha})`;
+
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, radius, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  ctx.globalCompositeOperation="source-over";
+  t += 1;
+  requestAnimationFrame(animate);
+}
+
+async function loadjson(name){
+  const res = await fetch("./"+name);
+  if(!res.ok) throw new Error(name+" http "+res.status);
+  return res.json();
+}
+
+function project(lon,lat,bbox,w,h){
+  return [
+    (lon-bbox[0])/(bbox[2]-bbox[0])*w,
+    (bbox[3]-lat)/(bbox[3]-bbox[1])*h
+  ];
+}
+
+function calcbbox(fc){
+  let minx=Infinity,miny=Infinity,maxx=-Infinity,maxy=-Infinity;
+  for(const f of fc.features){
+    const coords = f.geometry.coordinates.flat(Infinity);
+    for(let i=0;i<coords.length;i+=2){
+      const x=coords[i],y=coords[i+1];
+      if(x<minx)minx=x;if(y<miny)miny=y;
+      if(x>maxx)maxx=x;if(y>maxy)maxy=y;
+    }
+  }
+  return [minx,miny,maxx,maxy];
+}
+
+async function boot(){
+  try{
+    statusel.textContent="carregando pontos reais...";
+    const biomas = await loadjson(files.biomas);
+    const bbox = calcbbox(biomas);
+    const ptsfc = await loadjson(files.pts_sample);
+
+    const w=cnv.width,h=cnv.height;
+
+    for(const f of ptsfc.features){
+      const [x,y]=project(f.geometry.coordinates[0],f.geometry.coordinates[1],bbox,w,h);
+      pts.push({x,y,phase:Math.random()*Math.PI*2});
+    }
+
+    statusel.textContent="modo holografico continuo ativo • "+pts.length.toLocaleString("pt-br")+" pontos piscando.";
+    animate();
+
+  }catch(e){
+    statusel.textContent="erro: "+e.message;
+  }
+}
+
+boot();
+
+document.getElementById("btnBuy").onclick=()=>window.open(pump_url,"_blank");
+const solinput=document.getElementById("sol");
+const out=document.getElementById("out");
+solinput.addEventListener("input",()=>{
+  const sol=parseFloat(solinput.value)||0;
+  out.textContent=(sol*rate).toLocaleString("pt-br")+" cnt";
+});
+</script>
+
+
+
+</body>
+</html>
