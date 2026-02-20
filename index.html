@@ -208,6 +208,34 @@ html,body{
 }
 @keyframes scan{ 0%{ transform:translateY(-22px);} 100%{ transform:translateY(22px);} }
 
+/* Mini legend */
+#legend{
+  position:absolute;
+  left:14px;
+  bottom:14px;
+  padding:10px 12px;
+  border-radius:16px;
+  border:1px solid rgba(110,210,255,.16);
+  background: rgba(0,0,0,.22);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 0 18px rgba(110,210,255,.10);
+  font-size:11px;
+  color:#cfefff;
+  letter-spacing:.2px;
+}
+.legrow{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin:5px 0;
+  opacity:.95;
+}
+.dot{
+  width:9px;height:9px;border-radius:50%;
+  box-shadow: 0 0 10px rgba(255,255,255,.10);
+  border:1px solid rgba(255,255,255,.15);
+}
+
 /* Right */
 #right{
   display:flex;
@@ -296,13 +324,13 @@ input:focus{
 <div id="app">
   <div id="header" class="glass">
     <h1>CNT — Centro Natural TEC Amazônia</h1>
-    <p class="sub">Brasil (todos os biomas) • Água (azul) • Vegetação (verde) • Transição (amarelo) • Desmatamento (vermelho)</p>
+    <p class="sub">Brasil (todos os biomas) • Água (azul) • Floresta (verde) • Cidade (amarelo) • Desmatamento (vermelho)</p>
     <div id="chips">
       <div class="chip" id="chipSource">Fonte: dados públicos governamentais + MapBiomas</div>
-      <div class="chip" id="chipYear">Ano base: 2025</div>
+      <div class="chip" id="chipYear">Ano base: 2024</div>
       <div class="chip" id="chipPts">Pontos: --</div>
       <div class="chip" id="chipAlerts">Alertas: --</div>
-      <div class="chip btn" id="btnFull">Carregar FULL (vegetação)</div>
+      <div class="chip btn" id="btnReload">Recarregar (MapBiomas ao vivo)</div>
     </div>
   </div>
 
@@ -346,6 +374,13 @@ input:focus{
       <canvas id="cnvAlerts" class="layer"></canvas>
       <div id="mapGlow"></div>
       <div id="scanlines"></div>
+
+      <div id="legend">
+        <div class="legrow"><span class="dot" style="background:rgb(0,190,255)"></span> Água</div>
+        <div class="legrow"><span class="dot" style="background:rgb(60,255,180)"></span> Floresta</div>
+        <div class="legrow"><span class="dot" style="background:rgb(255,235,90)"></span> Cidade</div>
+        <div class="legrow"><span class="dot" style="background:rgb(255,80,60)"></span> Desmatamento</div>
+      </div>
     </div>
   </div>
 
@@ -379,25 +414,43 @@ input:focus{
 const PUMP_URL = "https://pump.fun/coin/GCVyjNaCbXkwGUuktyNxSXad4ozmTp2fzQr2jieSpump";
 const rate = 147449130;
 
+/**
+ * 🔥 MAPBIOMAS “AO VIVO” (GEE via sua API)
+ * Por padrão eu deixei como caminho RELATIVO no mesmo domínio:
+ * - Se você hospedar a API junto do site, configure seu proxy/route para:
+ *      /api/points
+ * - Se a API estiver em outro domínio, troque LIVE.apiBase para "https://seu-dominio.com"
+ */
+const LIVE = {
+  apiBase: "",          // "" => usa o mesmo domínio (location.origin) com /api
+  apiPrefix: "/api",    // prefixo da API no mesmo domínio (ex: /api)
+  year: 2024,
+  num: 5000,
+  scale: 1000,
+  timeoutMs: 15000
+};
+
+/**
+ * Fallback LOCAL (se sua API não estiver no ar ainda):
+ * mantenho seus caminhos locais como backup automático.
+ */
 const FILES = {
   dados: "dados_cnt.json",
   br: "BR_IBGE.geojson",
   uf: "uf.geojson",
   macro: "macro_rh.geojson",
   micro: "micro_rh.geojson",
-
   pts_water: "agua_pts_sample.geojson",
-  pts_vege_sample: "vege_pts_sample.geojson",
-  pts_vege_full: "vege_pts.geojson",
-  pts_trans: "trans_pts_sample.geojson",
+  pts_vege: "vege_pts_sample.geojson",
+  pts_city: "trans_pts_sample.geojson",   // amarelo/cidade
   pts_desm: "desm_pts_sample.geojson",
 };
 
 const COLORS = {
-  water: [0, 190, 255],
-  vege:  [60, 255, 180],
-  trans: [255, 235, 90],
-  desm:  [255, 80, 60],
+  water: [0, 190, 255],       // azul = água
+  vege:  [60, 255, 180],      // verde = floresta
+  city:  [255, 235, 90],      // amarelo = cidade
+  desm:  [255, 80, 60],       // vermelho = desmatamento
   alert: [255, 70, 40]
 };
 
@@ -414,13 +467,43 @@ function fmt(n, d=2){
 }
 function fmt1(n){ return fmt(n,1); }
 
+async function fetchWithTimeout(url, opts={}){
+  const ctrl = new AbortController();
+  const id = setTimeout(()=>ctrl.abort(), LIVE.timeoutMs);
+  try{
+    const res = await fetch(url, { ...opts, signal: ctrl.signal });
+    return res;
+  } finally {
+    clearTimeout(id);
+  }
+}
+
 async function loadJSON(path){
   const url = "./" + path + "?v=" + Date.now();
-  const res = await fetch(url, { cache:"no-store" });
+  const res = await fetchWithTimeout(url, { cache:"no-store" });
   if(!res.ok) throw new Error(`${path} HTTP ${res.status}`);
   const txt = await res.text();
   try{ return JSON.parse(txt); }
   catch(e){ throw new Error(`${path}: JSON inválido / truncado`); }
+}
+
+function apiBaseResolved(){
+  const base = LIVE.apiBase ? LIVE.apiBase.replace(/\/+$/,"") : location.origin;
+  const prefix = (LIVE.apiPrefix || "").startsWith("/") ? LIVE.apiPrefix : ("/" + LIVE.apiPrefix);
+  return base + prefix;
+}
+
+async function loadLivePoints(type){
+  // type: water | trees | deforestation | urban
+  const url =
+    `${apiBaseResolved()}/points?year=${LIVE.year}` +
+    `&type=${encodeURIComponent(type)}` +
+    `&num=${LIVE.num}&scale=${LIVE.scale}` +
+    `&v=${Date.now()}`;
+
+  const res = await fetchWithTimeout(url, { cache:"no-store" });
+  if(!res.ok) throw new Error(`LIVE ${type} HTTP ${res.status}`);
+  return await res.json();
 }
 
 function walkCoords(arr, cb){
@@ -500,7 +583,7 @@ function resizeAll(){
   if(state.ready){
     brPath2D = null;
     redrawStatic();
-    rebuildAllPoints(); // recalcula pontos na resolução nova
+    rebuildAllPoints();
   }
 }
 window.addEventListener("resize", resizeAll);
@@ -537,7 +620,7 @@ function buildBrasilPath2D(fc){
   brPath2D = p;
 }
 
-/* FALLBACK: se seus geojson vierem sem Point/MultiPoint, gera “pontos imagem_base” dentro do Brasil */
+/* FALLBACK: se pontos ao vivo/local não vierem como Point/MultiPoint, gera dots dentro do Brasil */
 function makeFallbackDotsInsideBrasil(qty = 14000){
   const W = cnvPoints.getBoundingClientRect().width;
   const H = cnvPoints.getBoundingClientRect().height;
@@ -582,7 +665,6 @@ function fillBrasilHolografico(){
   ctxF.save();
   ctxF.clip(brPath2D);
 
-  // base leve (não estoura)
   const g = ctxF.createLinearGradient(W*0.20, H*0.20, W*0.85, H*0.80);
   g.addColorStop(0.00, "rgba(0, 170, 255, 0.10)");
   g.addColorStop(0.45, "rgba(0, 255, 210, 0.08)");
@@ -590,7 +672,6 @@ function fillBrasilHolografico(){
   ctxF.fillStyle = g;
   ctxF.fillRect(0,0,W,H);
 
-  // textura holográfica suave
   ctxF.globalCompositeOperation = "screen";
   ctxF.globalAlpha = 0.08;
   for(let i=0;i<220;i++){
@@ -606,7 +687,6 @@ function fillBrasilHolografico(){
     ctxF.fill();
   }
 
-  // scanlines internas
   ctxF.globalCompositeOperation = "overlay";
   ctxF.globalAlpha = 0.10;
   ctxF.fillStyle = "rgba(120,220,255,0.20)";
@@ -787,7 +867,7 @@ function drawDotLayer(offCanvas, alpha, blurPx){
 }
 
 /* =========================
-   ALERTAS
+   ALERTAS (mantém seu formato)
 ========================= */
 function drawAlerts(items){
   const W = cnvAlerts.getBoundingClientRect().width;
@@ -829,13 +909,11 @@ const state = {
   macro:null,
   micro:null,
 
-  pts: { water: [], vege: [], trans: [], desm: [] },
-  dots:{ water:null, vege:null, trans:null, desm:null },
+  pts: { water: [], vege: [], city: [], desm: [] },
+  dots:{ water:null, vege:null, city:null, desm:null },
 
-  loadedFull:false,
   alerts: [],
-
-  fcCache: { water:null, vege:null, trans:null, desm:null },
+  fcCache: { water:null, vege:null, city:null, desm:null },
 
   t:0,
   raf:null
@@ -844,11 +922,11 @@ const state = {
 function rebuildDots(){
   state.dots.water = state.pts.water.length ? buildDotLayer(state.pts.water, COLORS.water) : null;
   state.dots.vege  = state.pts.vege.length  ? buildDotLayer(state.pts.vege,  COLORS.vege)  : null;
-  state.dots.trans = state.pts.trans.length ? buildDotLayer(state.pts.trans, COLORS.trans) : null;
+  state.dots.city  = state.pts.city.length  ? buildDotLayer(state.pts.city,  COLORS.city)  : null;
   state.dots.desm  = state.pts.desm.length  ? buildDotLayer(state.pts.desm,  COLORS.desm)  : null;
 
-  const total = state.pts.water.length + state.pts.vege.length + state.pts.trans.length + state.pts.desm.length;
-  chipPts.textContent = `Pontos: ${total.toLocaleString('pt-BR')} (4 cores)`;
+  const total = state.pts.water.length + state.pts.vege.length + state.pts.city.length + state.pts.desm.length;
+  chipPts.textContent = `Pontos: ${total.toLocaleString("pt-BR")} (4 cores)`;
 }
 
 function rebuildAllPoints(){
@@ -856,7 +934,7 @@ function rebuildAllPoints(){
 
   state.pts.water = projectPoints(state.fcCache.water);
   state.pts.vege  = projectPoints(state.fcCache.vege);
-  state.pts.trans = projectPoints(state.fcCache.trans);
+  state.pts.city  = projectPoints(state.fcCache.city);
   state.pts.desm  = projectPoints(state.fcCache.desm);
 
   rebuildDots();
@@ -898,13 +976,13 @@ function startAnim(){
     // halo (blur)
     drawDotLayer(state.dots.water, 0.22 * pulse, 12);
     drawDotLayer(state.dots.vege,  0.26 * pulse, 14);
-    drawDotLayer(state.dots.trans, 0.20 * pulse, 13);
+    drawDotLayer(state.dots.city,  0.20 * pulse, 13);
     drawDotLayer(state.dots.desm,  0.20 * pulse, 13);
 
     // nítido
     drawDotLayer(state.dots.water, 0.36 * pulse, 0);
     drawDotLayer(state.dots.vege,  0.42 * pulse, 0);
-    drawDotLayer(state.dots.trans, 0.32 * pulse, 0);
+    drawDotLayer(state.dots.city,  0.32 * pulse, 0);
     drawDotLayer(state.dots.desm,  0.32 * pulse, 0);
 
     drawAlerts(state.alerts);
@@ -1008,8 +1086,8 @@ function applyHUD(d){
   const meta = d?.meta || {};
   const idx = d?.indices || {};
 
-  document.getElementById("chipSource").textContent = `Fonte: ${meta.source || 'dados públicos'}`;
-  document.getElementById("chipYear").textContent = `Ano base: ${meta.year_base ?? 2025}`;
+  document.getElementById("chipSource").textContent = `Fonte: ${meta.source || "dados públicos"}`;
+  document.getElementById("chipYear").textContent = `Ano base: ${LIVE.year}`;
 
   const rawA = Number(idx.cnt_A_raw);
   const A100 = Number(idx.cnt_A_0_100);
@@ -1044,16 +1122,67 @@ function applyHUD(d){
 }
 
 /* =========================
+   LOAD POINTS (LIVE -> FALLBACK LOCAL)
+========================= */
+async function loadPointsAll(){
+  // tenta ao vivo; se falhar, cai pro local automático.
+  try{
+    statusEl.textContent = "Status: carregando pontos (MapBiomas ao vivo)…";
+    const [fcWater, fcTrees, fcUrban, fcDef] = await Promise.all([
+      loadLivePoints("water"),
+      loadLivePoints("trees"),
+      loadLivePoints("urban"),
+      loadLivePoints("deforestation")
+    ]);
+
+    state.fcCache.water = fcWater;
+    state.fcCache.vege  = fcTrees;
+    state.fcCache.city  = fcUrban;
+    state.fcCache.desm  = fcDef;
+
+    rebuildAllPoints();
+
+    statusEl.textContent =
+      "Status: MapBiomas AO VIVO OK • holografia OK\n" +
+      "Cores: verde=floresta • azul=água • amarelo=cidade • vermelho=desmatamento";
+    return;
+  }catch(eLive){
+    console.warn("LIVE falhou, usando local:", eLive?.message || eLive);
+    statusEl.textContent = "Status: live indisponível • carregando fallback local…";
+  }
+
+  const [fcWater, fcVege, fcCity, fcDesm] = await Promise.all([
+    loadJSON(FILES.pts_water),
+    loadJSON(FILES.pts_vege),
+    loadJSON(FILES.pts_city),
+    loadJSON(FILES.pts_desm)
+  ]);
+
+  state.fcCache.water = fcWater;
+  state.fcCache.vege  = fcVege;
+  state.fcCache.city  = fcCity;
+  state.fcCache.desm  = fcDesm;
+
+  rebuildAllPoints();
+
+  statusEl.textContent =
+    "Status: fallback local OK • holografia OK\n" +
+    "Cores: verde=floresta • azul=água • amarelo=cidade • vermelho=desmatamento";
+}
+
+/* =========================
    BOOT
 ========================= */
 async function boot(){
   try{
-    statusEl.textContent = "Status: carregando dados e camadas base…";
+    statusEl.textContent = "Status: carregando base IBGE + HUD…";
     resizeAll();
 
+    // HUD local (você já tem)
     state.dados = await loadJSON(FILES.dados);
     applyHUD(state.dados);
 
+    // Base IBGE local (você já tem)
     state.brasil = await loadJSON(FILES.br);
     bbox = calcBBox(state.brasil);
 
@@ -1066,38 +1195,21 @@ async function boot(){
     brPath2D = null;
     redrawStatic();
 
-    statusEl.textContent = "Status: base IBGE OK • carregando pontos…";
+    // pontos ao vivo (ou fallback local)
+    await loadPointsAll();
 
-    const [fcWater, fcVege, fcTrans, fcDesm] = await Promise.all([
-      loadJSON(FILES.pts_water),
-      loadJSON(FILES.pts_vege_sample),
-      loadJSON(FILES.pts_trans),
-      loadJSON(FILES.pts_desm)
-    ]);
-
-    state.fcCache.water = fcWater;
-    state.fcCache.vege  = fcVege;
-    state.fcCache.trans = fcTrans;
-    state.fcCache.desm  = fcDesm;
-
-    rebuildAllPoints();
-
-    // SE DER 0 PONTOS: fallback “imagem_base”
-    const tot = state.pts.water.length + state.pts.vege.length + state.pts.trans.length + state.pts.desm.length;
+    // SE DER 0 PONTOS: fallback “dot-field” interno
+    const tot = state.pts.water.length + state.pts.vege.length + state.pts.city.length + state.pts.desm.length;
     if(tot === 0){
-      statusEl.textContent = "Status: pontos GeoJSON não vieram como Point/MultiPoint — usando fallback (imagem_base)";
+      statusEl.textContent = "Status: pontos vazios — usando fallback interno (dot-field)";
       state.pts.vege  = makeFallbackDotsInsideBrasil(18000);
       state.pts.water = makeFallbackDotsInsideBrasil(8000);
-      state.pts.trans = makeFallbackDotsInsideBrasil(9000);
+      state.pts.city  = makeFallbackDotsInsideBrasil(9000);
       state.pts.desm  = makeFallbackDotsInsideBrasil(7000);
       rebuildDots();
     }
 
     startAnim();
-
-    statusEl.textContent =
-      "Status: holografia OK (dot-field)\n" +
-      "Cores: verde=vegetação • azul=água • amarelo=transição • vermelho=desmatamento";
 
   }catch(err){
     console.error(err);
@@ -1106,24 +1218,13 @@ async function boot(){
   }
 }
 
-// FULL vegetation manual
-async function loadFullVege(){
-  if(state.loadedFull) return;
+document.getElementById("btnReload").addEventListener("click", async ()=>{
   try{
-    statusEl.textContent = "Status: carregando FULL de vegetação…";
-    const fc = await loadJSON(FILES.pts_vege_full);
-    state.fcCache.vege = fc;
-    state.loadedFull = true;
-
-    rebuildAllPoints();
-
-    statusEl.textContent = "Status: FULL de vegetação OK • holografia contínua";
-    document.getElementById('btnFull').textContent = "FULL carregado";
+    await loadPointsAll();
   }catch(e){
-    statusEl.textContent = "Status: FULL indisponível/erro • mantendo sample";
+    statusEl.textContent = "Status: erro ao recarregar pontos.";
   }
-}
-document.getElementById("btnFull").addEventListener("click", loadFullVege);
+});
 
 boot();
 </script>
