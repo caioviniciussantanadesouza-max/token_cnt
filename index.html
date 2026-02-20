@@ -105,7 +105,7 @@ function project(lon, lat, W, H){
 }
 
 /* DESENHAR BRASIL */
-function drawBrazil(geo){
+function drawBrasil(geo){
   ctxBase.clearRect(0,0,cnvBase.width,cnvBase.height);
   ctxBase.strokeStyle="#00f7ff";
   ctxBase.lineWidth=1.5;
@@ -187,10 +187,10 @@ function animate(t){
 
 /* LOAD DADOS */
 Promise.all([
-  fetch("brazil.geojson").then(r=>r.json()),
+  fetch("brasil.geojson").then(r=>r.json()),
   fetch("dados.geojson").then(r=>r.json())
 ]).then(([brasil,dados])=>{
-  drawBrazil(brasil);
+  drawBrasil(brasil);
   buildPoints(dados);
   requestAnimationFrame(animate);
 });
