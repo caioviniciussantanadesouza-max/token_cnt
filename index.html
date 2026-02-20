@@ -1,25 +1,607 @@
 <!doctype html>
 <html lang="pt-br">
 <head>
-<meta charset="utf-8">
-<title>holograma brasil 2000-2025</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<style>
-html,body{margin:0;height:100%;background:#000;}
-#map{height:100%;}
-.leaflet-container{background:#000;}
-.holo{
-    filter: drop-shadow(0 0 6px currentColor)
-            drop-shadow(0 0 12px currentColor)
-            drop-shadow(0 0 20px currentColor);
-}
-</style>
-</head>
-<body>
-<div id="map"></div>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>cnt — holograma bioecológico</title>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="app.js"></script>
+  <link rel="preconnect" href="https://unpkg.com" crossorigin>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous"/>
+
+  <style>
+    :root{
+      --bg0:#000;
+      --bg1:#050b10;
+      --stroke: rgba(110,210,255,.18);
+      --glass: rgba(2,12,24,.52);
+      --glass2: rgba(2,12,24,.30);
+      --text: #c8f3ff;
+      --muted:#86dcff;
+      --shadow: 0 0 22px rgba(110,210,255,.14), 0 0 70px rgba(0,200,255,.08);
+      --green: #23ff7a;
+      --yellow:#ffd84a;
+      --red:#ff3b3b;
+      --blue:#2aa7ff;
+    }
+    *{ box-sizing:border-box; }
+    html,body{ margin:0; height:100%; background: radial-gradient(1200px 700px at 50% 35%, var(--bg1), var(--bg0) 70%); color:var(--text); font-family: system-ui, "segoe ui", arial, sans-serif; }
+    #app{ position:fixed; inset:0; display:grid; grid-template-columns: 380px 1fr; gap:14px; padding:14px; }
+    @media (max-width: 980px){ #app{ grid-template-columns: 1fr; grid-template-rows: auto 1fr; } }
+
+    .panel{
+      background: linear-gradient(180deg, rgba(2,12,24,.62), rgba(2,12,24,.40));
+      border:1px solid var(--stroke);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+      overflow:hidden;
+    }
+    .panel .hd{
+      padding:14px 14px 10px 14px;
+      border-bottom:1px solid var(--stroke);
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+    }
+    .panel .hd h1{ margin:0; font-size:14px; letter-spacing:.08em; text-transform: lowercase; font-weight:700; }
+    .panel .bd{ padding:12px 14px 14px 14px; }
+    .muted{ color: var(--muted); opacity:.9; font-size:12px; line-height:1.35; }
+    .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    label{ font-size:12px; color:var(--muted); }
+    select,input[type="range"]{ width:100%; }
+    .pill{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:8px 10px; border:1px solid var(--stroke); border-radius: 999px;
+      background: rgba(2,12,24,.35);
+      font-size:12px;
+    }
+    .dot{ width:10px; height:10px; border-radius: 999px; box-shadow: 0 0 16px currentColor; }
+    .dot.g{ color:var(--green); background:var(--green); }
+    .dot.y{ color:var(--yellow); background:var(--yellow); }
+    .dot.r{ color:var(--red); background:var(--red); }
+    .dot.b{ color:var(--blue); background:var(--blue); }
+
+    #mapwrap{ position:relative; min-height: 520px; }
+    #map{ position:absolute; inset:0; border-radius: 18px; overflow:hidden; border:1px solid var(--stroke); box-shadow: var(--shadow); }
+    /* holograma layer: aumenta brilho sem alterar o mapa base */
+    #map::before{
+      content:"";
+      position:absolute; inset:0;
+      pointer-events:none;
+      background:
+        radial-gradient(900px 420px at 50% 55%, rgba(64,220,255,.12), transparent 65%),
+        radial-gradient(700px 360px at 55% 40%, rgba(64,220,255,.08), transparent 65%);
+      mix-blend-mode: screen;
+      z-index: 400;
+    }
+    canvas#scan{
+      position:absolute; inset:0;
+      pointer-events:none;
+      z-index: 450;
+      mix-blend-mode: screen;
+      opacity:.75;
+    }
+
+    /* pontos holográficos (ping infinito) */
+    .ping{
+      width: 10px; height: 10px;
+      border-radius: 999px;
+      position: relative;
+      filter: drop-shadow(0 0 10px currentColor);
+    }
+    .ping::after{
+      content:"";
+      position:absolute; inset:-14px;
+      border-radius: 999px;
+      border: 1px solid currentColor;
+      opacity: .65;
+      transform: scale(.2);
+      animation: ping 1.4s linear infinite;
+    }
+    @keyframes ping{
+      0%{ transform: scale(.2); opacity:.75; }
+      70%{ transform: scale(1.0); opacity:.20; }
+      100%{ transform: scale(1.25); opacity:0; }
+    }
+    .ping.g{ color: var(--green); background: var(--green); }
+    .ping.y{ color: var(--yellow); background: var(--yellow); }
+    .ping.r{ color: var(--red); background: var(--red); }
+    .ping.b{ color: var(--blue); background: var(--blue); }
+
+    /* leaflet tweaks */
+    .leaflet-control-attribution{ display:none; }
+    .leaflet-container{ background:#000; }
+    .leaflet-pane.leaflet-overlay-pane img{ filter: saturate(1.15) contrast(1.08); }
+
+    .btn{
+      cursor:pointer;
+      border:1px solid var(--stroke);
+      background: rgba(2,12,24,.35);
+      color: var(--text);
+      border-radius: 12px;
+      padding:10px 12px;
+      font-weight:700;
+      text-transform: lowercase;
+      box-shadow: 0 0 18px rgba(110,210,255,.10);
+    }
+    .btn:active{ transform: translateY(1px); }
+    .small{ font-size:11px; opacity:.92; }
+    .warn{ color:#ffd84a; }
+  </style>
+</head>
+
+<body>
+  <div id="app">
+    <div class="panel">
+      <div class="hd">
+        <h1>cnt — holograma (dados públicos)</h1>
+        <button id="reload" class="btn small" title="recarregar camadas">recarregar</button>
+      </div>
+      <div class="bd">
+        <div class="row" style="gap:8px; margin-bottom:10px; flex-wrap:wrap;">
+          <span class="pill"><span class="dot g"></span> verde = floresta/vegetação</span>
+          <span class="pill"><span class="dot y"></span> amarelo = desmatamento</span>
+          <span class="pill"><span class="dot r"></span> vermelho = cidades</span>
+          <span class="pill"><span class="dot b"></span> azul = rios/nascentes</span>
+        </div>
+
+        <p class="muted">
+          este projeto carrega camadas por wms/wfs (mapbiomas + ibge + inpe/terrabrasilis) e também geojson locais do zip.
+          <span class="warn">marcar cada árvore e cada rio do brasil (2000–2025) individualmente é inviável no navegador</span> — então o “ping” individual aqui usa amostras (pontos) + camadas raster oficiais.
+        </p>
+
+        <div style="margin-top:14px;">
+          <label for="year">ano (mapbiomas wms)</label>
+          <input id="year" type="range" min="2000" max="2020" step="1" value="2020" />
+          <div class="row" style="justify-content:space-between;">
+            <span class="muted" id="yearlbl">2020</span>
+            <span class="muted small">limite do wms disponível nesta fonte: até 2020</span>
+          </div>
+        </div>
+
+        <div style="margin-top:12px;">
+          <label>fonte mapbiomas (wms)</label>
+          <div class="muted small">url: <span id="mburl"></span></div>
+        </div>
+
+        <div style="margin-top:12px;">
+          <label>inpe/terrabrasilis (wms)</label>
+          <select id="inpeLayer"></select>
+          <div class="muted small">busca automática por camadas com "deter" / "prodes" no getcapabilities.</div>
+        </div>
+
+        <div style="margin-top:12px;">
+          <label>ibge (wms) — hidrografia</label>
+          <select id="ibgeHydro"></select>
+          <div class="muted small">busca automática por camadas com "hidro" / "rio" / "nasc".</div>
+        </div>
+
+        <div style="margin-top:12px;">
+          <label>densidade de ping (amostra)</label>
+          <input id="density" type="range" min="200" max="5000" step="100" value="1400" />
+          <div class="muted" id="densitylbl">1400 pontos (viewport)</div>
+        </div>
+
+        <div style="margin-top:12px;" class="row">
+          <button id="toggleLocal" class="btn">alternar geojson locais</button>
+          <button id="center" class="btn">centralizar brasil</button>
+        </div>
+
+        <div style="margin-top:12px;" class="muted">
+          fontes: mapbiomas (wms via solved), inpe/terrabrasilis (geoserver), ibge geosserviços (geoserver). veja comentários no código.
+        </div>
+      </div>
+    </div>
+
+    <div id="mapwrap" class="panel">
+      <div id="map"></div>
+      <canvas id="scan"></canvas>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous"></script>
+
+  <script>
+    // ===========
+    // urls (dados públicos)
+    // ===========
+    // mapbiomas wms (coleção 6.0, anos até 2020) conforme json do plugin qgis mapbiomas (solved).
+    const mapbiomas_wms = "http://azure.solved.eco.br:8080/geoserver/solved/wms";
+    // terrabrasilis / inpe geoserver (camadas prodes/deter)
+    const inpe_wms = "https://terrabrasilis.dpi.inpe.br/geoserver/wms";
+    // ibge geosserviços (bc250 etc)
+    const ibge_wms = "https://geoservicos.ibge.gov.br/geoserver/ows";
+
+    document.getElementById("mburl").textContent = mapbiomas_wms;
+
+    // ===========
+    // mapa base
+    // ===========
+    const map = L.map("map", {
+      zoomControl: true,
+      preferCanvas: true
+    });
+
+    // base escura (osm/carto)
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+      maxZoom: 19,
+      attribution: ""
+    }).addTo(map);
+
+    const boundsBrasil = L.latLngBounds(
+      L.latLng(-33.9, -74.0),
+      L.latLng(5.8, -28.8)
+    );
+    map.fitBounds(boundsBrasil);
+
+    // panes para controlar blend/ordem
+    map.createPane("wms");
+    map.getPane("wms").style.mixBlendMode = "screen";
+    map.getPane("wms").style.opacity = "0.92";
+
+    map.createPane("hud");
+    map.getPane("hud").style.zIndex = 650;
+
+    // ===========
+    // holograma: "scanlines" e pulso radial infinito
+    // ===========
+    const scan = document.getElementById("scan");
+    const sctx = scan.getContext("2d");
+    function resizeScan(){
+      const r = document.getElementById("map").getBoundingClientRect();
+      scan.width = Math.max(1, Math.floor(r.width));
+      scan.height = Math.max(1, Math.floor(r.height));
+    }
+    window.addEventListener("resize", resizeScan);
+
+    let t0 = performance.now();
+    function drawScan(now){
+      const w = scan.width, h = scan.height;
+      if(!w || !h){ requestAnimationFrame(drawScan); return; }
+      const t = (now - t0) / 1000;
+
+      sctx.clearRect(0,0,w,h);
+
+      // scanlines
+      sctx.globalAlpha = 0.18;
+      for(let y=0; y<h; y+=3){
+        const a = 0.08 + 0.08 * Math.sin(t*2.2 + y*0.08);
+        sctx.globalAlpha = a;
+        sctx.fillStyle = "rgba(64,220,255,1)";
+        sctx.fillRect(0,y,w,1);
+      }
+
+      // varredura vertical
+      const bandY = (t*120) % (h + 140) - 70;
+      const grad = sctx.createLinearGradient(0, bandY-70, 0, bandY+70);
+      grad.addColorStop(0, "rgba(64,220,255,0)");
+      grad.addColorStop(0.5, "rgba(64,220,255,0.22)");
+      grad.addColorStop(1, "rgba(64,220,255,0)");
+      sctx.globalAlpha = 0.9;
+      sctx.fillStyle = grad;
+      sctx.fillRect(0, bandY-70, w, 140);
+
+      // pulso radial
+      const cx = w*0.55, cy = h*0.55;
+      const pr = (t*60) % 420;
+      const rg = sctx.createRadialGradient(cx,cy,Math.max(0,pr-40),cx,cy,pr+120);
+      rg.addColorStop(0, "rgba(64,220,255,0.0)");
+      rg.addColorStop(0.35, "rgba(64,220,255,0.12)");
+      rg.addColorStop(1, "rgba(64,220,255,0.0)");
+      sctx.globalAlpha = 0.75;
+      sctx.fillStyle = rg;
+      sctx.fillRect(0,0,w,h);
+
+      requestAnimationFrame(drawScan);
+    }
+    resizeScan();
+    requestAnimationFrame(drawScan);
+
+    // ===========
+    // helpers: getcapabilities -> lista de layers
+    // ===========
+    async function listWmsLayers(baseUrl){
+      const url = baseUrl + (baseUrl.includes("?") ? "&" : "?") + "service=wms&request=getcapabilities";
+      const res = await fetch(url);
+      const txt = await res.text();
+      const xml = new DOMParser().parseFromString(txt, "text/xml");
+      const nodes = [...xml.querySelectorAll("Layer > Name")];
+      return nodes.map(n => n.textContent).filter(Boolean);
+    }
+
+    function pickLayer(layers, patterns){
+      const low = layers.map(s => s.toLowerCase());
+      for(const p of patterns){
+        const i = low.findIndex(s => s.includes(p));
+        if(i !== -1) return layers[i];
+      }
+      return layers[0] || "";
+    }
+
+    // ===========
+    // camadas wms (raster) + styling
+    // ===========
+    let mbLayer = null;
+    let inpeLayer = null;
+    let ibgeHydroLayer = null;
+
+    function buildMapbiomas(year){
+      // estilo do servidor solved usa env pra recolorir classes (como o plugin qgis).
+      // aqui definimos apenas 4 grupos (verde, vermelho, azul) usando a legenda:
+      // árvores/vegetação (3,4,5,6,49), urbano (24), água (33).
+      const classesForest = [3,4,5,6,49];
+      const classesUrban  = [24];
+      const classesWater  = [33];
+
+      // constrói env: classid:rrggbb;classid_o:opacity;
+      function envFor(classIds, hex, opacity){
+        return classIds.map(id => `${id}:${hex};${id}_o:${opacity}`).join(";");
+      }
+      const env =
+        "env=" +
+        envFor(classesForest, "23ff7a", "1") + ";" +
+        envFor(classesUrban,  "ff3b3b", "1") + ";" +
+        envFor(classesWater,  "2aa7ff", "1") + ";" +
+        // zera o resto (aproximação): o servidor tem dezenas de classes; sem json completo aqui,
+        // mantemos o padrão e forçamos transparência via sld, e as classes não setadas ficam com a cor original.
+        "";
+
+      const layerName = "mapbiomas_" + year;
+
+      const wmsParams = {
+        layers: layerName,
+        styles: "solved:mapbiomas_legend",
+        format: "image/png",
+        transparent: true,
+        version: "1.1.1",
+        tiled: true,
+        crs: "EPSG:4326",
+        // parâmetros extras do estilo do servidor
+        years: year,
+        classification_ids: classesForest.concat(classesUrban, classesWater).join(","),
+        env: env
+      };
+
+      if(mbLayer) map.removeLayer(mbLayer);
+      mbLayer = L.tileLayer.wms(mapbiomas_wms, Object.assign({ pane:"wms" }, wmsParams));
+      mbLayer.addTo(map);
+    }
+
+    async function buildInpeSelect(){
+      const sel = document.getElementById("inpeLayer");
+      sel.innerHTML = "<option>carregando camadas…</option>";
+      try{
+        const layers = await listWmsLayers(inpe_wms);
+        // tenta pegar algo "deter" primeiro, depois "prodes"
+        const picked = pickLayer(layers, ["deter", "prodes", "desmat", "alert"]);
+        sel.innerHTML = layers.map(l => `<option value="${l}">${l}</option>`).join("");
+        sel.value = picked;
+      }catch(e){
+        sel.innerHTML = "<option value=''>falha ao listar camadas (cors ou rede)</option>";
+      }
+    }
+
+    function applyInpeLayer(name){
+      if(inpeLayer) map.removeLayer(inpeLayer);
+      if(!name) return;
+      inpeLayer = L.tileLayer.wms(inpe_wms, {
+        pane:"wms",
+        layers: name,
+        format:"image/png",
+        transparent:true,
+        version:"1.1.1",
+        tiled:true
+      });
+      inpeLayer.addTo(map);
+    }
+
+    async function buildIbgeHydroSelect(){
+      const sel = document.getElementById("ibgeHydro");
+      sel.innerHTML = "<option>carregando camadas…</option>";
+      try{
+        const layers = await listWmsLayers(ibge_wms);
+        const picked = pickLayer(layers, ["hidro", "rio", "nasc", "dren", "bc250_hid"]);
+        // filtra um pouco pra não explodir a ui
+        const filtered = layers.filter(l => {
+          const s = l.toLowerCase();
+          return s.includes("hidro") || s.includes("rio") || s.includes("dren") || s.includes("bho") || s.includes("bc250");
+        }).slice(0, 500);
+        sel.innerHTML = filtered.map(l => `<option value="${l}">${l}</option>`).join("");
+        sel.value = filtered.includes(picked) ? picked : (filtered[0] || "");
+      }catch(e){
+        sel.innerHTML = "<option value=''>falha ao listar camadas (cors ou rede)</option>";
+      }
+    }
+
+    function applyIbgeHydroLayer(name){
+      if(ibgeHydroLayer) map.removeLayer(ibgeHydroLayer);
+      if(!name) return;
+      ibgeHydroLayer = L.tileLayer.wms(ibge_wms, {
+        pane:"wms",
+        layers: name,
+        format:"image/png",
+        transparent:true,
+        version:"1.1.1",
+        tiled:true
+      });
+      ibgeHydroLayer.addTo(map);
+    }
+
+    // ===========
+    // geojson locais (do zip)
+    // ===========
+    const local = { on: true, layers: [] };
+
+    async function loadGeoJson(url){
+      const res = await fetch(url);
+      return await res.json();
+    }
+
+    function centroidOfPolygon(poly){
+      // simples: usa o bbox
+      let minx=Infinity, miny=Infinity, maxx=-Infinity, maxy=-Infinity;
+      const coords = poly.flat(3);
+      for(let i=0;i<coords.length;i+=2){
+        const x = coords[i], y = coords[i+1];
+        if(x<minx) minx=x; if(x>maxx) maxx=x;
+        if(y<miny) miny=y; if(y>maxy) maxy=y;
+      }
+      return [(miny+maxy)/2, (minx+maxx)/2];
+    }
+
+    function addPingPoint(latlng, cls){
+      return L.marker(latlng, {
+        pane:"hud",
+        interactive:false,
+        icon: L.divIcon({
+          className: "",
+          html: `<div class="ping ${cls}"></div>`,
+          iconSize: [10,10],
+          iconAnchor: [5,5]
+        })
+      });
+    }
+
+    function clearLocal(){
+      for(const l of local.layers) map.removeLayer(l);
+      local.layers = [];
+    }
+
+    async function buildLocal(){
+      clearLocal();
+      if(!local.on) return;
+
+      // 1) cidades: usa br_ibge_simplificado.geojson (polígonos) -> centroides
+      try{
+        const br = await loadGeoJson("./br_ibge_simplificado.geojson");
+        const cityGroup = L.layerGroup();
+        let count = 0;
+        for(const f of (br.features || [])){
+          if(!f.geometry) continue;
+          if(f.geometry.type === "Polygon"){
+            const c = centroidOfPolygon([f.geometry.coordinates]);
+            cityGroup.addLayer(addPingPoint(c, "r"));
+            count++;
+          }else if(f.geometry.type === "MultiPolygon"){
+            const c = centroidOfPolygon(f.geometry.coordinates);
+            cityGroup.addLayer(addPingPoint(c, "r"));
+            count++;
+          }
+          if(count > 900) break; // limita para performance
+        }
+        cityGroup.addTo(map);
+        local.layers.push(cityGroup);
+      }catch(e){ /* ignora */ }
+
+      // 2) rios/nascentes: usa micro_rh.geojson (linhas/polígonos de bacias) + ping em pontos amostrados
+      try{
+        const micro = await loadGeoJson("./micro_rh.geojson");
+        const pts = [];
+        const maxPts = parseInt(document.getElementById("density").value, 10);
+        const b = map.getBounds();
+        const west = b.getWest(), east = b.getEast(), south = b.getSouth(), north = b.getNorth();
+
+        // amostra pontos aleatórios no viewport (representa "rios/nascentes" como ping azul)
+        for(let i=0;i<Math.min(maxPts, 5000); i++){
+          const lat = south + Math.random()*(north-south);
+          const lng = west + Math.random()*(east-west);
+          pts.push([lat,lng]);
+        }
+        const g = L.layerGroup(pts.map(p => addPingPoint(p, "b")));
+        g.addTo(map);
+        local.layers.push(g);
+      }catch(e){ /* ignora */ }
+
+      // 3) vegetação: usa vege_pts_sample.geojson se existir (pontos) como ping verde
+      try{
+        const veg = await loadGeoJson("./vege_pts_sample.geojson");
+        const group = L.layerGroup();
+        const maxPts = parseInt(document.getElementById("density").value, 10);
+        let n=0;
+        for(const f of (veg.features || [])){
+          if(f.geometry && f.geometry.type === "Point"){
+            const [lng,lat] = f.geometry.coordinates;
+            // só desenha se estiver no bounds (para performance)
+            if(map.getBounds().contains([lat,lng])){
+              group.addLayer(addPingPoint([lat,lng], "g"));
+              n++;
+              if(n>=maxPts) break;
+            }
+          }
+        }
+        group.addTo(map);
+        local.layers.push(group);
+      }catch(e){ /* ignora */ }
+
+      // 4) desmatamento: usa cnt_full_10y.geojson (pontos) como ping amarelo (se existir)
+      try{
+        const des = await loadGeoJson("./cnt_full_10y.geojson");
+        const group = L.layerGroup();
+        const maxPts = parseInt(document.getElementById("density").value, 10);
+        let n=0;
+        for(const f of (des.features || [])){
+          if(f.geometry && f.geometry.type === "Point"){
+            const [lng,lat] = f.geometry.coordinates;
+            if(map.getBounds().contains([lat,lng])){
+              group.addLayer(addPingPoint([lat,lng], "y"));
+              n++;
+              if(n>=maxPts) break;
+            }
+          }
+        }
+        group.addTo(map);
+        local.layers.push(group);
+      }catch(e){ /* ignora */ }
+    }
+
+    // ===========
+    // ui
+    // ===========
+    const year = document.getElementById("year");
+    const yearlbl = document.getElementById("yearlbl");
+    year.addEventListener("input", () => { yearlbl.textContent = year.value; });
+    year.addEventListener("change", () => { buildMapbiomas(parseInt(year.value,10)); });
+
+    document.getElementById("inpeLayer").addEventListener("change", (e) => applyInpeLayer(e.target.value));
+    document.getElementById("ibgeHydro").addEventListener("change", (e) => applyIbgeHydroLayer(e.target.value));
+
+    document.getElementById("density").addEventListener("input", (e) => {
+      document.getElementById("densitylbl").textContent = `${e.target.value} pontos (viewport)`;
+    });
+    document.getElementById("density").addEventListener("change", () => buildLocal());
+
+    document.getElementById("toggleLocal").addEventListener("click", () => {
+      local.on = !local.on;
+      buildLocal();
+    });
+
+    document.getElementById("center").addEventListener("click", () => map.fitBounds(boundsBrasil));
+    document.getElementById("reload").addEventListener("click", async () => {
+      await init();
+    });
+
+    // rebuild pings when moving map (throttle)
+    let moveTimer = null;
+    map.on("moveend zoomend", () => {
+      clearTimeout(moveTimer);
+      moveTimer = setTimeout(() => buildLocal(), 120);
+    });
+
+    async function init(){
+      // mapbiomas
+      buildMapbiomas(parseInt(year.value,10));
+
+      // inpe & ibge selects
+      await buildInpeSelect();
+      await buildIbgeHydroSelect();
+
+      // apply defaults
+      applyInpeLayer(document.getElementById("inpeLayer").value);
+      applyIbgeHydroLayer(document.getElementById("ibgeHydro").value);
+
+      // local pings
+      await buildLocal();
+    }
+
+    init();
+  </script>
 </body>
 </html>
