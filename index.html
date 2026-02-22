@@ -1,207 +1,137 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CNT — Centro Natural TEC Amazônia</title>
 
 <style>
-html,body{
-  margin:0;
-  height:100%;
-  background:#000;
+:root{
+  --bg:#000;
+  --holo:#00ffc3;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+
+body{
+  background:var(--bg);
   overflow:hidden;
   font-family:Arial, sans-serif;
-  color:#c8f3ff;
+  color:white;
 }
-#app{
-  position:fixed;
-  inset:0;
-  display:grid;
-  grid-template-columns: 300px 1fr 360px;
-  grid-template-rows: 120px 1fr;
-  gap:14px;
-  padding:14px;
-}
-.glass{
-  background: rgba(2,12,24,.46);
-  border:1px solid rgba(110,210,255,.18);
-  border-radius:22px;
-}
-#header{
-  grid-column:1 / 4;
-  padding:14px;
-  text-align:center;
-}
-#center{
-  position:relative;
-  overflow:hidden;
-}
-#mapWrap{
+
+/* MAPA BASE */
+#mapBase{
   position:absolute;
-  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  z-index:1;
 }
-.layer{
+
+/* HOLOGRAMA */
+#hologram{
   position:absolute;
-  inset:0;
+  width:100%;
+  height:100%;
+  z-index:2;
+  pointer-events:none;
 }
-#yearIndicator{
+
+/* PAINEL */
+#panel{
   position:absolute;
   top:20px;
-  left:50%;
-  transform:translateX(-50%);
-  font-size:28px;
-  color:#00ffff;
-  text-shadow:0 0 12px #00ffff;
-  z-index:1000;
-  letter-spacing:3px;
+  left:20px;
+  background:rgba(0,0,0,0.6);
+  padding:15px 20px;
+  border:1px solid rgba(0,255,200,0.3);
+  border-radius:8px;
+  backdrop-filter:blur(6px);
+  z-index:3;
+  box-shadow:0 0 20px rgba(0,255,200,0.2);
 }
+
+#panel h1{
+  font-size:18px;
+  color:var(--holo);
+  margin-bottom:10px;
+}
+
 </style>
 </head>
-
 <body>
-<div id="app">
 
-<div id="header" class="glass">
-<h2>CNT — Centro Natural TEC Amazônia</h2>
-Loop ecológico real 2000 → 2025
-</div>
+<!-- MAPA BASE -->
+<img id="mapBase" src="mapa_base.png">
 
-<div class="glass"></div>
+<!-- HOLOGRAMA -->
+<canvas id="hologram"></canvas>
 
-<div id="center" class="glass">
-<div id="mapWrap">
-<canvas id="cnvBase" class="layer"></canvas>
-<canvas id="cnvPoints" class="layer"></canvas>
-<div id="yearIndicator">2000</div>
-</div>
-</div>
-
-<div class="glass"></div>
-
+<!-- PAINEL -->
+<div id="panel">
+  <h1>CNT 2025</h1>
+  Monitoramento Ativo
 </div>
 
 <script>
-
-// =============================
-// CONFIG
-// =============================
-
-const MIN_YEAR = 2000;
-const MAX_YEAR = 2025;
-const INTERVAL = 60000;
-
-let currentYear = MIN_YEAR;
-let allPoints = null;
-let bbox = null;
-
-// =============================
-// CANVAS
-// =============================
-
-const cnvBase = document.getElementById("cnvBase");
-const cnvPoints = document.getElementById("cnvPoints");
-const ctxBase = cnvBase.getContext("2d");
-const ctxP = cnvPoints.getContext("2d");
+const canvas = document.getElementById("hologram");
+const ctx = canvas.getContext("2d");
 
 function resize(){
-  const w = cnvBase.parentElement.clientWidth;
-  const h = cnvBase.parentElement.clientHeight;
-  cnvBase.width = w;
-  cnvBase.height = h;
-  cnvPoints.width = w;
-  cnvPoints.height = h;
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
 }
-window.addEventListener("resize", resize);
 resize();
+window.addEventListener("resize", resize);
 
-// =============================
-// PROJECTION
-// =============================
+let points = [];
+const MAX_POINTS = 500; // equilíbrio desempenho
 
-function calcBBox(fc){
-  let minx=Infinity,miny=Infinity,maxx=-Infinity,maxy=-Infinity;
-  fc.features.forEach(f=>{
-    const [x,y]=f.geometry.coordinates;
-    if(x<minx)minx=x;
-    if(y<miny)miny=y;
-    if(x>maxx)maxx=x;
-    if(y>maxy)maxy=y;
-  });
-  return [minx,miny,maxx,maxy];
+function createPoints(){
+  points = [];
+  for(let i=0;i<MAX_POINTS;i++){
+    points.push({
+      x: Math.random()*canvas.width,
+      y: Math.random()*canvas.height,
+      radius: Math.random()*1.8+0.5,
+      alpha: Math.random(),
+      speed: Math.random()*0.003+0.001
+    });
+  }
+}
+createPoints();
+
+let lastTime = 0;
+const FPS = 28;
+const interval = 1000/FPS;
+
+function animate(time){
+  requestAnimationFrame(animate);
+
+  if(time - lastTime < interval) return;
+  lastTime = time;
+
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  for(let p of points){
+    p.alpha += p.speed;
+
+    if(p.alpha > 1 || p.alpha < 0){
+      p.speed *= -1;
+    }
+
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.radius, 0, Math.PI*2);
+    ctx.fillStyle = `rgba(0,255,195,${p.alpha})`;
+    ctx.shadowBlur = 8;
+    ctx.shadowColor = "rgba(0,255,195,0.7)";
+    ctx.fill();
+  }
 }
 
-function proj(lon,lat){
-  const [minx,miny,maxx,maxy]=bbox;
-  const w=cnvBase.width;
-  const h=cnvBase.height;
-  return [
-    (lon-minx)/(maxx-minx)*w,
-    (maxy-lat)/(maxy-miny)*h
-  ];
-}
-
-// =============================
-// CORES
-// =============================
-
-function getColor(type){
-  if(type==="vegetation") return "rgba(0,255,100,";
-  if(type==="deforestation") return "rgba(255,255,0,";
-  if(type==="urban") return "rgba(255,0,0,";
-  if(type==="hydro") return "rgba(0,170,255,";
-  return "rgba(255,255,255,";
-}
-
-// =============================
-// RENDER
-// =============================
-
-function renderYear(){
-
-  document.getElementById("yearIndicator").innerText=currentYear;
-
-  ctxP.clearRect(0,0,cnvPoints.width,cnvPoints.height);
-  ctxP.globalCompositeOperation="lighter";
-
-  const filtered=allPoints.features.filter(f=>
-    Number(f.properties.year)===currentYear
-  );
-
-  filtered.forEach(f=>{
-    const [x,y]=proj(
-      f.geometry.coordinates[0],
-      f.geometry.coordinates[1]
-    );
-
-    const base=getColor(f.properties.type);
-    const pulse=0.5+0.5*Math.sin(Date.now()*0.002);
-    ctxP.fillStyle=base+(0.3+0.5*pulse)+")";
-    ctxP.beginPath();
-    ctxP.arc(x,y,1.5+2*pulse,0,Math.PI*2);
-    ctxP.fill();
-  });
-
-  ctxP.globalCompositeOperation="source-over";
-
-  currentYear++;
-  if(currentYear>MAX_YEAR) currentYear=MIN_YEAR;
-}
-
-// =============================
-// INIT
-// =============================
-
-async function init(){
-  const res=await fetch("vege_pts.geojson");
-  allPoints=await res.json();
-  bbox=calcBBox(allPoints);
-  renderYear();
-  setInterval(renderYear,INTERVAL);
-}
-
-init();
-
+requestAnimationFrame(animate);
 </script>
+
 </body>
 </html>
