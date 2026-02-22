@@ -304,7 +304,7 @@ input:focus{
   <div id="left" class="glass">
     <div class="small"><b>CNT</b> (índice único Brasil)</div>
 
-
+```
 <div class="big"><span id="eco">--</span><span style="font-size:16px; opacity:.9;">/100</span></div>
 <div class="small">RAW auditável: <b id="raw">--</b></div>
 
@@ -330,7 +330,7 @@ input:focus{
 </div>
 
 <div id="status">Status: iniciando…</div>
-
+```
 
   </div>
 
@@ -350,7 +350,7 @@ input:focus{
       <h2>COMPRAR CNT</h2>
       <p class="mut">Abre o token no Pump.fun.</p>
 
-
+```
   <label for="sol">Contribuição</label>
   <div class="row">
     <input id="sol" type="number" step="0.01" min="0" value="0.10" />
@@ -366,7 +366,7 @@ input:focus{
   <canvas id="wave"></canvas>
   <div id="telemetryHint">Carregando…</div>
 </div>
-
+```
 
   </div>
 </div>
@@ -460,93 +460,6 @@ const ctxB    = cnvBorder.getContext("2d");
 const ctxL    = cnvLines.getContext("2d");
 const ctxP    = cnvPoints.getContext("2d");
 
-/* =========================
-   MASK CACHE (evita travar no recorte por frame)
-========================= */
-const maskCnv = document.createElement("canvas");
-const maskCtx = maskCnv.getContext("2d");
-function resizeMaskCanvas(){
-  const dpr = Math.max(1, window.devicePixelRatio || 1);
-  const r = cnvBase.getBoundingClientRect();
-  const W = r.width, H = r.height;
-  maskCnv.width  = Math.floor(W * dpr);
-  maskCnv.height = Math.floor(H * dpr);
-  maskCtx.setTransform(dpr,0,0,dpr,0,0);
-}
-function rebuildBrasilMaskCanvas(){
-  if(!state.brasilMask) return;
-  resizeMaskCanvas();
-  const W = cnvBase.getBoundingClientRect().width;
-  const H = cnvBase.getBoundingClientRect().height;
-
-  maskCtx.clearRect(0,0,W,H);
-  maskCtx.fillStyle = "#fff";
-  maskCtx.beginPath();
-
-  for(const f of (state.brasilMask.features||[])){
-    const g = f.geometry;
-    if(!g) continue;
-    const polys = (g.type==="Polygon") ? [g.coordinates] : (g.type==="MultiPolygon" ? g.coordinates : []);
-    for(const poly of polys){
-      const outer = poly[0];
-      if(!outer || outer.length<3) continue;
-      for(let i=0;i<outer.length;i++){
-        const [x,y] = proj(outer[i][0], outer[i][1], W, H);
-        if(i===0) maskCtx.moveTo(x,y); else maskCtx.lineTo(x,y);
-      }
-      maskCtx.closePath();
-    }
-  }
-
-  maskCtx.fill();
-}
-
-/* =========================
-   DENSITY PRECOMPUTE (chunked)
-   (evita chamar densityAt() 100k vezes por frame)
-========================= */
-let densityJobToken = 0;
-function scheduleDensityCompute(){
-  densityJobToken++;
-  const token = densityJobToken;
-
-  const pts = state.ptsXY;
-  const n = pts.length;
-  if(!n) return;
-
-  let i = 0;
-  const chunkMs = 10;
-
-  const runner = (deadline)=>{
-    if(token !== densityJobToken) return;
-
-    const start = performance.now();
-    while(i < n){
-      // se tiver requestIdleCallback, usa timeRemaining; senão usa budget por ms
-      if(deadline && deadline.timeRemaining && deadline.timeRemaining() < 3) break;
-      if(!deadline && (performance.now() - start) > chunkMs) break;
-
-      const p = pts[i];
-      const d = densityAt(p.x, p.y);
-      p.d = d;
-
-      // bucket + cor base (sem alpha)
-      const norm = Math.min(1, d / state.target);
-      if(norm >= 0.70){ p.bucket = 2; p.rgb = "60,255,180"; }
-      else if(norm >= 0.40){ p.bucket = 1; p.rgb = "255,235,90"; }
-      else { p.bucket = 0; p.rgb = "255,80,60"; }
-
-      i++;
-    }
-
-    if(i < n){
-      (window.requestIdleCallback || function(fn){ setTimeout(()=>fn(null), 0); })(runner);
-    }
-  };
-
-  (window.requestIdleCallback || function(fn){ setTimeout(()=>fn(null), 0); })(runner);
-}
-
 function resizeCanvas(cnv, ctx){
   const dpr = Math.max(1, window.devicePixelRatio || 1);
   const r = cnv.getBoundingClientRect();
@@ -560,10 +473,7 @@ function resizeAll(){
   resizeCanvas(cnvLines, ctxL);
   resizeCanvas(cnvPoints, ctxP);
   resizeWave();
-  if(state.ready){
-    rebuildBrasilMaskCanvas();
-    redrawStatic();
-  }
+  if(state.ready) redrawStatic();
 }
 window.addEventListener("resize", resizeAll);
 
@@ -705,17 +615,6 @@ function maskCanvasToBrasil(ctx){
   const W = cnvBase.getBoundingClientRect().width;
   const H = cnvBase.getBoundingClientRect().height;
 
-  // caminho rápido: usa máscara já rasterizada
-  if(maskCnv && maskCnv.width && maskCnv.height){
-    ctx.save();
-    ctx.globalCompositeOperation = "destination-in";
-    ctx.drawImage(maskCnv, 0, 0, W, H);
-    ctx.restore();
-    ctx.globalCompositeOperation = "source-over";
-    return;
-  }
-
-  // fallback (se por algum motivo a máscara ainda não foi gerada)
   ctx.save();
   ctx.globalCompositeOperation = "destination-in";
   ctx.fillStyle = "#fff";
@@ -757,7 +656,7 @@ function buildProjectedPoints(fc){
   }
 
   // LIMITADOR (pra FULL não travar)
-  const MAX = 100000; // LIMITADOR (pra FULL não travar) — cap reduzido para evitar freeze
+  const MAX = 140000;
   if(pts.length > MAX){
     const step = Math.ceil(pts.length / MAX);
     const slim = [];
@@ -768,7 +667,6 @@ function buildProjectedPoints(fc){
   }
 
   buildGrid();
-  scheduleDensityCompute();
 }
 
 function buildGrid(){
@@ -835,8 +733,6 @@ function colorForDensity(count){
 ========================= */
 function redrawStatic(){
   if(!bbox) return;
-  // garante máscara no tamanho atual
-  rebuildBrasilMaskCanvas();
   clearAll();
 
   // base leve
@@ -860,77 +756,61 @@ function startAnim(){
   if(state.animStarted) return;
   state.animStarted = true;
 
-  // limita FPS para não matar a CPU/GPU
-  let last = 0;
-  const TARGET_FPS = 30;
-  const FRAME = 1000 / TARGET_FPS;
-
-  const loop = (ts)=>{
-    if(ts - last < FRAME){
-      requestAnimationFrame(loop);
-      return;
-    }
-    last = ts;
-
+  const loop = ()=>{
     const W = cnvPoints.getBoundingClientRect().width;
     const H = cnvPoints.getBoundingClientRect().height;
-
     ctxP.clearRect(0,0,W,H);
 
-    const pts = state.ptsXY;
-    const n = pts.length;
-    if(!n){
-      state.t++;
-      requestAnimationFrame(loop);
-      return;
+    if(state.ptsXY.length){
+      ctxP.globalCompositeOperation = "lighter";
+
+      // 1) micro pontos (bem pequenos)
+      for(const p of state.ptsXY){
+        const count = densityAt(p.x, p.y);
+        const [r,g,b] = colorForDensity(count);
+
+        const pulse = 0.55 + 0.45*Math.sin(p.ph + state.t*p.sp*0.025);
+        const alpha = (0.08 + 0.28*pulse);
+        const rad   = 0.38 + p.base*0.42; // pequeno
+
+        ctxP.beginPath();
+        ctxP.fillStyle = `rgba(${r},${g},${b},${alpha})`;
+        ctxP.arc(p.x, p.y, rad, 0, Math.PI*2);
+        ctxP.fill();
+      }
+
+      // 2) “sparkles” (dá o efeito referência)
+      const glowCount = Math.min(1800, Math.max(500, (state.ptsXY.length/14)|0));
+      ctxP.save();
+      ctxP.shadowBlur = 10;
+      for(let i=0;i<glowCount;i++){
+        const p = state.ptsXY[(Math.random()*state.ptsXY.length)|0];
+        if(!p) continue;
+
+        const count = densityAt(p.x, p.y);
+        const [r,g,b] = colorForDensity(count);
+
+        const pulse = 0.55 + 0.45*Math.sin(p.ph + state.t*0.03);
+        const alpha = 0.06 + 0.18*pulse;
+
+        ctxP.shadowColor = `rgba(${r},${g},${b},${0.55})`;
+        ctxP.fillStyle   = `rgba(${r},${g},${b},${alpha})`;
+
+        ctxP.beginPath();
+        ctxP.arc(p.x, p.y, 1.2 + pulse*1.5, 0, Math.PI*2);
+        ctxP.fill();
+      }
+      ctxP.restore();
+
+      // recorte BR
+      maskCanvasToBrasil(ctxP);
+      ctxP.globalCompositeOperation = "source-over";
     }
-
-    // pulse global (em vez de por ponto — MUITO mais leve)
-    const pulse = 0.45 + 0.55*Math.sin(state.t * 0.045);
-    const aBase = 0.06 + 0.20*pulse;
-
-    ctxP.globalCompositeOperation = "lighter";
-
-    // desenha como pixel (bem mais rápido que arc para 50k~100k)
-    // bucket 0 = vermelho, 1 = amarelo, 2 = verde
-    for(let i=0;i<n;i++){
-      const p = pts[i];
-      // se densidade ainda não foi calculada (job em background), usa vermelho por enquanto
-      const rgb = p.rgb || "255,80,60";
-      ctxP.fillStyle = `rgba(${rgb},${aBase})`;
-      ctxP.fillRect(p.x, p.y, 1, 1);
-    }
-
-    // sparkles controlados (menos que antes)
-    const glowCount = Math.min(700, (n/35)|0);
-    ctxP.save();
-    ctxP.shadowBlur = 8;
-
-    for(let i=0;i<glowCount;i++){
-      const p = pts[(Math.random()*n)|0];
-      if(!p) continue;
-
-      const rgb = p.rgb || "255,80,60";
-      const ap = 0.04 + 0.14*(0.5 + 0.5*Math.sin(p.ph + state.t*0.02));
-
-      ctxP.shadowColor = `rgba(${rgb},0.50)`;
-      ctxP.fillStyle   = `rgba(${rgb},${ap})`;
-
-      ctxP.beginPath();
-      ctxP.arc(p.x, p.y, 1.0 + pulse*1.4, 0, Math.PI*2);
-      ctxP.fill();
-    }
-    ctxP.restore();
-
-    // recorte via máscara rasterizada (rápido)
-    maskCanvasToBrasil(ctxP);
-    ctxP.globalCompositeOperation = "source-over";
 
     state.t++;
     requestAnimationFrame(loop);
   };
-
-  requestAnimationFrame(loop);
+  loop();
 }
 
 /* =========================
@@ -1033,8 +913,6 @@ async function boot(){
     state.cnt = await loadJSON(FILES.cnt);
 
     bbox = calcBBox(state.biomas);
-    // gera máscara rasterizada (evita travar na animação)
-    rebuildBrasilMaskCanvas();
 
     // HUD CNT
     const props = state.cnt?.features?.[0]?.properties || {};
