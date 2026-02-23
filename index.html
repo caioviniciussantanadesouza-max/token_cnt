@@ -58,13 +58,6 @@ html,body{
   color:#e9fdff;
   text-align:center;
 }
-#header .sub{
-  margin:0;
-  text-align:center;
-  font-size:12px;
-  color:var(--muted);
-  opacity:.95;
-}
 #chips{
   display:flex;
   justify-content:center;
@@ -138,13 +131,8 @@ html,body{
 .kv b{ font-weight:900; color:#e9fdff; }
 .kv span{ color:#d0fbff; font-weight:900; }
 
-#status{
-  margin-top:4px;
-  font-size:10px;
-  color:rgba(180,245,255,.9);
-  opacity:.88;
-  line-height:1.25;
-}
+/* ✅ status escondido */
+#status{ display:none; }
 
 /* Center */
 #center{
@@ -217,13 +205,6 @@ html,body{
   letter-spacing:.4px;
   color:#e9fdff;
 }
-#buy .mut{
-  margin:8px 0 10px;
-  font-size:12px;
-  color:var(--muted);
-  opacity:.95;
-  line-height:1.35;
-}
 label{ display:block; font-size:12px; color:var(--muted); margin:10px 0 6px; }
 .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
 input{
@@ -251,9 +232,9 @@ input:focus{
   min-width:160px;
 }
 .btn:hover{ box-shadow:0 0 18px rgba(110,210,255,.30); }
-.valueLine{ margin-top:10px; font-size:12px; color:#bdf4ff; }
-.valueLine b{ font-size:19px; color:#e9fdff; }
-.smallnote{ margin-top:6px; font-size:11px; color:var(--muted); opacity:.95; }
+
+/* ✅ textos azuis removidos */
+#buy .mut, .valueLine, .smallnote, #telemetryHint { display:none !important; }
 
 #telemetryTitle{
   font-size:12px;
@@ -271,12 +252,6 @@ input:focus{
   border:1px solid rgba(110,210,255,.14);
   border-radius:14px;
 }
-#telemetryHint{
-  margin-top:8px;
-  font-size:11px;
-  color:var(--muted);
-  opacity:.92;
-}
 
 @media (max-width: 1100px){
   body{ overflow:auto; }
@@ -290,13 +265,8 @@ input:focus{
 <div id="app">
   <div id="header" class="glass">
     <h1>CNT — Centro Natural TEC Amazônia</h1>
-    <p class="sub">Base: mapa.png (QGIS) • Leitura de pixels → pontos holográficos reais (azul/verde/amarelo/vermelho)</p>
-    <div id="chips">
-      <div class="chip">Fonte: QGIS export</div>
-      <div class="chip">Ano base: 2025</div>
-      <div class="chip">Holografia: scan + glow</div>
-      <div class="chip">Compra: Pump.fun</div>
-    </div>
+    <!-- ✅ removido subtexto -->
+    <div id="chips"><!-- ✅ removido chips --></div>
   </div>
 
   <div id="left" class="glass">
@@ -340,7 +310,6 @@ input:focus{
   <div id="right">
     <div id="buy" class="glass">
       <h2>COMPRAR CNT</h2>
-      <p class="mut">Abre o token no Pump.fun.</p>
 
       <label for="sol">Contribuição</label>
       <div class="row">
@@ -348,14 +317,14 @@ input:focus{
         <button class="btn" id="btnBuy">Comprar no Pump</button>
       </div>
 
-      <div class="valueLine">Estimativa: <b id="out">14.744.913 CNT</b></div>
+      <div class="valueLine">Estimativa: <b id="out">-- CNT</b></div>
       <div class="smallnote">Estimativa demo (não é cotação real).</div>
     </div>
 
     <div id="telemetry" class="glass">
       <div id="telemetryTitle">TELEMETRIA — Série 10 anos</div>
       <canvas id="wave"></canvas>
-      <div id="telemetryHint">Histórico: 10 • Último (RAW): 18,11</div>
+      <div id="telemetryHint">Carregando…</div>
     </div>
   </div>
 </div>
@@ -368,16 +337,13 @@ const PUMP_URL = "https://pump.fun/coin/GCVyjNaCbXkwGUuktyNxSXad4ozmTp2fzQr2jieS
 const rate = 147449130;
 const IMG_URL = "./mapa.png";
 
-// quantos pontos máximo para não travar
+/* leve / equilibrado */
 const MAX_POINTS = 45000;
+const SAMPLE_STEP = 3;
 
-// amostragem de pixels (quanto maior, mais leve; quanto menor, mais fiel)
-const SAMPLE_STEP = 3; // 2 = mais pesado / 4 = mais leve
-
-// thresholds (ajuste fino se precisar)
-const MIN_ALPHA = 40;     // ignora pixels transparentes
-const MIN_BRIGHT = 60;    // ignora pixels muito escuros
-const MIN_SAT = 0.38;     // precisa ser “colorido”
+const MIN_ALPHA = 40;
+const MIN_BRIGHT = 60;
+const MIN_SAT = 0.38;
 
 /* =========================
    DOM
@@ -415,7 +381,6 @@ function resizeAll(){
   resizeWave();
   if(state.imgLoaded){
     drawImageToCanvas();
-    // re-extrair pontos para novo tamanho
     extractPointsFromCanvas();
   }
 }
@@ -440,19 +405,13 @@ function rgbToHsv(r,g,b){
   const v = max;
   return [h,s,v];
 }
-
 function classifyHue(h){
-  // azul: ~180-260
-  if(h>=170 && h<=260) return 0;
-  // verde: ~80-170
-  if(h>=80 && h<170) return 1;
-  // amarelo: ~35-80
-  if(h>=35 && h<80) return 2;
-  // vermelho: ~0-20 ou ~330-360
-  if(h<=20 || h>=330) return 3;
+  if(h>=170 && h<=260) return 0; // azul
+  if(h>=80 && h<170) return 1;   // verde
+  if(h>=35 && h<80) return 2;    // amarelo
+  if(h<=20 || h>=330) return 3;  // vermelho
   return -1;
 }
-
 const CLASS_COLORS = [
   [0,210,255],   // azul
   [60,255,180],  // verde
@@ -479,35 +438,30 @@ function drawImageToCanvas(){
   const H = cnvImg.getBoundingClientRect().height;
   ctxI.clearRect(0,0,W,H);
 
-  // fundo preto
   ctxI.fillStyle = "#000";
   ctxI.fillRect(0,0,W,H);
 
   const img = state.img;
   const iw = img.naturalWidth, ih = img.naturalHeight;
 
-  // contain
   const scale = Math.min(W/iw, H/ih);
   const dw = iw*scale, dh = ih*scale;
   const dx = (W - dw)/2;
   const dy = (H - dh)/2;
 
-  // desenha mapa base
   ctxI.imageSmoothingEnabled = true;
   ctxI.drawImage(img, dx, dy, dw, dh);
 
-  // leve “holografia” na imagem base
   ctxI.globalCompositeOperation = "screen";
   ctxI.fillStyle = "rgba(0,180,255,0.10)";
   ctxI.fillRect(0,0,W,H);
   ctxI.globalCompositeOperation = "source-over";
 
-  // guarda retângulo onde a imagem está
   state._fit = {dx,dy,dw,dh,scale};
 }
 
 /* =========================
-   EXTRACT POINTS FROM IMAGE PIXELS
+   EXTRACT POINTS
 ========================= */
 function extractPointsFromCanvas(){
   const W = cnvImg.getBoundingClientRect().width;
@@ -518,7 +472,6 @@ function extractPointsFromCanvas(){
   const pts = [];
   const step = SAMPLE_STEP;
 
-  // varre pixels
   for(let y=0; y<imgData.height; y+=step){
     for(let x=0; x<imgData.width; x+=step){
       const i = (y*imgData.width + x)*4;
@@ -533,8 +486,6 @@ function extractPointsFromCanvas(){
       const cls = classifyHue(h);
       if(cls === -1) continue;
 
-      // “descompressão”/redução: pega só uma fração para não explodir
-      // (quanto mais brilhante, mais chance de entrar)
       const keepChance = Math.min(0.9, 0.08 + v*0.55);
       if(Math.random() > keepChance) continue;
 
@@ -552,7 +503,7 @@ function extractPointsFromCanvas(){
   }
 
   state.pts = pts;
-  statusEl.textContent = `Status: mapa OK • pontos extraídos: ${pts.length.toLocaleString("pt-BR")} (da imagem)`;
+  // ✅ não mostrar texto status
 }
 
 /* =========================
@@ -568,10 +519,8 @@ function startAnim(){
     ctxP.clearRect(0,0,W,H);
     ctxP.globalCompositeOperation = "lighter";
 
-    // pontos base
     for(const p of state.pts){
       const [r,g,b] = CLASS_COLORS[p.cls];
-
       const pulse = 0.55 + 0.45*Math.sin(p.ph + state.t*p.sp*0.025);
       const alpha = 0.10 + 0.32*pulse;
       const rad   = 0.55 + p.base*0.70;
@@ -582,7 +531,6 @@ function startAnim(){
       ctxP.fill();
     }
 
-    // sparkles (brilho)
     const glowCount = Math.min(2600, Math.max(700, (state.pts.length/12)|0));
     ctxP.save();
     ctxP.shadowBlur = 14;
@@ -656,13 +604,12 @@ function startWave(){
    BOOT
 ========================= */
 async function boot(){
-  statusEl.textContent = "Status: carregando mapa.png…";
   resizeAll();
   startWave();
 
   const img = new Image();
   img.decoding = "async";
-  img.src = IMG_URL + "?v=" + Date.now(); // evita cache
+  img.src = IMG_URL + "?v=" + Date.now();
   img.onload = ()=>{
     state.img = img;
     state.imgLoaded = true;
@@ -671,9 +618,6 @@ async function boot(){
     drawImageToCanvas();
     extractPointsFromCanvas();
     startAnim();
-  };
-  img.onerror = ()=>{
-    statusEl.textContent = "Status: ERRO • não achei mapa.png (verifique nome e pasta)";
   };
 }
 boot();
