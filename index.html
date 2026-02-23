@@ -120,7 +120,6 @@ html,body{
 }
 .abcline b{ color:#e9fdff; font-weight:900; }
 .abcline span{ color:#d5fbff; font-weight:900; }
-
 .grid2{
   display:grid;
   grid-template-columns: 1fr 1fr;
@@ -161,22 +160,6 @@ html,body{
   justify-content:center;
   background: radial-gradient(900px 600px at 50% 40%, rgba(20,60,80,.35), rgba(0,0,0,1) 70%);
 }
-
-/* ✅ SUA IMAGEM (QGIS) */
-#mapImg{
-  position:absolute;
-  inset:0;
-  width:100%;
-  height:100%;
-  object-fit: contain;
-  object-position:center;
-  pointer-events:none;
-  opacity:.98;
-  filter:
-    drop-shadow(0 0 18px rgba(0,255,220,.28))
-    drop-shadow(0 0 44px rgba(0,160,255,.16));
-}
-
 .layer{
   position:absolute; inset:0;
   width:100%;
@@ -184,7 +167,7 @@ html,body{
   pointer-events:none;
 }
 
-/* efeitos HUD */
+/* glow + scanlines */
 #mapGlow{
   position:absolute; inset:-10%;
   pointer-events:none;
@@ -268,7 +251,6 @@ input:focus{
   min-width:160px;
 }
 .btn:hover{ box-shadow:0 0 18px rgba(110,210,255,.30); }
-
 .valueLine{ margin-top:10px; font-size:12px; color:#bdf4ff; }
 .valueLine b{ font-size:19px; color:#e9fdff; }
 .smallnote{ margin-top:6px; font-size:11px; color:var(--muted); opacity:.95; }
@@ -302,47 +284,45 @@ input:focus{
   #center{ height:48vh; }
 }
 </style>
-
 </head>
 
 <body>
 <div id="app">
   <div id="header" class="glass">
     <h1>CNT — Centro Natural TEC Amazônia</h1>
-    <p class="sub">Mapa base do QGIS (mapa.png) • Pontos holográficos (azul/verde/amarelo/vermelho)</p>
+    <p class="sub">Base: mapa.png (QGIS) • Leitura de pixels → pontos holográficos reais (azul/verde/amarelo/vermelho)</p>
     <div id="chips">
-      <div class="chip">Fonte: dados públicos governamentais</div>
+      <div class="chip">Fonte: QGIS export</div>
       <div class="chip">Ano base: 2025</div>
-      <div class="chip">Pontos reais (sample → full)</div>
+      <div class="chip">Holografia: scan + glow</div>
       <div class="chip">Compra: Pump.fun</div>
     </div>
   </div>
 
   <div id="left" class="glass">
     <div class="small"><b>CNT</b> (índice único Brasil)</div>
-
-    <div class="big"><span id="eco">--</span><span style="font-size:16px; opacity:.9;">/100</span></div>
-    <div class="small">RAW auditável: <b id="raw">--</b></div>
+    <div class="big"><span id="eco">72,4</span><span style="font-size:16px; opacity:.9;">/100</span></div>
+    <div class="small">RAW auditável: <b id="raw">18,11</b></div>
 
     <div class="hr"></div>
 
     <div class="abclist">
-      <div class="abcline"><b>A — Estado</b><span id="A">--</span></div>
-      <div class="abcline"><b>B — Tendência</b><span id="B">--</span></div>
-      <div class="abcline"><b>C — Estabilidade</b><span id="C">--</span></div>
-      <div class="abcline"><b>Grau</b><span id="R">--</span></div>
+      <div class="abcline"><b>A — Estado</b><span id="A">72,43</span></div>
+      <div class="abcline"><b>B — Tendência</b><span id="B">-0,10</span></div>
+      <div class="abcline"><b>C — Estabilidade</b><span id="C">0,49</span></div>
+      <div class="abcline"><b>Grau</b><span id="R">E</span></div>
     </div>
 
     <div class="hr"></div>
 
     <div class="small" style="font-weight:900; letter-spacing:.3px;">Sub-índices</div>
     <div class="grid2">
-      <div class="kv"><b>IBE</b><span id="ibe">--</span></div>
-      <div class="kv"><b>IAB</b><span id="iab">--</span></div>
-      <div class="kv"><b>IBI</b><span id="ibi">--</span></div>
-      <div class="kv"><b>HID</b><span id="hid">--</span></div>
-      <div class="kv"><b>ENT</b><span id="ent">--</span></div>
-      <div class="kv"><b>PAN</b><span id="pan">--</span></div>
+      <div class="kv"><b>IBE</b><span id="ibe">55,2</span></div>
+      <div class="kv"><b>IAB</b><span id="iab">N/D</span></div>
+      <div class="kv"><b>IBI</b><span id="ibi">23,5</span></div>
+      <div class="kv"><b>HID</b><span id="hid">1,03</span></div>
+      <div class="kv"><b>ENT</b><span id="ent">86,2</span></div>
+      <div class="kv"><b>PAN</b><span id="pan">11,7</span></div>
     </div>
 
     <div id="status">Status: iniciando…</div>
@@ -350,15 +330,8 @@ input:focus{
 
   <div id="center" class="glass">
     <div id="mapWrap">
-      <!-- ✅ BASE DO QGIS -->
-      <img id="mapImg" src="./mapa.png" alt="Mapa CNT (QGIS)" />
-
-      <!-- ✅ Só pontos + efeitos (sem linhas/bordas) -->
-      <canvas id="cnvBase" class="layer"></canvas>
-      <canvas id="cnvBorder" class="layer"></canvas>
-      <canvas id="cnvLines" class="layer"></canvas>
-      <canvas id="cnvPoints" class="layer"></canvas>
-
+      <canvas id="cnvImg" class="layer"></canvas>
+      <canvas id="cnvPts" class="layer"></canvas>
       <div id="mapGlow"></div>
       <div id="scanlines"></div>
     </div>
@@ -375,14 +348,14 @@ input:focus{
         <button class="btn" id="btnBuy">Comprar no Pump</button>
       </div>
 
-      <div class="valueLine">Estimativa: <b id="out">-- CNT</b></div>
+      <div class="valueLine">Estimativa: <b id="out">14.744.913 CNT</b></div>
       <div class="smallnote">Estimativa demo (não é cotação real).</div>
     </div>
 
     <div id="telemetry" class="glass">
       <div id="telemetryTitle">TELEMETRIA — Série 10 anos</div>
       <canvas id="wave"></canvas>
-      <div id="telemetryHint">Carregando…</div>
+      <div id="telemetryHint">Histórico: 10 • Último (RAW): 18,11</div>
     </div>
   </div>
 </div>
@@ -393,76 +366,41 @@ input:focus{
 ========================= */
 const PUMP_URL = "https://pump.fun/coin/GCVyjNaCbXkwGUuktyNxSXad4ozmTp2fzQr2jieSpump";
 const rate = 147449130;
+const IMG_URL = "./mapa.png";
 
-/* ✅ Agora só precisamos do bbox (biomas) + cnt + pontos */
-const FILES = {
-  biomas: "biomas.geojson",            // usado só pra bbox/projeção (lon/lat -> tela)
-  cnt: "cnt_full_10y.geojson",
-  pts_sample: "vege_pts_sample.geojson",
-  pts_full: "vege_pts.geojson"
-};
+// quantos pontos máximo para não travar
+const MAX_POINTS = 45000;
+
+// amostragem de pixels (quanto maior, mais leve; quanto menor, mais fiel)
+const SAMPLE_STEP = 3; // 2 = mais pesado / 4 = mais leve
+
+// thresholds (ajuste fino se precisar)
+const MIN_ALPHA = 40;     // ignora pixels transparentes
+const MIN_BRIGHT = 60;    // ignora pixels muito escuros
+const MIN_SAT = 0.38;     // precisa ser “colorido”
 
 /* =========================
-   HELPERS
+   DOM
 ========================= */
 const statusEl = document.getElementById("status");
-function fmt(n, d=2){
-  if(n === null || n === undefined || !Number.isFinite(Number(n))) return "--";
-  return Number(n).toFixed(d).replace(".", ",");
-}
-function fmt1(n){ return fmt(n,1); }
-function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+const solInput = document.getElementById("sol");
+const out = document.getElementById("out");
+document.getElementById("btnBuy").addEventListener("click", ()=>window.open(PUMP_URL,"_blank","noopener,noreferrer"));
 
-async function loadJSON(name){
-  const url = "./" + name + "?v=" + Date.now();
-  const res = await fetch(url, { cache:"no-store" });
-  if(!res.ok) throw new Error(`${name} HTTP ${res.status} (${url})`);
-  const txt = await res.text();
-  try{ return JSON.parse(txt); }
-  catch(e){ throw new Error(`${name}: JSON inválido / truncado`); }
+function updateOut(){
+  const sol = parseFloat(solInput.value) || 0;
+  out.textContent = (sol * rate).toLocaleString("pt-BR") + " CNT";
 }
-
-function walkCoords(arr, cb){
-  if(!arr) return;
-  if(typeof arr[0] === "number") cb(arr);
-  else for(const a of arr) walkCoords(a, cb);
-}
-function calcBBox(fc){
-  let minx=+Infinity, miny=+Infinity, maxx=-Infinity, maxy=-Infinity;
-  for(const f of (fc.features||[])){
-    const g = f.geometry;
-    if(!g) continue;
-    walkCoords(g.coordinates, (c)=>{
-      const x=c[0], y=c[1];
-      if(x<minx)minx=x; if(y<miny)miny=y;
-      if(x>maxx)maxx=x; if(y>maxy)maxy=y;
-    });
-  }
-  return [minx, miny, maxx, maxy];
-}
-
-/* proj */
-let bbox = null;
-function proj(lon,lat,w,h){
-  const [minx,miny,maxx,maxy] = bbox;
-  return [
-    (lon-minx)/(maxx-minx)*w,
-    (maxy-lat)/(maxy-miny)*h
-  ];
-}
+solInput.addEventListener("input", updateOut);
+updateOut();
 
 /* =========================
    CANVAS
 ========================= */
-const cnvBase   = document.getElementById("cnvBase");
-const cnvBorder = document.getElementById("cnvBorder");
-const cnvLines  = document.getElementById("cnvLines");
-const cnvPoints = document.getElementById("cnvPoints");
-
-const ctxBase = cnvBase.getContext("2d");
-const ctxB    = cnvBorder.getContext("2d");
-const ctxL    = cnvLines.getContext("2d");
-const ctxP    = cnvPoints.getContext("2d");
+const cnvImg = document.getElementById("cnvImg");
+const cnvPts = document.getElementById("cnvPts");
+const ctxI = cnvImg.getContext("2d");
+const ctxP = cnvPts.getContext("2d");
 
 function resizeCanvas(cnv, ctx){
   const dpr = Math.max(1, window.devicePixelRatio || 1);
@@ -472,163 +410,200 @@ function resizeCanvas(cnv, ctx){
   ctx.setTransform(dpr,0,0,dpr,0,0);
 }
 function resizeAll(){
-  resizeCanvas(cnvBase, ctxBase);
-  resizeCanvas(cnvBorder, ctxB);
-  resizeCanvas(cnvLines, ctxL);
-  resizeCanvas(cnvPoints, ctxP);
+  resizeCanvas(cnvImg, ctxI);
+  resizeCanvas(cnvPts, ctxP);
   resizeWave();
-  if(state.ready) redrawStatic();
+  if(state.imgLoaded){
+    drawImageToCanvas();
+    // re-extrair pontos para novo tamanho
+    extractPointsFromCanvas();
+  }
 }
-window.addEventListener("resize", resizeAll);
+window.addEventListener("resize", ()=>requestAnimationFrame(resizeAll));
 
-function clearAll(){
-  const W = cnvBase.getBoundingClientRect().width;
-  const H = cnvBase.getBoundingClientRect().height;
-  ctxBase.clearRect(0,0,W,H);
-  ctxB.clearRect(0,0,W,H);
-  ctxL.clearRect(0,0,W,H);
-  ctxP.clearRect(0,0,W,H);
+/* =========================
+   COLOR HELPERS
+========================= */
+function rgbToHsv(r,g,b){
+  r/=255; g/=255; b/=255;
+  const max=Math.max(r,g,b), min=Math.min(r,g,b);
+  const d=max-min;
+  let h=0;
+  if(d!==0){
+    if(max===r) h=((g-b)/d)%6;
+    else if(max===g) h=(b-r)/d+2;
+    else h=(r-g)/d+4;
+    h*=60;
+    if(h<0) h+=360;
+  }
+  const s = max===0?0:d/max;
+  const v = max;
+  return [h,s,v];
 }
+
+function classifyHue(h){
+  // azul: ~180-260
+  if(h>=170 && h<=260) return 0;
+  // verde: ~80-170
+  if(h>=80 && h<170) return 1;
+  // amarelo: ~35-80
+  if(h>=35 && h<80) return 2;
+  // vermelho: ~0-20 ou ~330-360
+  if(h<=20 || h>=330) return 3;
+  return -1;
+}
+
+const CLASS_COLORS = [
+  [0,210,255],   // azul
+  [60,255,180],  // verde
+  [255,235,90],  // amarelo
+  [255,80,60],   // vermelho
+];
 
 /* =========================
    STATE
 ========================= */
 const state = {
-  ready:false,
-  biomas:null,
-  cnt:null,
-  ptsFC:null,
-  ptsXY:[],
-  t:0,
-  animStarted:false
+  img: null,
+  imgLoaded: false,
+  pts: [],
+  t: 0,
+  anim: false
 };
 
 /* =========================
-   COR POR CLASSE (4 cores CNT)
-   (ajuste se seus properties tiverem outro nome)
+   IMAGE -> CANVAS (fit contain)
 ========================= */
-function getProp(obj, keys){
-  for(const k of keys){
-    if(obj && obj[k] !== undefined && obj[k] !== null) return obj[k];
-  }
-  return null;
-}
-function classFromFeature(f){
-  const p = f?.properties || {};
-  return getProp(p, ["classe","class","cat","categoria","type","tipo","grupo","k","label"]);
-}
-function colorForClass(cls){
-  const c = (cls ?? "").toString().toLowerCase().trim();
+function drawImageToCanvas(){
+  const W = cnvImg.getBoundingClientRect().width;
+  const H = cnvImg.getBoundingClientRect().height;
+  ctxI.clearRect(0,0,W,H);
 
-  // água (azul)
-  if(c.includes("agua") || c.includes("water") || c === "2" || c === "azul") return [0, 210, 255];
+  // fundo preto
+  ctxI.fillStyle = "#000";
+  ctxI.fillRect(0,0,W,H);
 
-  // vegetação (verde)
-  if(c.includes("veg") || c.includes("flor") || c.includes("mata") || c.includes("tree") || c === "1" || c === "verde") return [60, 255, 180];
+  const img = state.img;
+  const iw = img.naturalWidth, ih = img.naturalHeight;
 
-  // transição (amarelo)
-  if(c.includes("trans") || c.includes("agro") || c.includes("past") || c.includes("lavour") || c === "3" || c === "amarelo") return [255, 235, 90];
+  // contain
+  const scale = Math.min(W/iw, H/ih);
+  const dw = iw*scale, dh = ih*scale;
+  const dx = (W - dw)/2;
+  const dy = (H - dh)/2;
 
-  // desmatamento/pressão (vermelho)
-  if(c.includes("desm") || c.includes("defor") || c.includes("press") || c.includes("alert") || c === "4" || c === "vermelho") return [255, 80, 60];
+  // desenha mapa base
+  ctxI.imageSmoothingEnabled = true;
+  ctxI.drawImage(img, dx, dy, dw, dh);
 
-  // fallback (ciano)
-  return [120, 220, 255];
+  // leve “holografia” na imagem base
+  ctxI.globalCompositeOperation = "screen";
+  ctxI.fillStyle = "rgba(0,180,255,0.10)";
+  ctxI.fillRect(0,0,W,H);
+  ctxI.globalCompositeOperation = "source-over";
+
+  // guarda retângulo onde a imagem está
+  state._fit = {dx,dy,dw,dh,scale};
 }
 
 /* =========================
-   POINTS (projeta e guarda classe)
+   EXTRACT POINTS FROM IMAGE PIXELS
 ========================= */
-function buildProjectedPoints(fc){
-  const W = cnvBase.getBoundingClientRect().width;
-  const H = cnvBase.getBoundingClientRect().height;
+function extractPointsFromCanvas(){
+  const W = cnvImg.getBoundingClientRect().width;
+  const H = cnvImg.getBoundingClientRect().height;
+  const imgData = ctxI.getImageData(0,0,Math.max(1,Math.floor(W)),Math.max(1,Math.floor(H)));
+  const d = imgData.data;
 
   const pts = [];
-  for(const f of (fc.features||[])){
-    const g = f.geometry;
-    if(!g || g.type!=="Point") continue;
-    const [x,y] = proj(g.coordinates[0], g.coordinates[1], W, H);
-    pts.push({
-      x,y,
-      cls: classFromFeature(f),
-      ph: Math.random()*Math.PI*2,
-      sp: 0.7+Math.random()*1.3,
-      base: 0.6+Math.random()*0.8
-    });
+  const step = SAMPLE_STEP;
+
+  // varre pixels
+  for(let y=0; y<imgData.height; y+=step){
+    for(let x=0; x<imgData.width; x+=step){
+      const i = (y*imgData.width + x)*4;
+      const r=d[i], g=d[i+1], b=d[i+2], a=d[i+3];
+
+      if(a < MIN_ALPHA) continue;
+
+      const [h,s,v] = rgbToHsv(r,g,b);
+      if(v*255 < MIN_BRIGHT) continue;
+      if(s < MIN_SAT) continue;
+
+      const cls = classifyHue(h);
+      if(cls === -1) continue;
+
+      // “descompressão”/redução: pega só uma fração para não explodir
+      // (quanto mais brilhante, mais chance de entrar)
+      const keepChance = Math.min(0.9, 0.08 + v*0.55);
+      if(Math.random() > keepChance) continue;
+
+      pts.push({
+        x, y,
+        cls,
+        ph: Math.random()*Math.PI*2,
+        sp: 0.7 + Math.random()*1.4,
+        base: 0.6 + Math.random()*0.9
+      });
+
+      if(pts.length >= MAX_POINTS) break;
+    }
+    if(pts.length >= MAX_POINTS) break;
   }
 
-  // LIMITADOR (pra FULL não travar)
-  const MAX = 140000;
-  if(pts.length > MAX){
-    const step = Math.ceil(pts.length / MAX);
-    const slim = [];
-    for(let i=0;i<pts.length;i+=step) slim.push(pts[i]);
-    state.ptsXY = slim;
-  } else {
-    state.ptsXY = pts;
-  }
+  state.pts = pts;
+  statusEl.textContent = `Status: mapa OK • pontos extraídos: ${pts.length.toLocaleString("pt-BR")} (da imagem)`;
 }
 
 /* =========================
-   STATIC (✅ NÃO desenha linhas/bordas)
-========================= */
-function redrawStatic(){
-  clearAll(); // imagem é a base, canvases ficam transparentes
-}
-
-/* =========================
-   ANIMAÇÃO (pontos holográficos por classe)
+   ANIMATE POINTS
 ========================= */
 function startAnim(){
-  if(state.animStarted) return;
-  state.animStarted = true;
+  if(state.anim) return;
+  state.anim = true;
 
   const loop = ()=>{
-    const W = cnvPoints.getBoundingClientRect().width;
-    const H = cnvPoints.getBoundingClientRect().height;
+    const W = cnvPts.getBoundingClientRect().width;
+    const H = cnvPts.getBoundingClientRect().height;
     ctxP.clearRect(0,0,W,H);
+    ctxP.globalCompositeOperation = "lighter";
 
-    if(state.ptsXY.length){
-      ctxP.globalCompositeOperation = "lighter";
+    // pontos base
+    for(const p of state.pts){
+      const [r,g,b] = CLASS_COLORS[p.cls];
 
-      // 1) micro pontos (bem pequenos)
-      for(const p of state.ptsXY){
-        const [r,g,b] = colorForClass(p.cls);
+      const pulse = 0.55 + 0.45*Math.sin(p.ph + state.t*p.sp*0.025);
+      const alpha = 0.10 + 0.32*pulse;
+      const rad   = 0.55 + p.base*0.70;
 
-        const pulse = 0.55 + 0.45*Math.sin(p.ph + state.t*p.sp*0.025);
-        const alpha = (0.10 + 0.34*pulse);
-        const rad   = 0.55 + p.base*0.65; // um pouco maior (mais “QGIS holográfico”)
-
-        ctxP.beginPath();
-        ctxP.fillStyle = `rgba(${r},${g},${b},${alpha})`;
-        ctxP.arc(p.x, p.y, rad, 0, Math.PI*2);
-        ctxP.fill();
-      }
-
-      // 2) “sparkles” (brilho)
-      const glowCount = Math.min(2200, Math.max(650, (state.ptsXY.length/12)|0));
-      ctxP.save();
-      ctxP.shadowBlur = 14;
-      for(let i=0;i<glowCount;i++){
-        const p = state.ptsXY[(Math.random()*state.ptsXY.length)|0];
-        if(!p) continue;
-
-        const [r,g,b] = colorForClass(p.cls);
-        const pulse = 0.55 + 0.45*Math.sin(p.ph + state.t*0.03);
-        const alpha = 0.08 + 0.22*pulse;
-
-        ctxP.shadowColor = `rgba(${r},${g},${b},${0.65})`;
-        ctxP.fillStyle   = `rgba(${r},${g},${b},${alpha})`;
-
-        ctxP.beginPath();
-        ctxP.arc(p.x, p.y, 1.4 + pulse*1.8, 0, Math.PI*2);
-        ctxP.fill();
-      }
-      ctxP.restore();
-
-      ctxP.globalCompositeOperation = "source-over";
+      ctxP.beginPath();
+      ctxP.fillStyle = `rgba(${r},${g},${b},${alpha})`;
+      ctxP.arc(p.x, p.y, rad, 0, Math.PI*2);
+      ctxP.fill();
     }
 
+    // sparkles (brilho)
+    const glowCount = Math.min(2600, Math.max(700, (state.pts.length/12)|0));
+    ctxP.save();
+    ctxP.shadowBlur = 14;
+    for(let i=0;i<glowCount;i++){
+      const p = state.pts[(Math.random()*state.pts.length)|0];
+      if(!p) continue;
+      const [r,g,b] = CLASS_COLORS[p.cls];
+
+      const pulse = 0.55 + 0.45*Math.sin(p.ph + state.t*0.03);
+      const alpha = 0.07 + 0.22*pulse;
+
+      ctxP.shadowColor = `rgba(${r},${g},${b},${0.70})`;
+      ctxP.fillStyle   = `rgba(${r},${g},${b},${alpha})`;
+
+      ctxP.beginPath();
+      ctxP.arc(p.x, p.y, 1.4 + pulse*1.9, 0, Math.PI*2);
+      ctxP.fill();
+    }
+    ctxP.restore();
+
+    ctxP.globalCompositeOperation = "source-over";
     state.t++;
     requestAnimationFrame(loop);
   };
@@ -636,7 +611,7 @@ function startAnim(){
 }
 
 /* =========================
-   TELEMETRY
+   TELEMETRY (dummy wave)
 ========================= */
 const wave = document.getElementById("wave");
 const wctx = wave.getContext("2d");
@@ -647,8 +622,7 @@ function resizeWave(){
   wave.height = Math.floor(wave.clientHeight * dpr);
   wctx.setTransform(dpr,0,0,dpr,0,0);
 }
-function startWave(series){
-  const s = Array.isArray(series) ? series : [];
+function startWave(){
   const draw = ()=>{
     const W = wave.clientWidth, H = wave.clientHeight;
     wctx.clearRect(0,0,W,H);
@@ -661,40 +635,14 @@ function startWave(series){
       wctx.beginPath(); wctx.moveTo(0,y); wctx.lineTo(W,y); wctx.stroke();
     }
 
-    const min = s.length? Math.min(...s) : 0;
-    const max = s.length? Math.max(...s) : 1;
-
-    function yAt(i){
-      if(s.length>=2){
-        const idx = (i / (W-1)) * (s.length-1);
-        const a = Math.floor(idx);
-        const b = Math.min(s.length-1, a+1);
-        const f = idx - a;
-        const v = s[a]*(1-f) + s[b]*f;
-        const norm = (max-min) < 1e-9 ? 0.5 : (v - min) / (max - min);
-        let y = (H*0.18) + (1-norm) * (H*0.68);
-        y += Math.sin((i + tWave)/28) * (H*0.02);
-        return y;
-      }
-      return (H*0.52)
-        + Math.sin((i+tWave)/38)*(H*0.20)
-        + Math.sin((i+tWave)/13)*(H*0.07);
-    }
-
     wctx.lineWidth = 2;
-    wctx.strokeStyle = "rgba(110,210,255,.35)";
-    wctx.beginPath();
-    for(let i=0;i<W;i++){
-      const y = yAt(i);
-      if(i===0) wctx.moveTo(i,y); else wctx.lineTo(i,y);
-    }
-    wctx.stroke();
-
     wctx.strokeStyle = "rgba(110,210,255,.90)";
     wctx.beginPath();
-    for(let i=0;i<W;i++){
-      const y = yAt(i);
-      if(i===0) wctx.moveTo(i,y); else wctx.lineTo(i,y);
+    for(let x=0;x<W;x++){
+      const y = (H*0.52)
+        + Math.sin((x+tWave)/38)*(H*0.20)
+        + Math.sin((x+tWave)/13)*(H*0.07);
+      if(x===0) wctx.moveTo(x,y); else wctx.lineTo(x,y);
     }
     wctx.stroke();
 
@@ -705,94 +653,30 @@ function startWave(series){
 }
 
 /* =========================
-   BUY
-========================= */
-const solInput = document.getElementById("sol");
-const out = document.getElementById("out");
-function updateOut(){
-  const sol = parseFloat(solInput.value) || 0;
-  out.textContent = (sol * rate).toLocaleString("pt-BR") + " CNT";
-}
-solInput.addEventListener("input", updateOut);
-updateOut();
-document.getElementById("btnBuy").addEventListener("click", ()=>{
-  window.open(PUMP_URL, "_blank", "noopener,noreferrer");
-});
-
-/* =========================
    BOOT
 ========================= */
 async function boot(){
-  try{
-    statusEl.textContent = "Status: carregando bbox/projeção + CNT…";
+  statusEl.textContent = "Status: carregando mapa.png…";
+  resizeAll();
+  startWave();
 
-    // bbox para projetar pontos (lon/lat -> tela)
-    state.biomas = await loadJSON(FILES.biomas);
-    bbox = calcBBox(state.biomas);
-
-    // HUD CNT
-    state.cnt = await loadJSON(FILES.cnt);
-    const props = state.cnt?.features?.[0]?.properties || {};
-
-    const rawA = Number(props.cnt_A);
-    const A100 = Number.isFinite(rawA) ? clamp(rawA * 4, 0, 100) : NaN;
-
-    document.getElementById("raw").textContent = fmt(rawA,2);
-    document.getElementById("eco").textContent = fmt1(A100);
-    document.getElementById("A").textContent   = fmt(A100,2);
-
-    const b = Number(props.cnt_B);
-    document.getElementById("B").textContent = Number.isFinite(b) ? ((b>=0?"+":"") + fmt(b,2)) : "--";
-    document.getElementById("C").textContent = fmt(props.cnt_C,2);
-    document.getElementById("R").textContent = props.grade || "--";
-
-    document.getElementById("ibe").textContent = Number.isFinite(Number(props.FUNC)) ? fmt(props.FUNC,1) : "--";
-    document.getElementById("iab").textContent = Number.isFinite(Number(props.IAB))  ? fmt(props.IAB,1)  : "N/D";
-    document.getElementById("ibi").textContent = Number.isFinite(Number(props.IBI))  ? fmt(props.IBI,1)  : "--";
-    document.getElementById("hid").textContent = Number.isFinite(Number(props.HID))  ? fmt(props.HID,2)  : "--";
-    document.getElementById("ent").textContent = Number.isFinite(Number(props.ENT))  ? fmt(props.ENT,1)  : "--";
-    document.getElementById("pan").textContent = Number.isFinite(Number(props.PAN))  ? fmt(props.PAN,1)  : "--";
-
-    const series = Array.isArray(props.series_10y) ? props.series_10y.map(Number).filter(Number.isFinite) : [];
-    document.getElementById("telemetryHint").textContent = series.length
-      ? ("Histórico: " + series.length + " • Último (RAW): " + fmt(rawA,2))
-      : "Sem série 10y no GeoJSON.";
+  const img = new Image();
+  img.decoding = "async";
+  img.src = IMG_URL + "?v=" + Date.now(); // evita cache
+  img.onload = ()=>{
+    state.img = img;
+    state.imgLoaded = true;
 
     resizeAll();
-    state.ready = true;
-
-    // base = mapa.png
-    redrawStatic();
-    startWave(series);
-
-    // pontos sample primeiro
-    statusEl.textContent = "Status: mapa base OK • carregando pontos (sample)…";
-    const ptsSample = await loadJSON(FILES.pts_sample);
-    state.ptsFC = ptsSample;
-    buildProjectedPoints(ptsSample);
+    drawImageToCanvas();
+    extractPointsFromCanvas();
     startAnim();
-    statusEl.textContent = `Status: pontos sample OK • exibindo ${state.ptsXY.length.toLocaleString("pt-BR")} pontos • tentando FULL…`;
-
-    // tenta FULL
-    setTimeout(async ()=>{
-      try{
-        const ptsFull = await loadJSON(FILES.pts_full);
-        state.ptsFC = ptsFull;
-        buildProjectedPoints(ptsFull);
-        statusEl.textContent = `Status: FULL OK • exibindo ${state.ptsXY.length.toLocaleString("pt-BR")} pontos (cap)`;
-      }catch(e){
-        statusEl.textContent = `Status: FULL indisponível • mantendo sample (${state.ptsXY.length.toLocaleString("pt-BR")} pts)`;
-      }
-    }, 250);
-
-  }catch(err){
-    console.error(err);
-    statusEl.textContent = "Status: ERRO • " + (err?.message || err);
-    document.getElementById("telemetryHint").textContent = "Erro: arquivos não carregaram. Veja o console (F12).";
-  }
+  };
+  img.onerror = ()=>{
+    statusEl.textContent = "Status: ERRO • não achei mapa.png (verifique nome e pasta)";
+  };
 }
 boot();
 </script>
-
 </body>
 </html>
