@@ -58,21 +58,6 @@ html,body{
   color:#e9fdff;
   text-align:center;
 }
-#chips{
-  display:flex;
-  justify-content:center;
-  gap:10px;
-  flex-wrap:wrap;
-}
-.chip{
-  font-size:11px;
-  padding:7px 10px;
-  border-radius:999px;
-  border:1px solid rgba(110,210,255,.22);
-  background: rgba(0,0,0,.20);
-  color:#cfefff;
-  opacity:.95;
-}
 
 /* Left */
 #left{
@@ -110,9 +95,16 @@ html,body{
   background:rgba(0,0,0,.18);
   border-radius:14px;
   font-size:12px;
+  cursor:pointer;
+  transition:all .18s ease;
+}
+.abcline:hover{
+  box-shadow:0 0 12px rgba(110,210,255,.22);
+  transform:translateY(-1px);
 }
 .abcline b{ color:#e9fdff; font-weight:900; }
 .abcline span{ color:#d5fbff; font-weight:900; }
+
 .grid2{
   display:grid;
   grid-template-columns: 1fr 1fr;
@@ -127,6 +119,12 @@ html,body{
   border:1px solid rgba(110,210,255,.16);
   border-radius:14px;
   background:rgba(0,0,0,.18);
+  cursor:pointer;
+  transition:all .18s ease;
+}
+.kv:hover{
+  box-shadow:0 0 12px rgba(110,210,255,.22);
+  transform:translateY(-1px);
 }
 .kv b{ font-weight:900; color:#e9fdff; }
 .kv span{ color:#d0fbff; font-weight:900; }
@@ -205,35 +203,21 @@ html,body{
   letter-spacing:.4px;
   color:#e9fdff;
 }
-label{ display:block; font-size:12px; color:var(--muted); margin:10px 0 6px; }
 .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-input{
-  width:170px;
-  padding:10px 12px;
-  border-radius:14px;
-  border:1px solid rgba(110,210,255,.35);
-  background:rgba(0,0,0,.18);
-  color:#e9fbff;
-  outline:none;
-}
-input:focus{
-  border-color: rgba(110,210,255,.70);
-  box-shadow: 0 0 16px rgba(110,210,255,.18);
-}
 .btn{
+  width:100%;
   background:linear-gradient(180deg,rgba(110,210,255,.20),rgba(0,0,0,.16));
   border:1px solid rgba(110,210,255,.45);
   color:#eafcff;
   border-radius:14px;
-  padding:10px 13px;
+  padding:12px 13px;
   cursor:pointer;
   font-weight:900;
   letter-spacing:.2px;
-  min-width:160px;
 }
 .btn:hover{ box-shadow:0 0 18px rgba(110,210,255,.30); }
 
-/* ✅ textos azuis removidos */
+/* ✅ remove textos extras */
 #buy .mut, .valueLine, .smallnote, #telemetryHint { display:none !important; }
 
 #telemetryTitle{
@@ -253,6 +237,67 @@ input:focus{
   border-radius:14px;
 }
 
+/* =========================
+   MODAL EXPLICAÇÃO
+========================= */
+.infoModal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.72);
+  backdrop-filter:blur(8px);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:9999;
+}
+.infoBox{
+  width:460px;
+  max-width:92%;
+  background:rgba(2,12,24,.92);
+  border:1px solid rgba(110,210,255,.45);
+  border-radius:18px;
+  padding:18px 18px 16px;
+  box-shadow:0 0 30px rgba(0,200,255,.25);
+}
+.infoHeader{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  margin-bottom:10px;
+}
+#infoTitle{
+  font-weight:900;
+  color:#e9fdff;
+  letter-spacing:.2px;
+}
+#closeInfo{
+  background:none;
+  border:none;
+  color:#86dcff;
+  font-size:22px;
+  cursor:pointer;
+  line-height:1;
+  padding:2px 8px;
+}
+.infoContent{
+  font-size:13px;
+  line-height:1.55;
+  color:#c8f3ff;
+  white-space:pre-line;
+}
+.infoBadge{
+  display:inline-block;
+  margin-top:10px;
+  font-size:11px;
+  color:#bdf4ff;
+  border:1px solid rgba(110,210,255,.20);
+  background:rgba(0,0,0,.20);
+  padding:6px 10px;
+  border-radius:999px;
+  opacity:.95;
+}
+
 @media (max-width: 1100px){
   body{ overflow:auto; }
   #app{ position:relative; grid-template-columns: 1fr; grid-template-rows: auto auto auto auto; }
@@ -265,8 +310,6 @@ input:focus{
 <div id="app">
   <div id="header" class="glass">
     <h1>CNT — Centro Natural TEC Amazônia</h1>
-    <!-- ✅ removido subtexto -->
-    <div id="chips"><!-- ✅ removido chips --></div>
   </div>
 
   <div id="left" class="glass">
@@ -277,22 +320,22 @@ input:focus{
     <div class="hr"></div>
 
     <div class="abclist">
-      <div class="abcline"><b>A — Estado</b><span id="A">72,43</span></div>
-      <div class="abcline"><b>B — Tendência</b><span id="B">-0,10</span></div>
-      <div class="abcline"><b>C — Estabilidade</b><span id="C">0,49</span></div>
-      <div class="abcline"><b>Grau</b><span id="R">E</span></div>
+      <div class="abcline" data-key="A"><b>A — Estado</b><span id="A">72,43</span></div>
+      <div class="abcline" data-key="B"><b>B — Tendência</b><span id="B">-0,10</span></div>
+      <div class="abcline" data-key="C"><b>C — Estabilidade</b><span id="C">0,49</span></div>
+      <div class="abcline" data-key="R"><b>Grau</b><span id="R">E</span></div>
     </div>
 
     <div class="hr"></div>
 
     <div class="small" style="font-weight:900; letter-spacing:.3px;">Sub-índices</div>
     <div class="grid2">
-      <div class="kv"><b>IBE</b><span id="ibe">55,2</span></div>
-      <div class="kv"><b>IAB</b><span id="iab">N/D</span></div>
-      <div class="kv"><b>IBI</b><span id="ibi">23,5</span></div>
-      <div class="kv"><b>HID</b><span id="hid">1,03</span></div>
-      <div class="kv"><b>ENT</b><span id="ent">86,2</span></div>
-      <div class="kv"><b>PAN</b><span id="pan">11,7</span></div>
+      <div class="kv" data-key="IBE"><b>IBE</b><span id="ibe">55,2</span></div>
+      <div class="kv" data-key="IAB"><b>IAB</b><span id="iab">N/D</span></div>
+      <div class="kv" data-key="IBI"><b>IBI</b><span id="ibi">23,5</span></div>
+      <div class="kv" data-key="HID"><b>HID</b><span id="hid">1,03</span></div>
+      <div class="kv" data-key="ENT"><b>ENT</b><span id="ent">86,2</span></div>
+      <div class="kv" data-key="PAN"><b>PAN</b><span id="pan">11,7</span></div>
     </div>
 
     <div id="status">Status: iniciando…</div>
@@ -310,15 +353,9 @@ input:focus{
   <div id="right">
     <div id="buy" class="glass">
       <h2>COMPRAR CNT</h2>
-
-      <label for="sol">Contribuição</label>
       <div class="row">
-        <input id="sol" type="number" step="0.01" min="0" value="0.10" />
         <button class="btn" id="btnBuy">Comprar no Pump</button>
       </div>
-
-      <div class="valueLine">Estimativa: <b id="out">-- CNT</b></div>
-      <div class="smallnote">Estimativa demo (não é cotação real).</div>
     </div>
 
     <div id="telemetry" class="glass">
@@ -329,36 +366,40 @@ input:focus{
   </div>
 </div>
 
+<!-- =========================
+     MODAL EXPLICAÇÃO
+========================= -->
+<div id="infoModal" class="infoModal">
+  <div class="infoBox">
+    <div class="infoHeader">
+      <span id="infoTitle">Índice</span>
+      <button id="closeInfo" aria-label="Fechar">×</button>
+    </div>
+    <div id="infoContent" class="infoContent"></div>
+    <div class="infoBadge">Clique fora para fechar</div>
+  </div>
+</div>
+
 <script>
 /* =========================
    CONFIG
 ========================= */
 const PUMP_URL = "https://pump.fun/coin/GCVyjNaCbXkwGUuktyNxSXad4ozmTp2fzQr2jieSpump";
-const rate = 147449130;
 const IMG_URL = "./mapa.png";
 
-/* leve / equilibrado */
+/* performance */
 const MAX_POINTS = 45000;
 const SAMPLE_STEP = 3;
-
 const MIN_ALPHA = 40;
 const MIN_BRIGHT = 60;
 const MIN_SAT = 0.38;
 
 /* =========================
-   DOM
+   BUY
 ========================= */
-const statusEl = document.getElementById("status");
-const solInput = document.getElementById("sol");
-const out = document.getElementById("out");
-document.getElementById("btnBuy").addEventListener("click", ()=>window.open(PUMP_URL,"_blank","noopener,noreferrer"));
-
-function updateOut(){
-  const sol = parseFloat(solInput.value) || 0;
-  out.textContent = (sol * rate).toLocaleString("pt-BR") + " CNT";
-}
-solInput.addEventListener("input", updateOut);
-updateOut();
+document.getElementById("btnBuy").addEventListener("click", ()=>{
+  window.open(PUMP_URL,"_blank","noopener,noreferrer");
+});
 
 /* =========================
    CANVAS
@@ -456,8 +497,6 @@ function drawImageToCanvas(){
   ctxI.fillStyle = "rgba(0,180,255,0.10)";
   ctxI.fillRect(0,0,W,H);
   ctxI.globalCompositeOperation = "source-over";
-
-  state._fit = {dx,dy,dw,dh,scale};
 }
 
 /* =========================
@@ -501,9 +540,7 @@ function extractPointsFromCanvas(){
     }
     if(pts.length >= MAX_POINTS) break;
   }
-
   state.pts = pts;
-  // ✅ não mostrar texto status
 }
 
 /* =========================
@@ -519,6 +556,7 @@ function startAnim(){
     ctxP.clearRect(0,0,W,H);
     ctxP.globalCompositeOperation = "lighter";
 
+    // pontos base
     for(const p of state.pts){
       const [r,g,b] = CLASS_COLORS[p.cls];
       const pulse = 0.55 + 0.45*Math.sin(p.ph + state.t*p.sp*0.025);
@@ -531,7 +569,8 @@ function startAnim(){
       ctxP.fill();
     }
 
-    const glowCount = Math.min(2600, Math.max(700, (state.pts.length/12)|0));
+    // brilho
+    const glowCount = Math.min(2400, Math.max(650, (state.pts.length/14)|0));
     ctxP.save();
     ctxP.shadowBlur = 14;
     for(let i=0;i<glowCount;i++){
@@ -540,13 +579,13 @@ function startAnim(){
       const [r,g,b] = CLASS_COLORS[p.cls];
 
       const pulse = 0.55 + 0.45*Math.sin(p.ph + state.t*0.03);
-      const alpha = 0.07 + 0.22*pulse;
+      const alpha = 0.06 + 0.20*pulse;
 
       ctxP.shadowColor = `rgba(${r},${g},${b},${0.70})`;
       ctxP.fillStyle   = `rgba(${r},${g},${b},${alpha})`;
 
       ctxP.beginPath();
-      ctxP.arc(p.x, p.y, 1.4 + pulse*1.9, 0, Math.PI*2);
+      ctxP.arc(p.x, p.y, 1.3 + pulse*1.8, 0, Math.PI*2);
       ctxP.fill();
     }
     ctxP.restore();
@@ -601,9 +640,105 @@ function startWave(){
 }
 
 /* =========================
+   MODAL: explicações
+========================= */
+const explanations = {
+  "A": {
+    title: "A — Estado",
+    text:
+`Condição ecológica atual do território.
+• Integra sinais de vegetação, água e pressões.
+• Quanto maior, mais íntegro o estado ambiental.`
+  },
+  "B": {
+    title: "B — Tendência",
+    text:
+`Direção da mudança no tempo.
+• Positivo: melhora / recuperação.
+• Negativo: degradação / aumento de pressão.`
+  },
+  "C": {
+    title: "C — Estabilidade",
+    text:
+`Resiliência e consistência do sistema.
+• Alto: oscila pouco (mais estável).
+• Baixo: oscila muito (mais instável).`
+  },
+  "R": {
+    title: "Grau",
+    text:
+`Classificação sintética do desempenho do sistema.
+• Converte os valores em uma faixa/nota para leitura rápida.`
+  },
+  "IBE": {
+    title: "IBE — Índice Bioecológico",
+    text:
+`Integridade biológica/ecológica.
+• Associado à cobertura vegetal e vitalidade do ecossistema.
+• Quanto maior, mais “saudável” a base bioecológica.`
+  },
+  "IAB": {
+    title: "IAB — Índice Abiótico",
+    text:
+`Fatores físicos do território.
+• Solo, relevo, clima local e condições ambientais não-vivas.
+• Ajuda a explicar limitações naturais do sistema.`
+  },
+  "IBI": {
+    title: "IBI — Índice Biótico Integrado",
+    text:
+`Integração de sinais bióticos.
+• Relações e “funcionamento” do sistema vivo como conjunto.
+• Bom para comparar regiões com padrões ecológicos diferentes.`
+  },
+  "HID": {
+    title: "HID — Indicador Hidrológico",
+    text:
+`Componentes de água e drenagem.
+• Presença/condição de rios, corpos d’água e estrutura hídrica.
+• Ajuda a monitorar alteração e conectividade hidrológica.`
+  },
+  "ENT": {
+    title: "ENT — Entropia / Desordem Antrópica",
+    text:
+`Sinal de desorganização por pressão humana.
+• Fragmentação, perturbação e ruído no sistema.
+• Quanto maior, maior a pressão/desordem.`
+  },
+  "PAN": {
+    title: "PAN — Pressão Antrópica Normalizada",
+    text:
+`Pressão humana padronizada.
+• Índice comparável entre áreas.
+• Quanto maior, maior impacto humano relativo.`
+  }
+};
+
+const modal = document.getElementById("infoModal");
+const titleEl = document.getElementById("infoTitle");
+const contentEl = document.getElementById("infoContent");
+const closeBtn = document.getElementById("closeInfo");
+
+function openInfo(key){
+  const data = explanations[key];
+  if(!data) return;
+  titleEl.textContent = data.title;
+  contentEl.textContent = data.text;
+  modal.style.display = "flex";
+}
+
+closeBtn.addEventListener("click", ()=> modal.style.display="none");
+modal.addEventListener("click", (e)=>{ if(e.target === modal) modal.style.display="none"; });
+window.addEventListener("keydown", (e)=>{ if(e.key === "Escape") modal.style.display="none"; });
+
+document.querySelectorAll("[data-key]").forEach(el=>{
+  el.addEventListener("click", ()=> openInfo(el.getAttribute("data-key")));
+});
+
+/* =========================
    BOOT
 ========================= */
-async function boot(){
+function boot(){
   resizeAll();
   startWave();
 
