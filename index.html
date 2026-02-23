@@ -368,14 +368,13 @@ const PUMP_URL = "https://pump.fun/coin/GCVyjNaCbXkwGUuktyNxSXad4ozmTp2fzQr2jieS
 const rate = 147449130;
 const IMG_URL = "./mapa.png";
 
-/* ✅ MAIS PONTOS + MAIS PISCANDO */
-const MAX_POINTS = 160000; // muito mais pontos (cap)
-const SAMPLE_STEP = 2;     // lê mais pixels (1 é pesado)
+/* ✅ EQUILIBRADO (menos excesso) */
+const MAX_POINTS = 70000;
+const SAMPLE_STEP = 3;
 
-/* thresholds mais permissivos (pega mais pontos) */
-const MIN_ALPHA = 25;
+const MIN_ALPHA  = 25;
 const MIN_BRIGHT = 35;
-const MIN_SAT = 0.18;
+const MIN_SAT    = 0.18;
 
 /* =========================
    DOM
@@ -470,24 +469,20 @@ function drawImageToCanvas(){
   const H = cnvImg.getBoundingClientRect().height;
   ctxI.clearRect(0,0,W,H);
 
-  // fundo preto
   ctxI.fillStyle = "#000";
   ctxI.fillRect(0,0,W,H);
 
   const img = state.img;
   const iw = img.naturalWidth, ih = img.naturalHeight;
 
-  // contain
   const scale = Math.min(W/iw, H/ih);
   const dw = iw*scale, dh = ih*scale;
   const dx = (W - dw)/2;
   const dy = (H - dh)/2;
 
-  // desenha mapa base
   ctxI.imageSmoothingEnabled = true;
   ctxI.drawImage(img, dx, dy, dw, dh);
 
-  // leve “holografia” na imagem base
   ctxI.globalCompositeOperation = "screen";
   ctxI.fillStyle = "rgba(0,180,255,0.10)";
   ctxI.fillRect(0,0,W,H);
@@ -497,7 +492,7 @@ function drawImageToCanvas(){
 }
 
 /* =========================
-   EXTRACT POINTS FROM IMAGE PIXELS
+   EXTRACT POINTS (equilibrado)
 ========================= */
 function extractPointsFromCanvas(){
   const W = Math.max(1, Math.floor(cnvImg.getBoundingClientRect().width));
@@ -513,7 +508,6 @@ function extractPointsFromCanvas(){
     for(let x=0; x<W; x+=step){
       const i = (y*W + x)*4;
       const r=d[i], g=d[i+1], b=d[i+2], a=d[i+3];
-
       if(a < MIN_ALPHA) continue;
 
       const [h,s,v] = rgbToHsv(r,g,b);
@@ -523,8 +517,8 @@ function extractPointsFromCanvas(){
       const cls = classifyHue(h);
       if(cls === -1) continue;
 
-      // ✅ mantém MUITO mais pixels (mais pontos)
-      const keepChance = Math.min(0.98, 0.25 + v*0.90);
+      // ✅ menos agressivo (menos pontos)
+      const keepChance = Math.min(0.90, 0.10 + v*0.60);
       if(Math.random() > keepChance) continue;
 
       pts.push({
@@ -545,7 +539,7 @@ function extractPointsFromCanvas(){
 }
 
 /* =========================
-   ANIMATE POINTS (mais piscando)
+   ANIMATE POINTS (menos excesso)
 ========================= */
 function startAnim(){
   if(state.anim) return;
@@ -557,13 +551,11 @@ function startAnim(){
     ctxP.clearRect(0,0,W,H);
     ctxP.globalCompositeOperation = "lighter";
 
-    // pontos base (mais vivos)
     for(const p of state.pts){
       const [r,g,b] = CLASS_COLORS[p.cls];
-
-      const pulse = 0.55 + 0.45*Math.sin(p.ph + state.t*p.sp*0.030);
-      const alpha = 0.14 + 0.40*pulse;
-      const rad   = 0.60 + p.base*0.85;
+      const pulse = 0.55 + 0.45*Math.sin(p.ph + state.t*p.sp*0.028);
+      const alpha = 0.10 + 0.30*pulse;
+      const rad   = 0.55 + p.base*0.75;
 
       ctxP.beginPath();
       ctxP.fillStyle = `rgba(${r},${g},${b},${alpha})`;
@@ -571,23 +563,23 @@ function startAnim(){
       ctxP.fill();
     }
 
-    // ✅ sparkles (bem mais) — “pisca muito mais”
-    const glowCount = Math.min(9000, Math.max(2500, (state.pts.length/7)|0));
+    // ✅ sparkles reduzidos (menos “poluição”)
+    const glowCount = Math.min(3500, Math.max(1200, (state.pts.length/10)|0));
     ctxP.save();
-    ctxP.shadowBlur = 16;
+    ctxP.shadowBlur = 14;
     for(let i=0;i<glowCount;i++){
       const p = state.pts[(Math.random()*state.pts.length)|0];
       if(!p) continue;
       const [r,g,b] = CLASS_COLORS[p.cls];
 
       const pulse = 0.55 + 0.45*Math.sin(p.ph + state.t*0.04);
-      const alpha = 0.09 + 0.30*pulse;
+      const alpha = 0.06 + 0.18*pulse;
 
-      ctxP.shadowColor = `rgba(${r},${g},${b},${0.78})`;
+      ctxP.shadowColor = `rgba(${r},${g},${b},${0.60})`;
       ctxP.fillStyle   = `rgba(${r},${g},${b},${alpha})`;
 
       ctxP.beginPath();
-      ctxP.arc(p.x, p.y, 1.5 + pulse*2.2, 0, Math.PI*2);
+      ctxP.arc(p.x, p.y, 1.2 + pulse*1.6, 0, Math.PI*2);
       ctxP.fill();
     }
     ctxP.restore();
@@ -651,7 +643,7 @@ async function boot(){
 
   const img = new Image();
   img.decoding = "async";
-  img.src = IMG_URL + "?v=" + Date.now(); // evita cache
+  img.src = IMG_URL + "?v=" + Date.now();
   img.onload = ()=>{
     state.img = img;
     state.imgLoaded = true;
